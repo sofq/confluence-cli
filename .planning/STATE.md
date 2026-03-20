@@ -1,3 +1,17 @@
+---
+gsd_state_version: 1.0
+milestone: v1.0
+milestone_name: milestone
+status: unknown
+stopped_at: Completed 01-core-scaffolding/01-01-PLAN.md
+last_updated: "2026-03-20T00:48:41.646Z"
+progress:
+  total_phases: 5
+  completed_phases: 0
+  total_plans: 4
+  completed_plans: 1
+---
+
 # Project State
 
 ## Project Reference
@@ -5,20 +19,17 @@
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 1 — Core Scaffolding
+**Current focus:** Phase 01 — core-scaffolding
 
 ## Current Position
 
-Phase: 1 of 5 (Core Scaffolding)
-Plan: 0 of ? in current phase
-Status: Ready to plan
-Last activity: 2026-03-20 — Roadmap created, requirements finalized (42 v1 requirements across 5 phases)
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 01 (core-scaffolding) — EXECUTING
+Plan: 1 of 4
 
 ## Performance Metrics
 
 **Velocity:**
+
 - Total plans completed: 0
 - Average duration: -
 - Total execution time: 0 hours
@@ -30,10 +41,12 @@ Progress: [░░░░░░░░░░] 0%
 | - | - | - | - |
 
 **Recent Trend:**
+
 - Last 5 plans: -
 - Trend: -
 
 *Updated after each plan completion*
+| Phase 01-core-scaffolding P01 | 5 | 2 tasks | 13 files |
 
 ## Accumulated Context
 
@@ -46,6 +59,9 @@ Recent decisions affecting current work:
 - [Init]: Raw Confluence storage format only, no Markdown conversion — agents handle raw format
 - [Init]: Confluence v2 API only — cleaner API, no legacy v1 support (raw command covers one-off v1 calls)
 - [Init]: AI agent as primary user — drives pure JSON stdout, semantic exit codes, JQ filtering on all output
+- [Phase 01-core-scaffolding]: oauth2 auth type removed from Phase 1 validAuthTypes — basic + bearer only, Phase 4 deferred
+- [Phase 01-core-scaffolding]: cmd/root.go stub required for go mod tidy (main.go imports cmd package, cannot resolve locally without it)
+- [Phase 01-core-scaffolding]: CF_PROFILE env var precedence: overrides config default_profile but is overridden by --profile flag
 
 ### Pending Todos
 
@@ -59,6 +75,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20
-Stopped at: Roadmap created. ROADMAP.md, STATE.md written. REQUIREMENTS.md traceability already populated. Ready to plan Phase 1.
+Last session: 2026-03-20T00:48:41.644Z
+Stopped at: Completed 01-core-scaffolding/01-01-PLAN.md
 Resume file: None

@@ -10,13 +10,13 @@ Requirements for initial release. Each maps to roadmap phases.
 ### Infrastructure
 
 - [ ] **INFRA-01**: CLI outputs pure JSON to stdout for all commands
-- [ ] **INFRA-02**: CLI outputs structured JSON errors to stderr with semantic exit codes (0=OK, 1=error, 2=auth, 3=not-found, 4=validation, 5=rate-limit, 6=conflict, 7=server-error)
-- [ ] **INFRA-03**: User can configure profiles with base URL, auth type, and credentials via `cf configure`
-- [ ] **INFRA-04**: User can select profile via `--profile` flag or `CF_PROFILE` env var
-- [ ] **INFRA-05**: CLI supports basic auth (email + API token) and bearer token auth
-- [ ] **INFRA-06**: User can apply JQ filter to any command output via `--jq` flag
+- [x] **INFRA-02**: CLI outputs structured JSON errors to stderr with semantic exit codes (0=OK, 1=error, 2=auth, 3=not-found, 4=validation, 5=rate-limit, 6=conflict, 7=server-error)
+- [x] **INFRA-03**: User can configure profiles with base URL, auth type, and credentials via `cf configure`
+- [x] **INFRA-04**: User can select profile via `--profile` flag or `CF_PROFILE` env var
+- [x] **INFRA-05**: CLI supports basic auth (email + API token) and bearer token auth
+- [x] **INFRA-06**: User can apply JQ filter to any command output via `--jq` flag
 - [ ] **INFRA-07**: CLI automatically paginates list endpoints and merges results (cursor-based)
-- [ ] **INFRA-08**: User can cache GET responses with configurable TTL via `--cache` flag
+- [x] **INFRA-08**: User can cache GET responses with configurable TTL via `--cache` flag
 - [ ] **INFRA-09**: User can make raw API calls via `cf raw <METHOD> <path>`
 - [ ] **INFRA-10**: User can preview write operations without executing via `--dry-run` flag
 - [ ] **INFRA-11**: User can inspect HTTP request/response details via `--verbose` flag (output to stderr)
@@ -116,13 +116,13 @@ Requirements for initial release. Each maps to roadmap phases.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | INFRA-01 | Phase 1 | Pending |
-| INFRA-02 | Phase 1 | Pending |
-| INFRA-03 | Phase 1 | Pending |
-| INFRA-04 | Phase 1 | Pending |
-| INFRA-05 | Phase 1 | Pending |
-| INFRA-06 | Phase 1 | Pending |
+| INFRA-02 | Phase 1 | Complete |
+| INFRA-03 | Phase 1 | Complete |
+| INFRA-04 | Phase 1 | Complete |
+| INFRA-05 | Phase 1 | Complete |
+| INFRA-06 | Phase 1 | Complete |
 | INFRA-07 | Phase 1 | Pending |
-| INFRA-08 | Phase 1 | Pending |
+| INFRA-08 | Phase 1 | Complete |
 | INFRA-09 | Phase 1 | Pending |
 | INFRA-10 | Phase 1 | Pending |
 | INFRA-11 | Phase 1 | Pending |
