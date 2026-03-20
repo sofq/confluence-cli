@@ -137,6 +137,13 @@ func init() {
 	rootCmd.AddCommand(configureCmd)
 	rootCmd.AddCommand(rawCmd)
 
+	// Phase 3: workflow command overrides for primary resources
+	mergeCommand(rootCmd, pagesCmd)    // replaces generated pages parent, preserves generated subcommands not overridden
+	mergeCommand(rootCmd, spacesCmd)   // replaces generated spaces parent
+	mergeCommand(rootCmd, commentsCmd) // replaces generated comments parent (use "comments" not "footer-comments")
+	mergeCommand(rootCmd, labelsCmd)   // replaces generated labels parent
+	rootCmd.AddCommand(searchCmd)      // no generated search command exists — add directly
+
 	// Override cobra's default help output so that "cf" with no args and
 	// "cf help <resource>" emit JSON errors to stderr instead of plain text
 	// to stdout. This preserves the JSON-only stdout contract.
