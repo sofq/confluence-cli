@@ -12,7 +12,7 @@ Build `cf`, a Go CLI that exposes the full Confluence Cloud v2 REST API as shell
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Core Scaffolding** - HTTP client, config profiles, auth, and the pure JSON output contract
+- [x] **Phase 1: Core Scaffolding** - HTTP client, config profiles, auth, and the pure JSON output contract (completed 2026-03-20)
 - [ ] **Phase 2: Code Generation Pipeline** - OpenAPI spec parser/generator producing all Cobra commands
 - [ ] **Phase 3: Pages, Spaces, Search, Comments, and Labels** - Primary resources with Confluence-specific workflow wrappers
 - [ ] **Phase 4: Governance and Agent Optimization** - Operation policy, audit logging, response caching, and batch execution
@@ -88,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Scaffolding | 3/4 | In Progress|  |
+| 1. Core Scaffolding | 4/4 | Complete   | 2026-03-20 |
 | 2. Code Generation Pipeline | 0/? | Not started | - |
 | 3. Pages, Spaces, Search, Comments, and Labels | 0/? | Not started | - |
 | 4. Governance and Agent Optimization | 0/? | Not started | - |

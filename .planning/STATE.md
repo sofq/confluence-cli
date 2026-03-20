@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-core-scaffolding/01-03-PLAN.md
-last_updated: "2026-03-20T00:59:28Z"
+stopped_at: Completed 01-core-scaffolding/01-04-PLAN.md
+last_updated: "2026-03-20T01:09:01.196Z"
 progress:
   total_phases: 5
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 4
-  completed_plans: 3
+  completed_plans: 4
 ---
 
 # Project State
@@ -49,6 +49,7 @@ Plan: 3 of 4
 | Phase 01-core-scaffolding P01 | 5 | 2 tasks | 13 files |
 | Phase 01-core-scaffolding P02 | 5 | 1 tasks | 1 files |
 | Phase 01-core-scaffolding P03 | 5 | 2 tasks | 5 files |
+| Phase 01-core-scaffolding P04 | 5 | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -70,6 +71,9 @@ Recent decisions affecting current work:
 - [Phase 01-core-scaffolding P03]: Version variable declared in cmd/root.go (not version.go) — avoids undefined reference across package init order
 - [Phase 01-core-scaffolding P03]: configure testConnection uses /wiki/api/v2/spaces?limit=1 (Confluence v2) not /rest/api/3/myself (Jira)
 - [Phase 01-core-scaffolding P03]: schemaOutput uses encoding/json Indent for pretty-print (no tidwall/pretty dependency needed)
+- [Phase 01-core-scaffolding]: External test packages (_test suffix) used for all test files to ensure public API coverage
+- [Phase 01-core-scaffolding]: Cache tests use unique URL-based keys with t.Name() to avoid sync.Once Dir() cross-test pollution
+- [Phase 01-core-scaffolding]: Cobra flag state isolation handled by explicit --profile flags in configure tests rather than flag resets
 
 ### Pending Todos
 
@@ -83,6 +87,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T00:59:28Z
-Stopped at: Completed 01-core-scaffolding/01-03-PLAN.md
+Last session: 2026-03-20T01:09:01.194Z
+Stopped at: Completed 01-core-scaffolding/01-04-PLAN.md
 Resume file: None
