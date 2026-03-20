@@ -128,7 +128,7 @@ func TestAvatarAnalyze_MissingUser(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	_, stderr, err := executeAvatarCmd(t, srv.URL, []string{"avatar", "analyze"})
+	_, stderr, err := executeAvatarCmd(t, srv.URL, []string{"avatar", "analyze", "--user", ""})
 
 	// Should have an error (AlreadyWrittenError with Code 4)
 	if err == nil {

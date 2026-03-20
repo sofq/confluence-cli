@@ -195,6 +195,7 @@ func init() {
 	mergeCommand(rootCmd, commentsCmd) // replaces generated comments parent (use "comments" not "footer-comments")
 	mergeCommand(rootCmd, labelsCmd)   // replaces generated labels parent
 	rootCmd.AddCommand(searchCmd)      // no generated search command exists — add directly
+	rootCmd.AddCommand(avatarCmd)      // Phase 5: user writing style profiling
 
 	// Override cobra's default help output so that "cf" with no args and
 	// "cf help <resource>" emit JSON errors to stderr instead of plain text
