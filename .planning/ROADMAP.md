@@ -47,7 +47,12 @@ Plans:
   2. Each generated command includes all path, query, and body parameters from the OpenAPI spec as Cobra flags
   3. Commands are grouped by OpenAPI resource tag (pages, spaces, search, etc.) under corresponding subcommands
   4. A hand-written workflow command registered via `mergeCommand` replaces the generated command for the same operation without build errors
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 02-01-PLAN.md — Download spec, add libopenapi dependency, document spec gaps
+- [ ] 02-02-PLAN.md — gen/ core: parser, grouper, generator, templates, unit tests
+- [ ] 02-03-PLAN.md — gen/main.go, conformance tests, make generate, commit generated output
 
 ### Phase 3: Pages, Spaces, Search, Comments, and Labels
 **Goal**: AI agents can perform all primary Confluence content operations — finding spaces, discovering pages via CQL, reading page bodies, creating and updating pages, managing comments and labels — with all Confluence v2 API edge cases handled correctly.
@@ -89,7 +94,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Core Scaffolding | 4/4 | Complete    | 2026-03-20 |
-| 2. Code Generation Pipeline | 0/? | Not started | - |
+| 2. Code Generation Pipeline | 0/3 | Not started | - |
 | 3. Pages, Spaces, Search, Comments, and Labels | 0/? | Not started | - |
 | 4. Governance and Agent Optimization | 0/? | Not started | - |
 | 5. Avatar Analysis | 0/? | Not started | - |
