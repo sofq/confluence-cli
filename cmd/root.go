@@ -266,7 +266,8 @@ func init() {
 	rootCmd.AddCommand(searchCmd)      // no generated search command exists — add directly
 	rootCmd.AddCommand(avatarCmd)      // Phase 5: user writing style profiling
 	mergeCommand(rootCmd, blogpostsCmd) // Phase 7: blog post workflow overrides
-	mergeCommand(rootCmd, attachmentsCmd) // Phase 8: attachment workflow overrides
+	mergeCommand(rootCmd, attachmentsCmd)    // Phase 8: attachment workflow overrides
+	mergeCommand(rootCmd, custom_contentCmd) // Phase 9: custom content workflow overrides
 
 	// Override cobra's default help output so that "cf" with no args and
 	// "cf help <resource>" emit JSON errors to stderr instead of plain text

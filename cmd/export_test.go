@@ -57,6 +57,16 @@ func DoBlogpostUpdate(ctx context.Context, c *client.Client, id, title, storageV
 	return doBlogpostUpdate(ctx, c, id, title, storageValue, versionNumber)
 }
 
+// FetchCustomContentVersion exposes the package-private fetchCustomContentVersion helper for tests.
+func FetchCustomContentVersion(ctx context.Context, c *client.Client, id string) (int, int) {
+	return fetchCustomContentVersion(ctx, c, id)
+}
+
+// DoCustomContentUpdate exposes the package-private doCustomContentUpdate helper for tests.
+func DoCustomContentUpdate(ctx context.Context, c *client.Client, id, title, storageValue string, versionNumber int) int {
+	return doCustomContentUpdate(ctx, c, id, title, storageValue, versionNumber)
+}
+
 // LabelsAddValidation validates the inputs for the labels add command without
 // making any HTTP requests. Returns 0 (ExitOK) if valid, non-zero if invalid.
 func LabelsAddValidation(pageID string, labelNames []string) int {
