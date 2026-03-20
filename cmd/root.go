@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/sofq/confluence-cli/cmd/generated"
+	"github.com/sofq/confluence-cli/internal/audit"
 	"github.com/sofq/confluence-cli/internal/client"
 	"github.com/sofq/confluence-cli/internal/config"
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
+	"github.com/sofq/confluence-cli/internal/policy"
 	"github.com/spf13/cobra"
 )
 
@@ -59,6 +61,7 @@ var rootCmd = &cobra.Command{
 		fields, _ := cmd.Flags().GetString("fields")
 		cacheTTL, _ := cmd.Flags().GetDuration("cache")
 		timeout, _ := cmd.Flags().GetDuration("timeout")
+		auditFlag, _ := cmd.Flags().GetString("audit")
 
 		flags := &config.FlagOverrides{
 			BaseURL:  baseURL,
@@ -88,23 +91,71 @@ var rootCmd = &cobra.Command{
 			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
 		}
 
+		// Load raw profile for governance fields (AllowedOperations, DeniedOperations, AuditLog).
+		// If load fails, silently use zero Profile — governance fields are additive, not required.
+		var rawProfile config.Profile
+		if cfg, loadErr := config.LoadFrom(config.DefaultPath()); loadErr == nil {
+			rawProfile = cfg.Profiles[resolved.ProfileName]
+		}
+
+		// Policy enforcement — build from profile config.
+		pol, err := policy.NewFromConfig(rawProfile.AllowedOperations, rawProfile.DeniedOperations)
+		if err != nil {
+			apiErr := &cferrors.APIError{
+				ErrorType: "config_error",
+				Status:    0,
+				Message:   "invalid policy config: " + err.Error(),
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
+		}
+
+		// Audit logging — --audit flag takes precedence over profile audit_log.
+		var auditLogger *audit.Logger
+		auditPath := auditFlag
+		if auditPath == "" {
+			auditPath = rawProfile.AuditLog
+		}
+		if auditPath != "" {
+			auditLogger, err = audit.NewLogger(auditPath)
+			if err != nil {
+				apiErr := &cferrors.APIError{
+					ErrorType: "config_error",
+					Status:    0,
+					Message:   "cannot open audit log: " + err.Error(),
+				}
+				apiErr.WriteJSON(os.Stderr)
+				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
+			}
+		}
+
 		c := &client.Client{
-			BaseURL:    resolved.BaseURL,
-			Auth:       resolved.Auth,
-			HTTPClient: &http.Client{Timeout: timeout},
-			Stdout:     os.Stdout,
-			Stderr:     os.Stderr,
-			JQFilter:   jqFilter,
-			Paginate:   !noPaginate,
-			DryRun:     dryRun,
-			Verbose:    verbose,
-			Pretty:     pretty,
-			Fields:     fields,
-			CacheTTL:   cacheTTL,
+			BaseURL:     resolved.BaseURL,
+			Auth:        resolved.Auth,
+			HTTPClient:  &http.Client{Timeout: timeout},
+			Stdout:      os.Stdout,
+			Stderr:      os.Stderr,
+			JQFilter:    jqFilter,
+			Paginate:    !noPaginate,
+			DryRun:      dryRun,
+			Verbose:     verbose,
+			Pretty:      pretty,
+			Fields:      fields,
+			CacheTTL:    cacheTTL,
+			Policy:      pol,
+			AuditLogger: auditLogger,
+			Profile:     resolved.ProfileName,
 		}
 
 		cmd.SetContext(client.NewContext(cmd.Context(), c))
 		return nil
+	},
+	PersistentPostRun: func(cmd *cobra.Command, args []string) {
+		if c, err := client.FromContext(cmd.Context()); err == nil {
+			if c.AuditLogger != nil {
+				c.AuditLogger.Close()
+			}
+		}
 	},
 }
 
@@ -123,6 +174,7 @@ func init() {
 	pf.String("fields", "", "comma-separated list of fields to return (GET only)")
 	pf.Duration("cache", 0, "cache GET responses for this duration (e.g. 5m, 1h)")
 	pf.Duration("timeout", 30*time.Second, "HTTP request timeout (e.g. 10s, 1m)")
+	pf.String("audit", "", "path to NDJSON audit log file (overrides profile audit_log)")
 
 	// Override --version template to output JSON.
 	rootCmd.SetVersionTemplate(`{"version":"{{.Version}}"}` + "\n")
