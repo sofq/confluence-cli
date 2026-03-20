@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-core-scaffolding/01-01-PLAN.md
-last_updated: "2026-03-20T00:48:41.646Z"
+stopped_at: Completed 01-core-scaffolding/01-02-PLAN.md
+last_updated: "2026-03-20T00:55:15.401Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -47,6 +47,7 @@ Plan: 1 of 4
 
 *Updated after each plan completion*
 | Phase 01-core-scaffolding P01 | 5 | 2 tasks | 13 files |
+| Phase 01-core-scaffolding P02 | 5 | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -62,6 +63,9 @@ Recent decisions affecting current work:
 - [Phase 01-core-scaffolding]: oauth2 auth type removed from Phase 1 validAuthTypes — basic + bearer only, Phase 4 deferred
 - [Phase 01-core-scaffolding]: cmd/root.go stub required for go mod tidy (main.go imports cmd package, cannot resolve locally without it)
 - [Phase 01-core-scaffolding]: CF_PROFILE env var precedence: overrides config default_profile but is overridden by --profile flag
+- [Phase 01-core-scaffolding]: encoding/json indent used for pretty-print instead of tidwall/pretty to avoid adding external dependency
+- [Phase 01-core-scaffolding]: oauth2 removed from ApplyAuth in client.go — Phase 1 supports only basic + bearer per INFRA-05
+- [Phase 01-core-scaffolding]: Phase 4 fields (AuditLogger, Policy, Operation, Profile) excluded from Client struct — clean phase boundary
 
 ### Pending Todos
 
@@ -75,6 +79,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T00:48:41.644Z
-Stopped at: Completed 01-core-scaffolding/01-01-PLAN.md
+Last session: 2026-03-20T00:55:15.399Z
+Stopped at: Completed 01-core-scaffolding/01-02-PLAN.md
 Resume file: None
