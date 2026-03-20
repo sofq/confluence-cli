@@ -81,7 +81,7 @@ Plans:
 - [ ] **Phase 6: OAuth2 Authentication** - Client credentials and browser-based OAuth2 with automatic token refresh
 - [x] **Phase 7: Blog Posts** - Full CRUD for blog posts mirroring the pages pattern (completed 2026-03-20)
 - [x] **Phase 8: Attachments** - Attachment listing, metadata, upload (v1 API), and deletion (completed 2026-03-20)
-- [ ] **Phase 9: Custom Content** - CRUD for custom content types via v2 API
+- [x] **Phase 9: Custom Content** - CRUD for custom content types via v2 API (completed 2026-03-20)
 - [ ] **Phase 10: Output Presets and Templates** - Named output presets and content template system
 - [ ] **Phase 11: Watch** - Long-running content change polling with NDJSON event streaming
 
@@ -182,6 +182,6 @@ Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can e
 | 6. OAuth2 Authentication | v1.1 | 0/2 | In Progress | - |
 | 7. Blog Posts | 1/1 | Complete   | 2026-03-20 | - |
 | 8. Attachments | 1/1 | Complete   | 2026-03-20 | - |
-| 9. Custom Content | v1.1 | 0/1 | Not started | - |
+| 9. Custom Content | 1/1 | Complete   | 2026-03-20 | - |
 | 10. Output Presets and Templates | v1.1 | 0/? | Not started | - |
 | 11. Watch | v1.1 | 0/? | Not started | - |

@@ -109,10 +109,10 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 
 ### Custom Content
 
-- [ ] **CUST-01**: User can list custom content of a given type
-- [ ] **CUST-02**: User can create custom content with type, title, and body
-- [ ] **CUST-03**: User can update custom content
-- [ ] **CUST-04**: User can delete custom content
+- [x] **CUST-01**: User can list custom content of a given type
+- [x] **CUST-02**: User can create custom content with type, title, and body
+- [x] **CUST-03**: User can update custom content
+- [x] **CUST-04**: User can delete custom content
 
 ### Output Presets
 
@@ -201,10 +201,10 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 | ATCH-02 | Phase 8 | Complete |
 | ATCH-03 | Phase 8 | Complete |
 | ATCH-04 | Phase 8 | Complete |
-| CUST-01 | Phase 9 | Pending |
-| CUST-02 | Phase 9 | Pending |
-| CUST-03 | Phase 9 | Pending |
-| CUST-04 | Phase 9 | Pending |
+| CUST-01 | Phase 9 | Complete |
+| CUST-02 | Phase 9 | Complete |
+| CUST-03 | Phase 9 | Complete |
+| CUST-04 | Phase 9 | Complete |
 | PRST-01 | Phase 10 | Pending |
 | PRST-02 | Phase 10 | Pending |
 | TMPL-01 | Phase 10 | Pending |
