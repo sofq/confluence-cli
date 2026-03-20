@@ -26,6 +26,7 @@ type Token struct {
 	RefreshToken string    `json:"refresh_token,omitempty"`
 	Scope        string    `json:"scope,omitempty"`
 	ObtainedAt   time.Time `json:"obtained_at"`
+	CloudID      string    `json:"cloud_id,omitempty"`
 }
 
 // Expired reports whether the token has expired or will expire within the
