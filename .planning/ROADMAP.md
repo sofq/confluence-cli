@@ -126,7 +126,10 @@ Plans:
   2. `cf attachments get <id>` returns attachment metadata as JSON (file name, media type, size, download link)
   3. `cf attachments upload --page-id <id> --file ./report.pdf` uploads the file via multipart/form-data (v1 API) and returns the attachment JSON
   4. `cf attachments delete <id>` removes the attachment and exits 0
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 08-01-PLAN.md -- Attachment list (v2 --page-id), upload (v1 multipart), mergeCommand wiring
 
 ### Phase 9: Custom Content
 **Goal**: Users can manage custom content types (from Connect and Forge apps) through the same CRUD pattern as pages and blog posts.
@@ -175,7 +178,7 @@ Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can e
 | 5. Avatar Analysis | v1.0 | 2/2 | Complete | 2026-03-20 |
 | 6. OAuth2 Authentication | v1.1 | 0/2 | In Progress | - |
 | 7. Blog Posts | 1/1 | Complete   | 2026-03-20 | - |
-| 8. Attachments | v1.1 | 0/? | Not started | - |
+| 8. Attachments | v1.1 | 0/1 | Not started | - |
 | 9. Custom Content | v1.1 | 0/? | Not started | - |
 | 10. Output Presets and Templates | v1.1 | 0/? | Not started | - |
 | 11. Watch | v1.1 | 0/? | Not started | - |
