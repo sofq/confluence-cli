@@ -83,7 +83,7 @@ Plans:
 - [x] **Phase 8: Attachments** - Attachment listing, metadata, upload (v1 API), and deletion (completed 2026-03-20)
 - [x] **Phase 9: Custom Content** - CRUD for custom content types via v2 API (completed 2026-03-20)
 - [x] **Phase 10: Output Presets and Templates** - Named output presets and content template system (completed 2026-03-20)
-- [ ] **Phase 11: Watch** - Long-running content change polling with NDJSON event streaming
+- [x] **Phase 11: Watch** - Long-running content change polling with NDJSON event streaming (completed 2026-03-20)
 
 ## Phase Details
 
@@ -191,4 +191,4 @@ Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can e
 | 8. Attachments | 1/1 | Complete   | 2026-03-20 | - |
 | 9. Custom Content | 1/1 | Complete   | 2026-03-20 | - |
 | 10. Output Presets and Templates | 2/2 | Complete    | 2026-03-20 | - |
-| 11. Watch | v1.1 | 0/1 | Not started | - |
+| 11. Watch | 1/1 | Complete   | 2026-03-20 | - |

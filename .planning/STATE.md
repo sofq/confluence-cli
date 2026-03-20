@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Extended Capabilities
-status: unknown
-stopped_at: Phase 11 context gathered
-last_updated: "2026-03-20T14:18:19.275Z"
+status: complete
+stopped_at: Completed 11-01-PLAN.md
+last_updated: "2026-03-20T14:32:11.263Z"
 progress:
   total_phases: 6
-  completed_phases: 5
-  total_plans: 7
-  completed_plans: 7
+  completed_phases: 6
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 10 — output-presets-and-templates
+**Current focus:** Phase 11 — watch
 
 ## Current Position
 
-Phase: 10 (output-presets-and-templates) — COMPLETE
-Plan: 2 of 2 (all plans complete)
+Phase: 11 (watch) — COMPLETE
+Plan: 1 of 1 (DONE)
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Plan: 2 of 2 (all plans complete)
 | Phase 09-custom-content P01 | 3min | 1 tasks | 4 files |
 | Phase 10-output-presets P01 | 3min | 2 tasks | 4 files |
 | Phase 10-output-presets P02 | 7min | 2 tasks | 7 files |
+| Phase 11-watch P01 | 5min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,8 @@ Recent decisions affecting current work:
 - [Phase 09-custom-content]: --type flag required on list/create custom content, not on get/update/delete
 - [Phase 10-output-presets]: Preset resolution after rawProfile load, before Client construction -- downstream JQ unaware of source
 - [Phase 10-output-presets]: Empty --preset string treated as not-set to avoid interfering with --jq
+- [Phase 11-watch]: Hidden --max-polls flag for deterministic test control of polling commands
+- [Phase 11-watch]: Seen map pruning at 48h threshold balances memory vs dedup accuracy
 
 ### Pending Todos
 
@@ -90,6 +93,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T14:18:19.273Z
-Stopped at: Phase 11 context gathered
-Resume file: .planning/phases/11-watch/11-CONTEXT.md
+Last session: 2026-03-20T14:37:22Z
+Stopped at: Completed 11-01-PLAN.md
+Resume file: .planning/phases/11-watch/11-01-SUMMARY.md

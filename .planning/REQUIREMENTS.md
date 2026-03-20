@@ -126,8 +126,8 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 
 ### Watch
 
-- [ ] **WTCH-01**: User can watch content for changes via `cf watch --cql <query>` with NDJSON event output
-- [ ] **WTCH-02**: Watch command handles graceful shutdown on SIGINT/SIGTERM
+- [x] **WTCH-01**: User can watch content for changes via `cf watch --cql <query>` with NDJSON event output
+- [x] **WTCH-02**: Watch command handles graceful shutdown on SIGINT/SIGTERM
 
 ## Out of Scope
 
@@ -209,8 +209,8 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 | PRST-02 | Phase 10 | Complete |
 | TMPL-01 | Phase 10 | Complete |
 | TMPL-02 | Phase 10 | Complete |
-| WTCH-01 | Phase 11 | Pending |
-| WTCH-02 | Phase 11 | Pending |
+| WTCH-01 | Phase 11 | Complete |
+| WTCH-02 | Phase 11 | Complete |
 
 **Coverage (v1.0):**
 - v1.0 requirements: 42 total
