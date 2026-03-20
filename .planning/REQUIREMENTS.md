@@ -94,11 +94,11 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 
 ### Blog Posts
 
-- [ ] **BLOG-01**: User can list blog posts in a space with pagination
-- [ ] **BLOG-02**: User can get a blog post by ID with content body (storage format)
-- [ ] **BLOG-03**: User can create a blog post in a space with title and storage format body
-- [ ] **BLOG-04**: User can update a blog post with automatic version increment
-- [ ] **BLOG-05**: User can delete a blog post
+- [x] **BLOG-01**: User can list blog posts in a space with pagination
+- [x] **BLOG-02**: User can get a blog post by ID with content body (storage format)
+- [x] **BLOG-03**: User can create a blog post in a space with title and storage format body
+- [x] **BLOG-04**: User can update a blog post with automatic version increment
+- [x] **BLOG-05**: User can delete a blog post
 
 ### Attachments
 
@@ -192,11 +192,11 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 | AUTH-02 | Phase 6 | Complete |
 | AUTH-03 | Phase 6 | Complete |
 | AUTH-04 | Phase 6 | Complete |
-| BLOG-01 | Phase 7 | Pending |
-| BLOG-02 | Phase 7 | Pending |
-| BLOG-03 | Phase 7 | Pending |
-| BLOG-04 | Phase 7 | Pending |
-| BLOG-05 | Phase 7 | Pending |
+| BLOG-01 | Phase 7 | Complete |
+| BLOG-02 | Phase 7 | Complete |
+| BLOG-03 | Phase 7 | Complete |
+| BLOG-04 | Phase 7 | Complete |
+| BLOG-05 | Phase 7 | Complete |
 | ATCH-01 | Phase 8 | Pending |
 | ATCH-02 | Phase 8 | Pending |
 | ATCH-03 | Phase 8 | Pending |
