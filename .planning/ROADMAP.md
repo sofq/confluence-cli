@@ -112,7 +112,10 @@ Plans:
   3. `cf blogposts create --space-id <id> --title "Post" --body "<p>content</p>"` creates a blog post and returns its JSON representation
   4. `cf blogposts update <id> --title "New Title"` succeeds with automatic version increment (same optimistic locking as pages)
   5. `cf blogposts delete <id>` soft-deletes the blog post and exits 0
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 07-01-PLAN.md -- Blog post CRUD (cmd/blogposts.go) + tests + root wiring
 
 ### Phase 8: Attachments
 **Goal**: Users can discover, inspect, upload, and remove file attachments on Confluence content.
@@ -171,7 +174,7 @@ Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can e
 | 4. Governance and Agent Optimization | v1.0 | 3/3 | Complete | 2026-03-20 |
 | 5. Avatar Analysis | v1.0 | 2/2 | Complete | 2026-03-20 |
 | 6. OAuth2 Authentication | v1.1 | 0/2 | In Progress | - |
-| 7. Blog Posts | v1.1 | 0/? | Not started | - |
+| 7. Blog Posts | v1.1 | 0/1 | Not started | - |
 | 8. Attachments | v1.1 | 0/? | Not started | - |
 | 9. Custom Content | v1.1 | 0/? | Not started | - |
 | 10. Output Presets and Templates | v1.1 | 0/? | Not started | - |
