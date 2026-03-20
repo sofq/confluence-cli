@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-code-generation-pipeline/02-01-PLAN.md
-last_updated: "2026-03-20T02:30:49.013Z"
+stopped_at: Completed 02-code-generation-pipeline/02-02-PLAN.md
+last_updated: "2026-03-20T03:00:00.000Z"
 progress:
   total_phases: 5
   completed_phases: 1
   total_plans: 7
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 02 (code-generation-pipeline) — EXECUTING
-Plan: 1 of 3
+Plan: 2 of 3
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Plan: 1 of 3
 | Phase 01-core-scaffolding P03 | 5 | 2 tasks | 5 files |
 | Phase 01-core-scaffolding P04 | 5 | 2 tasks | 9 files |
 | Phase 02-code-generation-pipeline P01 | 4 | 2 tasks | 4 files |
+| Phase 02-code-generation-pipeline P02 | 9 | 2 tasks | 10 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,9 @@ Recent decisions affecting current work:
 - [Phase 02-code-generation-pipeline]: libopenapi v0.34.3 added as indirect dep — go mod tidy skipped until gen/ package imports it in Plan 02
 - [Phase 02-code-generation-pipeline]: spec/confluence-v2.json pinned locally from dac-static.atlassian.com (596KB, 212 ops) — generator reads at build time not runtime
 - [Phase 02-code-generation-pipeline]: Five Confluence v2 API gaps documented in SPEC_GAPS.md: no attachment upload (v1-only), deprecated getChildPages, 18 EAP ops, array params as string flags, embeds undocumented
+- [Phase 02-code-generation-pipeline P02]: ExtractResource uses first non-param path segment for Confluence v2 paths (no /rest/api/3/ prefix)
+- [Phase 02-code-generation-pipeline P02]: gen/main.go included in Task 1 because generator.go is required for package compilation
+- [Phase 02-code-generation-pipeline P02]: TestGenerateResource verb adapted to get-by-id (DeriveVerb strips Page prefix from getPageById against pages resource)
 
 ### Pending Todos
 
@@ -91,6 +95,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T02:30:49.011Z
-Stopped at: Completed 02-code-generation-pipeline/02-01-PLAN.md
+Last session: 2026-03-20T03:00:00.000Z
+Stopped at: Completed 02-code-generation-pipeline/02-02-PLAN.md
 Resume file: None
