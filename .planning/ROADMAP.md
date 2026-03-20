@@ -140,7 +140,10 @@ Plans:
   2. `cf custom-content create --type "ac:app:type" --title "Item" --body "<ac:...>"` creates custom content and returns its JSON representation
   3. `cf custom-content update <id>` updates the custom content with automatic version increment
   4. `cf custom-content delete <id>` removes the custom content and exits 0
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 09-01-PLAN.md -- Custom content CRUD (cmd/custom_content.go) with --type flag + tests + root wiring
 
 ### Phase 10: Output Presets and Templates
 **Goal**: Users can save and reuse output formatting configurations and create content from reusable templates with variable substitution.
@@ -179,6 +182,6 @@ Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can e
 | 6. OAuth2 Authentication | v1.1 | 0/2 | In Progress | - |
 | 7. Blog Posts | 1/1 | Complete   | 2026-03-20 | - |
 | 8. Attachments | 1/1 | Complete   | 2026-03-20 | - |
-| 9. Custom Content | v1.1 | 0/? | Not started | - |
+| 9. Custom Content | v1.1 | 0/1 | Not started | - |
 | 10. Output Presets and Templates | v1.1 | 0/? | Not started | - |
 | 11. Watch | v1.1 | 0/? | Not started | - |
