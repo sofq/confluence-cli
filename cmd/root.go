@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"sort"
+	"strings"
 	"time"
 
 	"github.com/sofq/confluence-cli/cmd/generated"
@@ -58,6 +60,7 @@ var rootCmd = &cobra.Command{
 
 		profileName, _ := cmd.Flags().GetString("profile")
 		jqFilter, _ := cmd.Flags().GetString("jq")
+		preset, _ := cmd.Flags().GetString("preset")
 		pretty, _ := cmd.Flags().GetBool("pretty")
 		noPaginate, _ := cmd.Flags().GetBool("no-paginate")
 		verbose, _ := cmd.Flags().GetBool("verbose")
@@ -164,6 +167,28 @@ var rootCmd = &cobra.Command{
 			rawProfile = cfg.Profiles[resolved.ProfileName]
 		}
 
+		// Resolve --preset to JQ expression.
+		if preset != "" {
+			if jqFilter != "" {
+				apiErr := &cferrors.APIError{
+					ErrorType: "validation_error",
+					Message:   "cannot use --preset and --jq together; choose one",
+				}
+				apiErr.WriteJSON(os.Stderr)
+				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+			}
+			expr, ok := rawProfile.Presets[preset]
+			if !ok {
+				apiErr := &cferrors.APIError{
+					ErrorType: "config_error",
+					Message:   fmt.Sprintf("preset %q not found in profile %q; available presets: %s", preset, resolved.ProfileName, availablePresets(rawProfile)),
+				}
+				apiErr.WriteJSON(os.Stderr)
+				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+			}
+			jqFilter = expr
+		}
+
 		// Policy enforcement — build from profile config.
 		pol, err := policy.NewFromConfig(rawProfile.AllowedOperations, rawProfile.DeniedOperations)
 		if err != nil {
@@ -236,6 +261,7 @@ func init() {
 	pf.String("client-secret", "", "OAuth2 client secret (overrides config)")
 	pf.String("cloud-id", "", "Atlassian Cloud site ID (overrides config)")
 	pf.String("jq", "", "jq filter expression to apply to the response")
+	pf.String("preset", "", "named output preset to apply (defined in profile config)")
 	pf.Bool("pretty", false, "pretty-print JSON output")
 	pf.Bool("no-paginate", false, "disable automatic pagination")
 	pf.Bool("verbose", false, "log HTTP request/response details to stderr")
@@ -295,6 +321,19 @@ func init() {
 // RootCommand returns the root cobra.Command for documentation generation.
 func RootCommand() *cobra.Command {
 	return rootCmd
+}
+
+// availablePresets returns a comma-separated list of preset names from a profile.
+func availablePresets(p config.Profile) string {
+	if len(p.Presets) == 0 {
+		return "(none)"
+	}
+	names := make([]string, 0, len(p.Presets))
+	for k := range p.Presets {
+		names = append(names, k)
+	}
+	sort.Strings(names)
+	return strings.Join(names, ", ")
 }
 
 // Execute runs the root command and returns an exit code.
