@@ -489,6 +489,79 @@ func TestTokenDirEnvOverride(t *testing.T) {
 	}
 }
 
+func TestProfilePresets(t *testing.T) {
+	t.Run("roundtrip preserves presets", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "config.json")
+		original := &config.Config{
+			DefaultProfile: "default",
+			Profiles: map[string]config.Profile{
+				"default": {
+					BaseURL: "https://example.atlassian.net",
+					Auth:    config.AuthConfig{Type: "basic", Token: "tok"},
+					Presets: map[string]string{
+						"brief":  ".results[] | {id, title}",
+						"titles": ".results[].title",
+					},
+				},
+			},
+		}
+		if err := config.SaveTo(original, path); err != nil {
+			t.Fatalf("SaveTo failed: %v", err)
+		}
+
+		loaded, err := config.LoadFrom(path)
+		if err != nil {
+			t.Fatalf("LoadFrom failed: %v", err)
+		}
+		p := loaded.Profiles["default"]
+		if len(p.Presets) != 2 {
+			t.Fatalf("Presets length = %d, want 2", len(p.Presets))
+		}
+		if got := p.Presets["brief"]; got != ".results[] | {id, title}" {
+			t.Errorf("Presets[brief] = %q, want %q", got, ".results[] | {id, title}")
+		}
+		if got := p.Presets["titles"]; got != ".results[].title" {
+			t.Errorf("Presets[titles] = %q, want %q", got, ".results[].title")
+		}
+	})
+
+	t.Run("config without presets loads correctly", func(t *testing.T) {
+		path := filepath.Join(t.TempDir(), "config.json")
+		original := &config.Config{
+			DefaultProfile: "default",
+			Profiles: map[string]config.Profile{
+				"default": {
+					BaseURL: "https://example.atlassian.net",
+					Auth:    config.AuthConfig{Type: "basic"},
+				},
+			},
+		}
+		if err := config.SaveTo(original, path); err != nil {
+			t.Fatalf("SaveTo failed: %v", err)
+		}
+
+		loaded, err := config.LoadFrom(path)
+		if err != nil {
+			t.Fatalf("LoadFrom failed: %v", err)
+		}
+		p := loaded.Profiles["default"]
+		if p.Presets != nil {
+			t.Errorf("Presets should be nil for config without presets, got %v", p.Presets)
+		}
+	})
+
+	t.Run("JSON with presets unmarshals correctly", func(t *testing.T) {
+		jsonStr := `{"base_url":"https://x.atlassian.net","auth":{"type":"basic"},"presets":{"brief":".results[] | {id, title}"}}`
+		var p config.Profile
+		if err := json.Unmarshal([]byte(jsonStr), &p); err != nil {
+			t.Fatalf("Unmarshal failed: %v", err)
+		}
+		if got := p.Presets["brief"]; got != ".results[] | {id, title}" {
+			t.Errorf("Presets[brief] = %q, want %q", got, ".results[] | {id, title}")
+		}
+	})
+}
+
 func TestOAuth2RoundTrip(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.json")
 

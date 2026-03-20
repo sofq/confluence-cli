@@ -32,7 +32,8 @@ type Profile struct {
 	Auth              AuthConfig `json:"auth"`
 	AllowedOperations []string   `json:"allowed_operations,omitempty"`
 	DeniedOperations  []string   `json:"denied_operations,omitempty"`
-	AuditLog          string     `json:"audit_log,omitempty"` // path to NDJSON file; empty = disabled
+	AuditLog          string            `json:"audit_log,omitempty"` // path to NDJSON file; empty = disabled
+	Presets           map[string]string `json:"presets,omitempty"`
 }
 
 // Config is the top-level configuration structure persisted to disk.
