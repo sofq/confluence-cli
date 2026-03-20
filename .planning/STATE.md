@@ -2,14 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Extended Capabilities
+current_plan: 2 of 2
 status: unknown
-stopped_at: Completed 06-01-PLAN.md (OAuth2 client credentials)
-last_updated: "2026-03-20T08:18:24.346Z"
+stopped_at: Completed 06-02-PLAN.md (OAuth2 3LO browser flow)
+last_updated: "2026-03-20T08:38:10.591Z"
 progress:
   total_phases: 6
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -45,6 +46,8 @@ Current Plan: 2 of 2
 - Last 5 plans: 5m, 6m, 10m, 4m, 18m
 - Trend: Variable (avatar analysis was outlier at 18m)
 
+| Phase 06 P02 | 4min | 2 tasks | 4 files |
+
 ## Accumulated Context
 
 ### Decisions
@@ -63,6 +66,8 @@ Recent decisions affecting current work:
 - [v1.1 06-01]: No TokenURL config field -- Atlassian single fixed endpoint as constant
 - [v1.1 06-01]: OAuth2 resolves to bearer before Client construction -- downstream unaware
 - [v1.1 06-01]: Token files use atomic write (temp + rename) for crash safety
+- [Phase 06]: PKCE included defensively -- Atlassian does not enforce but OAuth 2.1 recommends
+- [Phase 06]: CloudID stored in Token struct so 3LO discovery persists across invocations
 
 ### Pending Todos
 
@@ -75,6 +80,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20
-Stopped at: Completed 06-01-PLAN.md (OAuth2 client credentials)
+Last session: 2026-03-20T08:38:10.589Z
+Stopped at: Completed 06-02-PLAN.md (OAuth2 3LO browser flow)
 Resume file: None
