@@ -116,8 +116,8 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 
 ### Output Presets
 
-- [ ] **PRST-01**: User can define named output presets in profile config (JQ expression + fields)
-- [ ] **PRST-02**: User can apply a preset to any command output via `--preset <name>`
+- [x] **PRST-01**: User can define named output presets in profile config (JQ expression + fields)
+- [x] **PRST-02**: User can apply a preset to any command output via `--preset <name>`
 
 ### Content Templates
 
@@ -205,8 +205,8 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 | CUST-02 | Phase 9 | Complete |
 | CUST-03 | Phase 9 | Complete |
 | CUST-04 | Phase 9 | Complete |
-| PRST-01 | Phase 10 | Pending |
-| PRST-02 | Phase 10 | Pending |
+| PRST-01 | Phase 10 | Complete |
+| PRST-02 | Phase 10 | Complete |
 | TMPL-01 | Phase 10 | Pending |
 | TMPL-02 | Phase 10 | Pending |
 | WTCH-01 | Phase 11 | Pending |

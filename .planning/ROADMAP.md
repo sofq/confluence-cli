@@ -187,5 +187,5 @@ Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can e
 | 7. Blog Posts | 1/1 | Complete   | 2026-03-20 | - |
 | 8. Attachments | 1/1 | Complete   | 2026-03-20 | - |
 | 9. Custom Content | 1/1 | Complete   | 2026-03-20 | - |
-| 10. Output Presets and Templates | v1.1 | 0/2 | Not started | - |
+| 10. Output Presets and Templates | 1/2 | In Progress|  | - |
 | 11. Watch | v1.1 | 0/? | Not started | - |
