@@ -11,10 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/sofq/confluence-cli/internal/audit"
 	"github.com/sofq/confluence-cli/internal/cache"
 	"github.com/sofq/confluence-cli/internal/config"
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
 	"github.com/sofq/confluence-cli/internal/jq"
+	"github.com/sofq/confluence-cli/internal/policy"
 	"github.com/spf13/cobra"
 )
 
@@ -24,18 +26,22 @@ type contextKey struct{}
 // Client is the core HTTP client for cf. It wraps net/http with auth,
 // pagination, jq filtering, and structured error output.
 type Client struct {
-	BaseURL    string
-	Auth       config.AuthConfig
-	HTTPClient *http.Client
-	Stdout     io.Writer     // JSON responses go here
-	Stderr     io.Writer     // structured errors go here
-	JQFilter   string        // --jq filter expression
-	Paginate   bool          // auto-paginate GET responses
-	DryRun     bool          // output request as JSON, don't execute
-	Verbose    bool          // log request/response to stderr
-	Pretty     bool          // pretty-print JSON
-	Fields     string        // --fields comma-separated field names for GET
-	CacheTTL   time.Duration // --cache duration; 0 means no caching
+	BaseURL     string
+	Auth        config.AuthConfig
+	HTTPClient  *http.Client
+	Stdout      io.Writer     // JSON responses go here
+	Stderr      io.Writer     // structured errors go here
+	JQFilter    string        // --jq filter expression
+	Paginate    bool          // auto-paginate GET responses
+	DryRun      bool          // output request as JSON, don't execute
+	Verbose     bool          // log request/response to stderr
+	Pretty      bool          // pretty-print JSON
+	Fields      string        // --fields comma-separated field names for GET
+	CacheTTL    time.Duration // --cache duration; 0 means no caching
+	Policy      *policy.Policy // nil = unrestricted
+	AuditLogger *audit.Logger  // nil = no logging
+	Profile     string         // active profile name (for audit entries)
+	Operation   string         // operation name (for audit entries, set by batch)
 }
 
 // NewContext stores the client in the given context and returns the new context.
@@ -105,6 +111,22 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 		}
 	}
 
+	// Determine operation name for policy enforcement and audit logging.
+	operationName := c.Operation
+	if operationName == "" {
+		operationName = fmt.Sprintf("%s %s", method, path)
+	}
+
+	// Policy enforcement — BEFORE DryRun check so policy blocks even dry-run.
+	if err := c.Policy.Check(operationName); err != nil {
+		apiErr := &cferrors.APIError{
+			ErrorType: "policy_denied",
+			Message:   err.Error(),
+		}
+		apiErr.WriteJSON(c.Stderr)
+		return cferrors.ExitValidation
+	}
+
 	// DryRun: emit the request as JSON and return immediately.
 	if c.DryRun {
 		dryOut := map[string]any{
@@ -126,7 +148,17 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 		enc := json.NewEncoder(&buf)
 		enc.SetEscapeHTML(false)
 		_ = enc.Encode(dryOut)
-		return c.WriteOutput(bytes.TrimRight(buf.Bytes(), "\n"))
+		exitCode := c.WriteOutput(bytes.TrimRight(buf.Bytes(), "\n"))
+		c.AuditLogger.Log(audit.Entry{
+			Profile:   c.Profile,
+			Operation: operationName,
+			Method:    method,
+			Path:      path,
+			Status:    0,
+			Exit:      cferrors.ExitOK,
+			DryRun:    true,
+		})
+		return exitCode
 	}
 
 	// Pagination only for GET requests.
@@ -134,11 +166,11 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 		return c.doWithPagination(ctx, method, rawURL, path, query)
 	}
 
-	return c.doOnce(ctx, method, rawURL, path, body)
+	return c.doOnce(ctx, method, rawURL, path, operationName, body)
 }
 
 // doOnce performs a single HTTP request and writes the response to Stdout.
-func (c *Client) doOnce(ctx context.Context, method, rawURL, path string, body io.Reader) int {
+func (c *Client) doOnce(ctx context.Context, method, rawURL, path, operationName string, body io.Reader) int {
 	// Cache check for GET requests.
 	var cacheKey string
 	if c.CacheTTL > 0 && method == "GET" {
@@ -189,6 +221,9 @@ func (c *Client) doOnce(ctx context.Context, method, rawURL, path string, body i
 
 	c.VerboseLog(map[string]any{"type": "response", "status": resp.StatusCode})
 
+	// Capture status code for audit logging before body is read.
+	statusCode := resp.StatusCode
+
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		apiErr := &cferrors.APIError{
@@ -204,7 +239,16 @@ func (c *Client) doOnce(ctx context.Context, method, rawURL, path string, body i
 	if resp.StatusCode >= 400 {
 		apiErr := cferrors.NewFromHTTP(resp.StatusCode, strings.TrimSpace(string(respBody)), method, path, resp)
 		apiErr.WriteJSON(c.Stderr)
-		return apiErr.ExitCode()
+		exitCode := apiErr.ExitCode()
+		c.AuditLogger.Log(audit.Entry{
+			Profile:   c.Profile,
+			Operation: operationName,
+			Method:    method,
+			Path:      path,
+			Status:    statusCode,
+			Exit:      exitCode,
+		})
+		return exitCode
 	}
 
 	// HTTP 204 No Content — emit empty JSON object to maintain JSON-only contract.
@@ -219,7 +263,16 @@ func (c *Client) doOnce(ctx context.Context, method, rawURL, path string, body i
 		}
 	}
 
-	return c.WriteOutput(respBody)
+	exitCode := c.WriteOutput(respBody)
+	c.AuditLogger.Log(audit.Entry{
+		Profile:   c.Profile,
+		Operation: operationName,
+		Method:    method,
+		Path:      path,
+		Status:    statusCode,
+		Exit:      exitCode,
+	})
+	return exitCode
 }
 
 // cursorPage represents a Confluence v2 paginated response envelope.
