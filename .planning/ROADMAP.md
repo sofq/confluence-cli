@@ -167,7 +167,10 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `cf watch --cql "space = ENG" --interval 60` polls for content changes and emits one NDJSON line per detected change to stdout, each containing the content ID, type, title, modifier, and timestamp
   2. Pressing Ctrl+C (SIGINT) or sending SIGTERM causes the watch command to emit a `{"type":"shutdown"}` event and exit cleanly without partial JSON lines or leaked connections
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 11-01-PLAN.md -- Watch command with CQL polling, NDJSON events, signal shutdown
 
 ## Progress
 
@@ -188,4 +191,4 @@ Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can e
 | 8. Attachments | 1/1 | Complete   | 2026-03-20 | - |
 | 9. Custom Content | 1/1 | Complete   | 2026-03-20 | - |
 | 10. Output Presets and Templates | 2/2 | Complete    | 2026-03-20 | - |
-| 11. Watch | v1.1 | 0/? | Not started | - |
+| 11. Watch | v1.1 | 0/1 | Not started | - |
