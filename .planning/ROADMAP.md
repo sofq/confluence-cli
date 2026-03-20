@@ -154,7 +154,11 @@ Plans:
   2. `cf pages list --preset brief` applies the preset's JQ expression to the output, producing the configured subset of fields
   3. `cf templates list` shows available content templates from `~/.config/cf/templates/`
   4. `cf pages create --template meeting-notes --var "date=2026-03-20" --var "attendees=Alice,Bob"` creates a page with the template's storage format body and variables substituted
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 10-01-PLAN.md -- Named output presets (config Presets field + --preset flag + resolution)
+- [ ] 10-02-PLAN.md -- Content template system (internal/template + cf templates list + --template/--var on create commands)
 
 ### Phase 11: Watch
 **Goal**: AI agents can reactively monitor Confluence content for changes via a long-running polling command that emits structured NDJSON events.
@@ -183,5 +187,5 @@ Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can e
 | 7. Blog Posts | 1/1 | Complete   | 2026-03-20 | - |
 | 8. Attachments | 1/1 | Complete   | 2026-03-20 | - |
 | 9. Custom Content | 1/1 | Complete   | 2026-03-20 | - |
-| 10. Output Presets and Templates | v1.1 | 0/? | Not started | - |
+| 10. Output Presets and Templates | v1.1 | 0/2 | Not started | - |
 | 11. Watch | v1.1 | 0/? | Not started | - |
