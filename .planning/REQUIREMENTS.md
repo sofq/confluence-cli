@@ -121,8 +121,8 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 
 ### Content Templates
 
-- [ ] **TMPL-01**: User can list available content templates
-- [ ] **TMPL-02**: User can create content from a template with variable substitution
+- [x] **TMPL-01**: User can list available content templates
+- [x] **TMPL-02**: User can create content from a template with variable substitution
 
 ### Watch
 
@@ -207,8 +207,8 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 | CUST-04 | Phase 9 | Complete |
 | PRST-01 | Phase 10 | Complete |
 | PRST-02 | Phase 10 | Complete |
-| TMPL-01 | Phase 10 | Pending |
-| TMPL-02 | Phase 10 | Pending |
+| TMPL-01 | Phase 10 | Complete |
+| TMPL-02 | Phase 10 | Complete |
 | WTCH-01 | Phase 11 | Pending |
 | WTCH-02 | Phase 11 | Pending |
 
