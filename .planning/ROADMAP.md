@@ -64,7 +64,13 @@ Plans:
   3. `cf search --cql "space = ENG AND type = page"` paginates through all results and returns a merged JSON array, including pages beyond the first cursor
   4. `cf spaces list --key ENG` resolves the space key to a numeric ID and returns space details without a 404
   5. `cf comments list --page-id <id>` and `cf labels list --content-id <id>` return JSON arrays; add and delete operations exit 0 on success
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 03-01-PLAN.md — cmd/pages.go: get-by-id (body-format=storage), create, update (version auto-increment + 409 retry), delete, list
+- [ ] 03-02-PLAN.md — cmd/spaces.go: resolveSpaceID helper, list and get-by-id with key resolution
+- [ ] 03-03-PLAN.md — cmd/search.go (CQL + manual v1 pagination), cmd/comments.go, cmd/labels.go (v1 add/remove)
+- [ ] 03-04-PLAN.md — Wire all commands into cmd/root.go + unit tests for all five workflow files
 
 ### Phase 4: Governance and Agent Optimization
 **Goal**: Production deployments of AI agents using `cf` can enforce operation policies, maintain an audit trail, reduce API quota consumption through caching, and execute multi-step workflows atomically via batch.
@@ -95,6 +101,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 |-------|----------------|--------|-----------|
 | 1. Core Scaffolding | 4/4 | Complete    | 2026-03-20 |
 | 2. Code Generation Pipeline | 2/3 | Complete    | 2026-03-20 |
-| 3. Pages, Spaces, Search, Comments, and Labels | 0/? | Not started | - |
+| 3. Pages, Spaces, Search, Comments, and Labels | 0/4 | Not started | - |
 | 4. Governance and Agent Optimization | 0/? | Not started | - |
 | 5. Avatar Analysis | 0/? | Not started | - |
