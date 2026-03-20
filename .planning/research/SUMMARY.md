@@ -1,210 +1,214 @@
 # Project Research Summary
 
-**Project:** Confluence Cloud CLI (`cf`)
-**Domain:** REST API CLI tool with OpenAPI code generation — optimized for AI agent consumption
+**Project:** Confluence Cloud CLI (`cf`) — v1.1 Extended Capabilities
+**Domain:** Go CLI tool for Confluence Cloud REST API v2 (agent-optimized) — additive extension to shipped v1.0
 **Researched:** 2026-03-20
 **Confidence:** HIGH
 
 ## Executive Summary
 
-`cf` is a Go CLI tool that exposes the full Confluence Cloud v2 REST API as shell commands, with AI agents as the primary consumer. Research establishes a clear, well-validated architecture based on a direct reference implementation (`jira-cli-v2`, referred to as `jr` throughout) — the design is effectively a port of that tool adapted for the Confluence v2 API and OpenAPI spec. The core differentiator is a code-generation pipeline (`gen/`) that reads the Confluence OpenAPI spec and produces Cobra command files for every endpoint automatically, ensuring complete API coverage without manual maintenance. All output is pure JSON to stdout, with structured JSON errors to stderr and semantic exit codes — a contract that makes the tool usable by AI agents without parsing human-readable text.
+`cf` v1.1 is an incremental extension to an already-shipped Go/Cobra CLI (v1.0). The v1.0 foundation is solid: code-generated from the Confluence v2 OpenAPI spec, strict JSON-stdout contract, semantic exit codes, JQ filtering, batch operations, and API token authentication. v1.1 closes three gaps that block real-world adoption: missing content types (blog posts, attachments, custom content), missing enterprise authentication (OAuth2 2LO and 3LO), and missing agent ergonomics (output presets, content templates, watch/polling). All features are implementable with zero new Go dependencies — entirely Go stdlib — which preserves the project's clean dependency profile and mirrors the reference `jr` implementation pattern.
 
-The recommended approach is to build the project in three natural layers that mirror the architecture's dependency graph: (1) core scaffolding — errors, config, HTTP client, and CLI skeleton; (2) the code generation pipeline plus the generated commands for the primary resources (pages, spaces, search); and (3) governance and agent-optimization features (operation policy, audit logging, caching, batch operations, presets). This order is enforced by hard dependencies: nothing works without the HTTP client, and no generated commands exist until the generator runs. Stack choices are constrained and well-validated — Go 1.26, Cobra v1.10.2, `pb33f/libopenapi` for spec parsing, `gojq` for JQ filtering, and stdlib `net/http` for the HTTP client.
+The recommended approach is to build in three tracks: OAuth2 authentication infrastructure first (it changes the base URL and auth model for all subsequent commands), then content types (blog posts, attachment CRUD, custom content), then agent features (presets, templates, watch). The OAuth2 track requires the most architectural care: tokens must be stored separately from config, refresh must be single-flight to avoid rotating-token race conditions, and the base URL must switch from the direct instance URL to `api.atlassian.com/ex/confluence/{cloudId}` when OAuth2 is active. These are known failure modes with clear, well-documented solutions.
 
-The highest-risk areas are Confluence v2 API behaviors that differ subtly from expectations: page bodies are not returned by default on GET, DELETE is a soft trash (not permanent), page updates require version increment via optimistic locking, and spaces use numeric IDs not human-readable keys. These are API-level traps that require explicit handling in the command implementations, not architectural problems. The CQL search cursor length issue (producing 413 errors on page 2+) is the only infrastructure-level risk that may require a workaround rather than a clean fix.
+The highest-risk area is attachment upload: Confluence v2 has no upload endpoint (tracked in CONFCLOUD-77196), so upload must fall back to the v1 API, which uses a different URL prefix than the v2 base URL stored in config. The fix is a `SiteRoot()` method that strips `/wiki/api/v2` from the stored base URL — but it must be implemented before any v1 endpoint integration or it causes subtly broken double-prefixed URLs. This is not theoretical: this exact bug already occurred in this codebase and was fixed in commit `a6e99ef`.
 
 ## Key Findings
 
 ### Recommended Stack
 
-The stack is entirely constrained by the reference implementation (`jr`) and the project mandate (Go + Cobra). No decision-making is required — copy dependency versions directly from `jr`'s `go.mod` with minor version upgrades to current stable releases. The only new dependency relative to `jr` is `pb33f/libopenapi` (for the `gen/` code generator); everything else is identical.
+All v1.1 features require zero new Go dependencies. The existing stack (Go 1.25.8, Cobra v1.10.2, pflag v1.0.9, libopenapi v0.34.3, gojq v0.12.18) remains unchanged. New capabilities are implemented entirely with Go stdlib packages.
 
-The `gen/` binary uses `libopenapi` to parse the OpenAPI spec but is a standalone program never imported by the compiled CLI binary. This means libopenapi's transitive dependencies (yaml, ordered-map) do not affect the CLI binary size or build. The CLI itself depends only on Cobra, pflag, gojq, and tidwall/pretty — a minimal, well-audited set.
+**New stdlib usage (no new deps):**
+- `net/http`, `crypto/rand`, `crypto/sha256`, `encoding/base64` — OAuth2 client_credentials and 3LO browser flow; no `golang.org/x/oauth2` needed
+- `mime/multipart`, `io`, `os` — attachment upload form-data encoding; no `go-resty` needed
+- `text/template`, `embed` — content template rendering; `html/template` must NOT be used (it would escape Confluence storage format XHTML macro tags)
+- `time.Ticker`, `context` — watch/polling loop with clean SIGINT shutdown
+- `encoding/json` + file I/O — token persistence (`~/.config/cf/tokens/{profile}.json`) and output preset storage
 
-**Core technologies:**
-- Go 1.26.1 — implementation language; single-binary, cross-compile, no runtime dependencies
-- github.com/spf13/cobra v1.10.2 — CLI framework; command tree, persistent flags, shell completions
-- github.com/pb33f/libopenapi v0.34.3 — OpenAPI spec parsing in `gen/`; exposes typed model for paths and parameters
-- github.com/itchyny/gojq v0.12.18 — pure-Go jq filtering embedded in binary; `--jq` flag on every command
-- github.com/tidwall/pretty v1.2.1 — fast JSON pretty-print without unmarshaling; `--pretty` flag
-- stdlib net/http — HTTP client; no additional HTTP library needed
+**Critical config struct changes needed:**
+- `AuthConfig`: add `ClientID`, `ClientSecret`, `TokenURL`, `Scopes`, `CloudID` fields for OAuth2
+- `Profile`: add `Presets map[string]Preset` for named output presets
+- Token file (separate from config.json): `~/.config/cf/tokens/{profile}.json` with 0600 permissions and atomic writes
 
-**Do not use:** oapi-codegen (generates server stubs, not CLI commands), spf13/viper (20+ transitive deps for simple config needs), go-resty or cleanhttp (obscures headers/timeouts), logrus/zerolog (structured logging adds deps; use encoding/json + fmt.Fprintf directly).
+**Do not use:** `golang.org/x/oauth2` (over-engineered for CLI, adds transitive deps, designed for long-running servers), `go-keyring` (CGO dependency on Linux, breaks cross-compilation), `gorilla/websocket` (Confluence has no WebSocket API), `html/template` (escapes Confluence XHTML).
 
 ### Expected Features
 
-The feature set divides cleanly into: (P1) table stakes that an AI agent cannot function without, (P2) governance and agent-optimization features that add significant value after core CRUD works, and (P3) deferred features not essential for agent use cases.
+Research identifies a clear P1/P2/P3 split. P1 features justify the v1.1 version bump and close the content coverage and auth gaps. P2 features differentiate the tool for agent and automation users. P3 is deferred.
 
-**Must have — table stakes (P1):**
-- Profile/config system (`cf configure`, `~/.config/cf/config.json`, `--profile`, `CF_*` env vars) — nothing else works without auth
-- OpenAPI codegen pipeline — generates all CRUD commands from spec; the architectural foundation
-- Pages CRUD (get, create, update, delete) — primary resource; required for real Confluence work
-- Space list/get — discovery layer before page operations
-- CQL search — agents find pages without knowing IDs upfront
-- Pure JSON stdout + structured JSON errors to stderr — non-negotiable for agent consumption
-- Semantic exit codes (0=ok, 1=error, 2=auth, 3=not_found, 4=validation, 5=rate_limit, 6=conflict, 7=server)
-- Automatic pagination with cursor-based following
-- JQ filtering (`--jq`) on all output
-- Raw API passthrough command (`cf raw`)
-- Schema/help as JSON (`cf schema`)
-- Dry-run mode (`--dry-run`)
+**Must have for v1.1 — P1 (table stakes):**
+- Blog post CRUD — v2 API endpoints mirror pages exactly; 90% code reuse from `pages.go`; lowest effort among new features
+- OAuth2 3LO browser flow — unblocks enterprise orgs that disable API tokens; most-requested auth gap
+- Attachment list/get/delete — v2 API with cursor pagination; completes content discovery
+- Attachment upload — v1 API fallback (`POST /wiki/rest/api/content/{id}/child/attachment`), multipart/form-data; no v2 equivalent exists
+- Output presets — named JQ+fields combinations in config; `--preset` global flag in root.go; zero API work, enhances every command
 
-**Should have — competitive differentiators (P2):**
-- Operation policy (allow/deny lists per profile) — agent governance in shared environments
-- Audit logging (NDJSON, append-only) — accountability for agent actions
-- Response caching for GET with TTL — reduces quota pressure in agent context-gathering loops
-- Preset system (named `--jq` + `--fields` combinations)
-- Batch command (JSON array of commands executed in one invocation)
-- Comments and label management via generated commands
+**Should have — P2 (agent/CI differentiators):**
+- OAuth2 2LO client credentials — service accounts for CI/CD pipelines and autonomous agents; zero user interaction; unique among Confluence CLI tools
+- Watch command (polling + NDJSON) — reactive agent workflows without cron jobs; no other Confluence CLI has this
+- Content templates (local) — Go `text/template` XHTML skeletons in `~/.config/cf/templates/`; `--template` flag on pages/blogposts create
 
-**Defer to v2+:**
-- OAuth2 browser/device flow — only for human-interactive scenarios; API tokens cover all agent cases
-- Watch/polling command — reactive agents are a future use case
-- Blog post CRUD, space permissions management, content version history
+**Defer to v1.2+ — P3:**
+- Custom content CRUD — v2 API exists but niche demand (depends on which Connect apps target users have installed)
+- Space-level watch via CQL — scaling concern under new Atlassian points-based rate limit (enforced March 2, 2026)
+
+**Explicitly out of scope (anti-features to reject):**
+- Markdown-to-storage-format conversion (already excluded in PROJECT.md; lossy, heavy dependency)
+- Confluence template API integration (v2 has no template endpoints; v1 template API has known broken image handling)
+- OAuth2 device code flow (Atlassian does not support it; 2LO covers all headless scenarios)
+- Real-time WebSocket watch (Confluence has no WebSocket API; polling is the only option)
+- Attachment inline preview/rendering (breaks JSON-stdout contract; agents use metadata + download separately)
+
+**Feature dependency notes:**
+- OAuth2 2LO and 3LO share infrastructure (token endpoint, dynamic base URL) — build shared foundation, then add grant types
+- Blog posts and custom content reuse pages patterns (version auto-increment, body format) — factor shared helpers to avoid duplication
+- Attachment upload requires v1 API path support and multipart client method before any attachment write command can be implemented
+- Output presets should be built early — they enhance all existing and new commands globally with minimal effort
 
 ### Architecture Approach
 
-The architecture is a clean three-layer design: a `gen/` standalone program that reads the OpenAPI spec and writes Go source files into `cmd/generated/`; a `cmd/` layer with a root command (client injection via `PersistentPreRunE`), generated commands, hand-written workflow wrappers, and utility commands; and an `internal/` layer of unexported packages (client, config, errors, cache, jq, policy, audit, preset). The generated code is committed to the repo — the generator is a development tool, not a build step. All commands receive the HTTP client via `cmd.Context()`, never via global variables.
+v1.1 integrates three new internal packages alongside targeted modifications to existing `internal/config` and `internal/client`. The dominant architectural decision is that OAuth2 token management is resolved entirely in `PersistentPreRunE` before the Client is constructed, so the Client remains stateless with respect to token refresh — it just receives a bearer token. The existing `mergeCommand()` pattern extends the generated command tree with hand-written blogposts, attachments, and custom-content commands.
 
-**Major components:**
-1. `gen/` (parser → grouper → generator + templates) — reads `spec/confluence-v2.json`, writes `cmd/generated/*.go`; standalone, never imported at runtime
-2. `cmd/root.go` — `PersistentPreRunE` builds and context-injects `client.Client`; only place config resolution happens
-3. `cmd/generated/` — auto-generated Cobra commands, one file per OpenAPI resource tag; `RegisterAll()` mounts all to root; marked DO NOT EDIT
-4. `cmd/workflow.go` — hand-written multi-step commands (page create, page update, search) that use `client.Fetch()` for intermediate calls and `WriteOutput()` once at the end
-5. `internal/client` — `Do()` (execute + output) vs `Fetch()` (execute + return body); handles pagination, auth, cache, jq, audit, policy
-6. `internal/config` — config file + env var + flag resolution in strict priority order; `CF_` prefix for env vars
-7. `internal/errors` — `APIError`, `AlreadyWrittenError` sentinel, semantic exit code map; prevents double-writing errors
+**Major components (new or modified):**
+1. `internal/oauth2/` — Token acquisition (client_credentials + 3LO), single-flight refresh, file-based token store per profile; does NOT import `internal/client`; tokens flow upward to `cmd/root.go`
+2. `internal/client/multipart.go` — New `DoMultipart` method on existing Client; derives site root from BaseURL via `strings.TrimSuffix(BaseURL, "/wiki/api/v2")` for v1 API path construction
+3. `internal/preset/` — Load/resolve named output presets from config; pure filesystem I/O, no HTTP
+4. `internal/template/` — Load Go `text/template` content templates from `~/.config/cf/templates/`; fully independent
+5. `cmd/watch.go` — Long-running polling loop with `signal.NotifyContext` for clean shutdown; single goroutine, NDJSON output to stdout
+
+**Key integration points in existing code:**
+- `internal/config/config.go`: add `oauth2`, `oauth2-3lo` to `validAuthTypes`; add OAuth2 fields to `AuthConfig`
+- `internal/client/client.go`: add `oauth2` case in `ApplyAuth` (maps to bearer); minimal change
+- `cmd/root.go`: add `--preset` flag; add OAuth2 token resolution in `PersistentPreRunE`; add `--client-id`, `--client-secret` flag overrides
+- `cmd/configure.go`: accept `--client-id`, `--client-secret`; handle `oauth2` and `oauth2-3lo` auth types
+
+**Anti-patterns to avoid:**
+- OAuth2 logic inside `Client.ApplyAuth` or `Client.Do` — puts refresh in the wrong layer; Client must stay stateless
+- Separate HTTP Client instance for v1 API — duplicates auth, logging, error handling; use `DoMultipart` on the same Client
+- Watch command spawning goroutines per resource — concurrent stdout writes corrupt NDJSON; use single goroutine sequential loop
+- Full templating engine (Sprig, Handlebars) for content — `text/template` stdlib is sufficient for variable substitution
+- Storing OAuth2 tokens in `config.json` — tokens are ephemeral, config is persistent; separate files prevent churn and race conditions
 
 ### Critical Pitfalls
 
-1. **Page GET returns empty body by default** — v2 API omits `body` unless `?body-format=storage` is passed. The `pages get` command must inject this query param by default; generated commands need it as a flag with a `storage` default. Verify with integration test asserting `body.storage.value` is non-empty.
+The following are the highest-priority pitfalls specific to v1.1 features:
 
-2. **Page UPDATE requires version increment via optimistic locking** — `PUT /pages/{id}` with stale `version.number` returns 409. The `pages update` workflow command must always GET current version first, then send `current + 1`. Map 409 to `ExitConflict` (6) with structured error including resource ID and version hint.
+1. **Mixed v1/v2 URL prefix doubling (CRITICAL)** — `BaseURL` already contains `/wiki/api/v2`. Naively appending a v1 attachment path creates `.../wiki/api/v2/wiki/rest/api/...`. Fix: add `SiteRoot()` method: `strings.TrimSuffix(c.BaseURL, "/wiki/api/v2")`. This exact bug already occurred in this codebase (commit `a6e99ef`). Must be resolved before any v1 endpoint work starts.
 
-3. **DELETE is soft-delete (trash), not permanent** — `DELETE /pages/{id}` moves to trash. Agents that delete-and-recreate the same page title loop on title conflict. The `pages delete` command must: output `"trashed": true`, provide `--purge` flag, and map 403 on purge to a structured error with admin hint.
+2. **OAuth2 rotating refresh token race condition** — Atlassian rotates refresh tokens on use. Two sequential requests in a batch that both detect 401 and both attempt refresh: the second fails with "invalid refresh token". Fix: implement token refresh as single-flight (mutex or `golang.org/x/sync/singleflight`); proactively refresh when `AccessTokenExpiry` is within 60 seconds to avoid reactive 401s entirely.
 
-4. **Space identifier is numeric ID, not key** — v2 API uses integer space IDs everywhere. The `spaces` command must expose `--key` that transparently resolves via `GET /spaces?keys=<key>` and cache the key→ID mapping. Without this, users passing `--space ENG` receive confusing 404 errors.
+3. **OAuth2 token storage in config.json** — Refresh tokens are long-lived secrets equivalent to passwords. Mixing them with static credentials in `config.json` risks accidental git commits and backup exposure. Fix: separate token file per profile (`~/.config/cf/tokens/{profile}.json`) with atomic writes (temp file + rename) for concurrent safety.
 
-5. **OpenAPI spec has known gaps** — Atlassian's `openapi-v2.v3.json` is incomplete: missing types, some attachment write operations are v1-only. Commit the spec to `spec/` at project start, run code gen in CI to catch compile errors early, and maintain a `SPEC_GAPS.md` for known omissions.
+4. **Watch command goroutine/connection leaks** — The existing CLI is request-response; watch is a long-running loop. Without `signal.NotifyContext` and `ctx.Done()` checks between iterations, Ctrl+C leaves HTTP connections open and can produce partial NDJSON output. Fix: wire OS signals to context cancellation; write only complete JSON lines; emit `{"type":"shutdown","reason":"signal"}` on clean exit.
 
-6. **CQL cursor length causes 413 on pagination page 2+** — As of September 2025, cursor values can be ~11,000 characters. Detect 413 in the pagination handler and surface as `pagination_error` with a hint. This is a known unfixed Atlassian bug.
+5. **Attachment upload breaks JSON stdout contract** — Upload response is JSON (correct); but attachment download (which users expect next) returns binary. Binary content cannot be piped through `WriteOutput` + JQ. Fix: upload uses `DoMultipart` (new method, not a hack on `Do`); download must write to a file (`--output` flag), never stdout; stdout emits JSON metadata about what was downloaded.
 
-7. **Binary name `cf` collides with Cloud Foundry CLI** — Many CI environments have `cf` on `$PATH` for Cloud Foundry. Document the collision explicitly; `cf --version` as a verification step.
+6. **Atlassian points-based rate limit (enforced March 2, 2026)** — Applies to OAuth2 apps; NOT to API token auth. OAuth2-authenticated watch and batch operations may exhaust the hourly quota. Fix: 429 handler must parse `Retry-After`; auto-pagination must respect delays; document bulk operation risks; recommend watch interval of 60s minimum for OAuth2-authenticated usage until per-endpoint point costs are determined empirically.
+
+**v1.0 pitfalls that remain relevant to v1.1 work:**
+- Page GET requires `?body-format=storage` — still applies to blogposts GET (same v2 behavior)
+- Delete is soft-trash — same behavior for blogposts DELETE
+- CQL cursor 413 on pagination page 2+ — watch command using CQL search must handle 413 gracefully
 
 ## Implications for Roadmap
 
-Based on the architecture's dependency graph and the feature dependency tree, a four-phase structure is recommended:
+Based on the dependency graph, a three-phase structure is recommended. OAuth2 must come first because it changes the base URL for all subsequent commands. Content types and agent features can follow in parallel tracks.
 
-### Phase 1: Core Scaffolding and HTTP Client
+### Phase 1: OAuth2 Authentication Infrastructure
 
-**Rationale:** Everything in the project depends on the HTTP client being correct. Errors, config, and client are the foundation — nothing else compiles or runs without them. Rate limit handling, HTML error sanitization, auth, and config file permissions (0600) must be correct before any command code is written, because every command inherits these behaviors from the client.
+**Rationale:** OAuth2 changes the auth model and base URL for all API commands. Building it first ensures Phase 2 content commands can be tested with both API-token and OAuth2 auth from day one. Client credentials (2LO) is simpler than 3LO and provides immediate CI/CD value — build it first within this phase, then add 3LO.
 
-**Delivers:** A working CLI skeleton with `cf configure`, `cf --version` (JSON output), and a `cf raw` command that can make any authenticated API call.
+**Delivers:** `cf configure --auth-type oauth2` (both 2LO and 3LO); transparent token refresh with expiry tracking; per-profile token store (`~/.config/cf/tokens/`); `PersistentPreRunE` OAuth2 resolution and dynamic base URL switching; updated `cmd/configure.go`.
 
-**Addresses features:** Profile/config system, Basic + Bearer auth, semantic exit codes, JQ filtering, dry-run mode, verbose mode, pure JSON stdout contract.
+**Addresses features:** OAuth2 2LO client credentials (P2, promoted to P1 as foundation), OAuth2 3LO browser flow (P1)
 
-**Avoids pitfalls:** Rate limit 429 handling (client setup phase), HTML error response sanitization (mirror `jr`'s `sanitizeBody`), config file 0600 permissions, cache file permissions, `AlreadyWrittenError` sentinel pattern.
+**Avoids pitfalls:** Token storage in config.json (Pitfall 9), rotating refresh token race condition (Pitfall 12), March 2026 rate limit misconfiguration for OAuth2 traffic (Pitfall 8)
 
-**Needs research-phase:** No — well-documented patterns from reference implementation.
+**Research flag:** Standard patterns — Atlassian OAuth2 docs are authoritative and complete; reference `jr` `fetchOAuth2Token` implementation available; PKCE (S256 method) is required for 3LO and must not be skipped.
 
-### Phase 2: OpenAPI Code Generation Pipeline
+### Phase 2: Content Type Completion
 
-**Rationale:** The code generator must be built and validated before any resource commands can exist. Generated commands are the primary delivery mechanism for all CRUD operations. The generator also forces confrontation with the OpenAPI spec's gaps early — compile errors in CI catch type issues before they affect command implementations.
+**Rationale:** Blog posts reuse 90% of the pages pattern and provide rapid wins. Attachment listing (v2) is a standard fetch command. Attachment upload (v1) requires the `SiteRoot()` fix and `DoMultipart` — tackle it last within this phase to build confidence before the v1 integration.
 
-**Delivers:** The `gen/` pipeline (parser, grouper, generator, templates) producing `cmd/generated/` with page, space, and core resource commands. The Makefile `generate` and `spec-update` targets. A committed `spec/confluence-v2.json`. A `SPEC_GAPS.md` documenting known omissions.
+**Delivers:** `cf blogposts` CRUD; `cf attachments` list/get/delete (v2 API); `cf attachments upload` (v1 multipart); `internal/client/multipart.go` with `DoMultipart`; `SiteRoot()` method on Client.
 
-**Addresses features:** OpenAPI-generated commands (core differentiator), `RegisterAll` command registration, schema introspection command.
+**Addresses features:** Blog post CRUD (P1), Attachment list/get/delete (P1), Attachment upload (P1)
 
-**Avoids pitfalls:** OpenAPI spec incompleteness (commit spec, run gen in CI), `body-format=storage` injection in page commands, generator template correctness.
+**Avoids pitfalls:** v1/v2 URL prefix doubling (Pitfall 11 — implement `SiteRoot()` first, before upload subcommand), JSON stdout contract break for binary download (Pitfall 10), OpenAPI spec gaps for attachment write (Pitfall 4 — plan v1 fallback explicitly)
 
-**Needs research-phase:** Possibly — libopenapi's API for walking paths and extracting parameters should be validated against the actual Confluence spec structure before writing the generator.
+**Research flag:** No additional research needed — v1 attachment API is stable and well-documented; v2 blog post endpoints mirror pages exactly; `DoMultipart` is standard stdlib. Validate `X-Atlassian-Token: nocheck` behavior with OAuth2 bearer tokens during development (minor uncertainty).
 
-### Phase 3: Pages, Spaces, and Search
+### Phase 3: Agent Features
 
-**Rationale:** These are the P1 table stakes that make the tool actually usable for AI agents. Pages and spaces are the primary resources; CQL search is the discovery mechanism. All three have Confluence-specific API behaviors (optimistic locking, numeric IDs, cursor pagination, body-format) that require hand-written workflow wrappers on top of the generated commands.
+**Rationale:** Presets, templates, and watch are independent of each other and of Phase 2. They add differentiation for the AI-agent audience. Output presets are lowest effort and highest leverage (enhances all existing commands globally) — build first within this phase. Watch requires careful signal handling and is highest complexity — build last.
 
-**Delivers:** Working `cf pages` commands (get with body, create, update with version increment, delete with purge flag), `cf spaces` commands (list, get with `--key` resolution), `cf search` with CQL and auto-pagination, and the `raw` passthrough command.
+**Delivers:** `--preset` global flag; `cf presets` list/show commands; `cf templates` list/apply commands; `cf watch pages/blogposts` with NDJSON event streaming; built-in preset defaults (e.g., `brief`, `ids-only`, `full`).
 
-**Addresses features:** Pages CRUD, space list/get, CQL search, automatic pagination, `--fields` sparse fieldset.
+**Addresses features:** Output presets (P1), Content templates (P2), Watch command (P2)
 
-**Avoids pitfalls:** Empty body on GET (inject `body-format=storage`), version conflict on update (GET-before-write), soft-delete confusion (`--purge` flag, `"trashed": true` output), space key vs ID (transparent `--key` resolution with cache), CQL cursor 413 (detect and surface as `pagination_error`).
+**Avoids pitfalls:** Watch goroutine/connection leaks (Pitfall 13 — `signal.NotifyContext` required; single goroutine loop; complete-line-only stdout writes), rate limit exhaustion during watch polling (Pitfall 8 — conservative 60s default interval for OAuth2), `html/template` escaping Confluence XHTML (use `text/template`)
 
-**Needs research-phase:** No — all behaviors are documented in PITFALLS.md with specific prevention strategies.
-
-### Phase 4: Governance and Agent Optimization
-
-**Rationale:** Once core CRUD is working and agents can interact with Confluence, the governance and optimization features add significant value for production deployments. Operation policy and audit logging are tightly coupled to the profile system and belong together. Caching, batch, and presets build on a working client and are safe to defer until the core is validated.
-
-**Delivers:** Operation policy (allow/deny lists per profile), audit logging (NDJSON), response caching with TTL, preset system (named `--jq` + `--fields`), batch command.
-
-**Addresses features:** Operation policy, audit logging, response caching, preset system, batch operations, comments CRUD, label management.
-
-**Avoids pitfalls:** Policy must be enforced even in dry-run (not a bypass). Cache keys must be scoped per-profile to prevent cross-profile cache hits. Space key→ID cache integrates here.
-
-**Needs research-phase:** No for policy/audit/cache (patterns from `jr`). Possibly for batch — the dispatch mechanism against the command registry needs design validation.
+**Research flag:** No research needed for presets or templates (pure config/file features with established stdlib patterns). Watch: validate safe polling interval under Atlassian points-based quota empirically (one spike test against real Confluence instance).
 
 ### Phase Ordering Rationale
 
-- Phase 1 before Phase 2: The client is a dependency of every generated command; must be correct first.
-- Phase 2 before Phase 3: Generated commands do not exist until the generator runs; the workflow wrappers in Phase 3 sit on top of them.
-- Phase 3 before Phase 4: Operation policy is meaningless without commands to apply it to; caching requires real API calls to validate TTL behavior; presets require established `--jq` patterns to name.
-- Phase 4 after validation: The feature dependency tree in FEATURES.md shows that policy, audit, and presets all require the profile system (Phase 1) and generated commands (Phase 2) as prerequisites.
+- **OAuth2 before content types:** The base URL changes with OAuth2 (switches from direct instance URL to `api.atlassian.com/ex/confluence/{cloudId}`). Content commands built without OAuth2 support would need retroactive base URL handling. Building auth first lets all feature commands be tested with both auth modes from day one.
+- **Blog posts before attachment upload within Phase 2:** Blog posts are pure v2, low-risk, fast to implement. Attachment upload requires the v1 URL fix and a new multipart client method. Build confidence with blog posts first, then tackle the v1 integration point.
+- **Presets early in Phase 3:** Presets are global flag additions that enhance all commands (including Phase 2 commands). Building them first means watch can use presets for event formatting immediately.
+- **Watch last in Phase 3:** Watch is the most architecturally different command (long-running, signal handling, NDJSON). Building it last means all supporting commands (pages GET, blogposts GET) are stable and tested.
+- **Custom content deferred to v1.2:** Well-defined v2 API exists but real-world demand is uncertain. Deferring avoids scope creep; v1.1 users can validate demand before v1.2 planning.
 
 ### Research Flags
 
-Phases likely needing deeper research during planning:
-- **Phase 2 (Code Generation):** The libopenapi v0.34.3 API for walking OpenAPI paths, extracting parameter types, and generating Go-compatible identifiers against the actual Confluence spec shape should be validated before writing generator templates. The spec has known gaps that may affect generator design.
+Phases with well-documented patterns (skip `/gsd:research-phase`):
+- **Phase 1 (OAuth2):** Atlassian OAuth2 docs are authoritative; reference `jr` 2LO implementation is available; token store pattern is standard CLI practice (cf. `gh`, `gcloud`)
+- **Phase 2 (Content types):** Blog post endpoints mirror pages exactly; v1 attachment API is stable and well-documented; `DoMultipart` is standard stdlib multipart pattern
+- **Phase 3 (Agent features):** Presets and templates are pure config/file features; watch is standard `time.Ticker` + `signal.NotifyContext` pattern
 
-Phases with standard patterns (skip research-phase):
-- **Phase 1 (Core Scaffolding):** Patterns are directly copied from `jr`. No novel decisions.
-- **Phase 3 (Pages/Spaces/Search):** All API behaviors are documented in PITFALLS.md with specific prevention strategies and integration test requirements.
-- **Phase 4 (Governance):** Policy, audit, cache, and preset patterns are all present in `jr` and can be ported directly.
+Targeted validation needed (spike, not full research):
+- **Phase 2 attachment upload:** Confirm `X-Atlassian-Token: nocheck` header behavior with OAuth2 bearer tokens vs. basic/token auth — one test upload against a real Confluence instance
+- **Phase 3 watch:** Measure points-based rate limit consumption of polling under OAuth2 to determine safe default interval — one empirical test
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All library versions verified against pkg.go.dev; exact copies from reference implementation with minor version bumps |
-| Features | HIGH | Reference implementation examined directly; Confluence v2 API surveyed; competitor CLIs reviewed |
-| Architecture | HIGH | Derived directly from reference implementation code analysis; component boundaries and patterns verified |
-| Pitfalls | HIGH | Majority verified against official Atlassian docs and community reports; CQL 413 issue reported Sep 2025 |
+| Stack | HIGH | All v1.1 features verified as implementable with Go stdlib. Zero new deps confirmed against reference `jr` implementation. Atlassian OAuth2 endpoints verified against official docs. |
+| Features | HIGH | v2 API endpoints for blog posts verified against official Atlassian REST API docs. v1 attachment upload confirmed as the only upload path (CONFCLOUD-77196 is an open tracked bug). OAuth2 2LO for Confluence confirmed via official service account docs. |
+| Architecture | HIGH | Architecture is additive to a well-understood existing codebase with direct code inspection. New packages follow established patterns (config, client, errors). Key risks (URL prefix, token storage, refresh race) have specific, proven solutions. |
+| Pitfalls | HIGH | Critical pitfalls sourced from official Atlassian docs (rate limits, token rotation, v1/v2 gap), community reports (CQL cursor 413 bug), and direct codebase inspection (URL prefix doubling in commit `a6e99ef`). |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **libopenapi API shape for Confluence spec:** The generator templates need to be designed around what libopenapi actually exposes for the Confluence spec's specific structure. Recommend a spike at the start of Phase 2 to parse the spec and log what the model exposes before committing to template design.
-
-- **Attachment commands:** v2 API is read-only for attachments; write operations require v1 endpoints. This needs a decision during Phase 3 planning: implement v1 attachment write as a special case, or defer attachments entirely and document in `SPEC_GAPS.md`.
-
-- **golangci-lint version:** Confirmed as v2.11.3 from WebSearch only (MEDIUM confidence). Verify against the official releases page at project start.
-
-- **Binary naming final decision:** The `cf` name collision with Cloud Foundry CLI is documented as a known issue with no code change required. If the project determines the collision is unacceptable in target environments, the binary name must be changed before any release — this cannot be changed after users have scripts.
+- **Atlassian rate limit point costs per endpoint:** Not published by Atlassian. Watch polling interval defaults cannot be precisely calibrated without empirical measurement. Recommend conservative 60s default; validate in Phase 3 spike test.
+- **OAuth2 PKCE requirement verification:** PKCE with S256 method is documented as required for Atlassian 3LO. Must be included in authorization request (`code_challenge`, `code_challenge_method=S256`) and token exchange (`code_verifier`). Not optional — Atlassian rejects 3LO without it.
+- **`X-Atlassian-Token: nocheck` with OAuth2:** Behavior of this header with OAuth2 bearer tokens (vs. basic/token auth) is not explicitly documented. Validate during Phase 2 attachment upload development.
+- **Custom content type string discovery:** If custom content CRUD is added in v1.2, users must know their app's custom content type string (e.g., `ac:my-app:my-type`). There is no v2 endpoint to list registered types. Must be clearly documented as a prerequisite.
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- `/Users/quan.hoang/quanhh/quanhoang/jira-cli-v2` (reference implementation) — stack, architecture, and pattern decisions
-- [pkg.go.dev/github.com/spf13/cobra](https://pkg.go.dev/github.com/spf13/cobra) — v1.10.2 confirmed
-- [pkg.go.dev/github.com/pb33f/libopenapi](https://pkg.go.dev/github.com/pb33f/libopenapi) — v0.34.3 confirmed
-- [pkg.go.dev/github.com/itchyny/gojq](https://pkg.go.dev/github.com/itchyny/gojq) — v0.12.18 confirmed
-- [go.dev/doc/devel/release](https://go.dev/doc/devel/release) — Go 1.26.1 current stable
-- [Confluence Cloud REST API v2 — Atlassian Developer](https://developer.atlassian.com/cloud/confluence/rest/v2/) — endpoint and parameter behaviors
-- [Confluence rate limiting — official docs](https://developer.atlassian.com/cloud/confluence/rate-limiting/) — 429 and Retry-After
-- [Delete, restore, or purge — Confluence Cloud support](https://support.atlassian.com/confluence-cloud/docs/delete-restore-or-purge-a-page/) — soft-delete behavior
-- [Get Body of a Page through API v2 — Developer Community](https://community.developer.atlassian.com/t/get-body-of-a-page-through-api-v2/67966) — empty body without body-format
-- [Confluence Cloud API v2 Space ID vs Key — Community](https://community.atlassian.com/forums/Confluence-questions/How-to-get-space-ID-on-the-UI-or-how-to-utilise-space-key-in-v2/qaq-p/2680647) — numeric ID requirement
+- [Atlassian OAuth 2.0 3LO for Confluence Cloud](https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/) — authorization URL, token URL, PKCE requirement, scopes
+- [Atlassian Service Account OAuth2 Credentials](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/) — client_credentials grant confirmed for Confluence Cloud
+- [Confluence Scopes for OAuth 2.0](https://developer.atlassian.com/cloud/confluence/scopes-for-oauth-2-3LO-and-forge-apps/) — required scopes for all v1.1 operations
+- [Confluence REST API v2 — Blog Post endpoints](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/) — CRUD endpoints and body structure
+- [Confluence REST API v2 — Attachment endpoints](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/) — read-only v2 attachment operations confirmed
+- [Confluence REST API v1 — Attachments](https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments/) — upload endpoint, multipart format, required headers
+- Reference implementation: `jira-cli-v2/internal/client/client.go` — proven `fetchOAuth2Token` pattern for client_credentials (HIGH confidence, direct code inspection)
+- Existing codebase: `internal/client/client.go`, `internal/config/config.go`, `cmd/root.go` — direct code inspection, including commit `a6e99ef` (URL prefix doubling bug fix)
 
 ### Secondary (MEDIUM confidence)
-- [CQL cursor 413 issue — Developer Community (Sep 2025)](https://community.developer.atlassian.com/t/confluence-rest-v1-search-endpoint-fails-cursor-of-next-url-is-extraordinarily-long-leading-to-413-error/95098) — cursor length bug
-- [OpenAPI spec incomplete — Community report](https://community.atlassian.com/forums/Confluence-questions/OpenAPI-specification-seems-incomplete/qaq-p/2570847) — spec gaps confirmed
-- [Evolving API rate limits — Atlassian blog](https://www.atlassian.com/blog/platform/evolving-api-rate-limits) — March 2026 OAuth2 points-based quota
-- [pchuri/confluence-cli — GitHub](https://github.com/pchuri/confluence-cli) — competitor feature comparison
-- [open-cli-collective/atlassian-cli — GitHub](https://github.com/open-cli-collective/atlassian-cli) — competitor feature comparison
-- [Why CLI Tools Are Beating MCP for AI Agents — Jan Reinhard, 2026](https://jannikreinhard.com/2026/02/22/why-cli-tools-are-beating-mcp-for-ai-agents/) — CLI vs MCP for agents
+- [CONFCLOUD-77196](https://jira.atlassian.com/browse/CONFCLOUD-77196) — v2 attachment upload endpoint missing (community-tracked open bug)
+- [Atlassian Community: CQL cursor 413 issue](https://community.developer.atlassian.com/) — 11,000-character cursor values causing 413 errors on paginated search (reported Sep 2025)
+- [Evolving API rate limits — Atlassian blog](https://www.atlassian.com/blog/platform/evolving-api-rate-limits) — points-based quota enforced March 2, 2026; applies to OAuth2 apps
+- [pchuri/confluence-cli](https://github.com/pchuri/confluence-cli), [atlassian-python-api](https://github.com/atlassian-api/atlassian-python-api), [confluence-go-api](https://github.com/virtomize/confluence-go-api) — competitor feature comparison
 
 ### Tertiary (LOW confidence)
-- [github.com/golangci/golangci-lint/releases](https://github.com/golangci/golangci-lint/releases) — v2.11.3 from WebSearch only; verify at project start
+- `X-Atlassian-Token: nocheck` behavior with OAuth2 bearer tokens — not explicitly documented; requires empirical validation
+- Per-endpoint rate limit point costs — not published by Atlassian; requires empirical measurement
 
 ---
 *Research completed: 2026-03-20*

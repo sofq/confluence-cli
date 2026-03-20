@@ -1,108 +1,196 @@
 # Stack Research
 
-**Domain:** Confluence Cloud CLI (Go)
+**Domain:** Confluence Cloud CLI (Go) -- v1.1 Stack Additions
 **Researched:** 2026-03-20
-**Confidence:** HIGH — all libraries are direct copies from the reference `jr` implementation with versions verified against pkg.go.dev and official release pages.
+**Confidence:** HIGH -- core stack verified against reference `jr` implementation, Atlassian official docs, and Go stdlib capabilities.
 
-## Recommended Stack
+## Existing Stack (DO NOT CHANGE)
 
-### Core Technologies
+These are validated in v1.0 and remain unchanged:
+- Go 1.25.8, Cobra v1.10.2, pflag v1.0.9, libopenapi v0.34.3, gojq v0.12.18
+- net/http stdlib client, encoding/json, filesystem cache
+- OpenAPI code generation pipeline via gen/ binary
+
+## New Stack Additions for v1.1
+
+### OAuth2 Authentication
 
 | Technology | Version | Purpose | Why Recommended |
 |------------|---------|---------|-----------------|
-| Go | 1.26.1 | Implementation language | Constraint from PROJECT.md. Single-binary distribution, cross-compile, no runtime dependencies. Go 1.26 (Feb 2026) is the current stable release; the reference `jr` uses 1.25.8, so 1.26.x is a safe upgrade. |
-| github.com/spf13/cobra | v1.10.2 | CLI framework — command tree, flags, completions | Constraint from PROJECT.md. Industry standard for Go CLIs (used by kubectl, Hugo, GitHub CLI). Provides persistent flags, subcommand routing, and shell completion generation. Latest stable release (Dec 2024). |
-| github.com/spf13/pflag | v1.0.10 | POSIX-style flag parsing | Cobra's underlying flag library. Required transitively; used directly in `cmd/` for declaring persistent flags. Upgraded to v1.0.10 (Sep 2025) from v1.0.9 in `jr`. |
-| github.com/pb33f/libopenapi | v0.34.3 | OpenAPI 3.x spec parsing for code generation | Used in the `gen/` binary to parse the Confluence v2 OpenAPI spec and walk paths/operations. Chosen over `kin-openapi` because it exposes a high-level typed model for paths, parameters, and schemas — exactly what the generator needs. Latest version (Mar 2026). |
-| github.com/itchyny/gojq | v0.12.18 | In-process jq filtering on JSON output | Provides `--jq` flag on every command. Pure Go, no cgo, ships inside the binary. The only mature pure-Go jq library. Same version as `jr`. |
-| github.com/tidwall/pretty | v1.2.1 | JSON pretty-printing with color | Used for `--pretty` flag output. Faster than `encoding/json` indent + a terminal color library. Zero dependencies. Same version as `jr`. |
+| Go stdlib (net/http, net/url, encoding/json, crypto/rand, crypto/sha256) | (stdlib) | OAuth2 client_credentials grant and authorization code + PKCE flow | **No new dependencies.** The jr reference implements `fetchOAuth2Token()` for client_credentials in ~30 lines using stdlib `net/http` POST + `url.Values` + JSON decode. The 3LO browser flow needs a local HTTP callback server (`net/http.ListenAndServe` on localhost) and PKCE code challenge (`crypto/sha256` + `encoding/base64`). Both flows are simple enough that golang.org/x/oauth2 adds unnecessary complexity. |
+| Go stdlib (os, encoding/json) | (stdlib) | Token persistence (refresh tokens, access token cache) | Store OAuth2 tokens in a separate file (`~/.config/cf/tokens.json`) alongside config.json. Tokens are short-lived (60 min for Atlassian) and refresh tokens rotate, so file-based persistence with 0600 permissions is the right model. |
 
-### Supporting Libraries (transitive, from libopenapi)
+**Atlassian OAuth2 Details (verified from official docs):**
 
-| Library | Version | Purpose | Notes |
-|---------|---------|---------|-------|
-| github.com/pb33f/ordered-map/v2 | v2.3.0 | Ordered map for OpenAPI object iteration | Required by libopenapi for deterministic path ordering in generated code. |
-| go.yaml.in/yaml/v4 | v4.0.0-rc.4 | YAML parsing for OpenAPI specs | libopenapi's YAML backend. The Confluence spec is JSON, but libopenapi normalises through YAML internally. |
-| golang.org/x/sync | v0.20.0 | Concurrent spec processing | Used by libopenapi for parallel schema resolution. |
+| Parameter | Value | Source |
+|-----------|-------|--------|
+| Authorization URL | `https://auth.atlassian.com/authorize` | [Atlassian 3LO docs](https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/) |
+| Token URL | `https://auth.atlassian.com/oauth/token` | Same |
+| Audience | `api.atlassian.com` | Same |
+| Accessible Resources | `GET https://api.atlassian.com/oauth/token/accessible-resources` | Same |
+| API Base URL Pattern | `https://api.atlassian.com/ex/confluence/{cloudId}/wiki/rest/api/v2` | Same |
+| Access Token Lifetime | 60 minutes | [Service account docs](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/) |
+| Refresh Token Expiry | 90 days inactivity | Atlassian 3LO docs |
+| Client Credentials Support | YES, via service accounts (2LO) | [Service account OAuth2](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/) |
 
-### Development Tools
+**Key Scopes Needed:**
 
-| Tool | Purpose | Notes |
-|------|---------|-------|
-| golangci-lint v2 | Static analysis and linting | v2.11.3 is current (Mar 2026). Run with `golangci-lint run`. Mirror `jr`'s existing `.golangci.yml` config if it exists, otherwise use `default: standard`. |
-| go generate / `go run ./gen/...` | Code generation from OpenAPI spec | The `gen/` binary is a plain Go program — no external codegen tools (no `oapi-codegen`, no Swagger UI). Run via `make generate`. |
-| curl | Downloading the Confluence OpenAPI spec | Used in `make spec-update`. Target URL: `https://dac-static.atlassian.com/cloud/confluence/openapi-v2.v3.json` |
+| Scope | Purpose |
+|-------|---------|
+| `read:confluence-content.all` | Read pages, blogs, attachments, custom content |
+| `write:confluence-content` | Create/update pages, blogs, comments |
+| `write:confluence-file` | Upload attachments |
+| `read:confluence-space.summary` | List spaces |
+| `search:confluence` | CQL search |
+| `offline_access` | Obtain refresh tokens (3LO only) |
 
-## Installation
+### Attachment Upload (Binary/Multipart)
 
-```bash
-# The project uses go modules — no npm/pip required.
-# After cloning, dependencies are fetched automatically by go build/test.
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Go stdlib (mime/multipart, io, os) | (stdlib) | Multipart form-data encoding for file uploads | **No new dependencies.** Go's `mime/multipart.Writer` handles multipart encoding. The pattern is: create a pipe, write file content via `multipart.Writer.CreateFormFile()`, set `X-Atlassian-Token: nocheck` header. This is well-documented stdlib usage. |
 
-go mod init github.com/sofq/confluence-cli   # or your chosen module path
+**Confluence Attachment API Details:**
 
-# Core dependencies
-go get github.com/spf13/cobra@v1.10.2
-go get github.com/spf13/pflag@v1.0.10
-go get github.com/pb33f/libopenapi@v0.34.3
-go get github.com/itchyny/gojq@v0.12.18
-go get github.com/tidwall/pretty@v1.2.1
+Attachment upload uses the **v1 API** (not v2). The v2 API only supports listing/getting attachments, not creating them.
 
-# Dev tool (install globally, not a go.mod dependency)
-go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@latest
-```
+| Parameter | Value | Source |
+|-----------|-------|--------|
+| Upload Endpoint | `POST /wiki/rest/api/content/{id}/child/attachment` | [Confluence v1 attachment API](https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments/) |
+| Update Endpoint | `POST /wiki/rest/api/content/{id}/child/attachment/{attachmentId}/data` | Same |
+| Content-Type | `multipart/form-data` | Same |
+| Required Header | `X-Atlassian-Token: nocheck` | Same |
+| Form Field Name | `file` | Same |
+| Comment Field | `comment` (optional, same count as files) | Same |
+
+**Integration point:** The `client.Client` needs a new method (e.g., `DoMultipart`) that:
+1. Accepts a file path instead of `io.Reader` JSON body
+2. Sets `Content-Type: multipart/form-data` (NOT `application/json`)
+3. Adds `X-Atlassian-Token: nocheck` header
+4. Constructs the URL using the v1 API base path, not the v2 path
+5. Streams the file via `io.Pipe` to avoid loading entire files into memory
+
+### Watch/Polling Command
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Go stdlib (time.Ticker, context, encoding/json) | (stdlib) | Periodic polling with configurable interval and NDJSON output | **No new dependencies.** `time.NewTicker` + `context.WithCancel` for graceful shutdown on SIGINT. Each poll result is written as a single JSON line (NDJSON) to stdout. The pattern: compare current state hash with previous, emit only changed items. |
+
+**Design notes:**
+- Use `time.Ticker` (not `time.Sleep`) for consistent intervals that account for request latency
+- NDJSON output (one JSON object per line) for streaming consumption by agents
+- `context.WithCancel` + signal handling for clean shutdown
+- Content change detection via `version.number` field comparison (pages/blogs) or CQL `lastModified` ordering
+
+### Output Presets
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Go stdlib (encoding/json, os, embed) | (stdlib) | Named combinations of --jq + --fields stored in config | **No new dependencies.** Presets are JSON objects mapping a name to `{"jq": "...", "fields": "..."}` stored in config.json under a `presets` key. Built-in defaults can be embedded via `//go:embed` or simply hardcoded as Go map literals. |
+
+**Implementation:** Presets resolve at flag parsing time in `PersistentPreRunE` -- if `--preset <name>` is set, it overrides `--jq` and `--fields` with the preset's values. User-defined presets in config.json override built-in ones.
+
+### Content Templates
+
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| Go stdlib (text/template, embed, os) | (stdlib) | Parameterized content creation templates | **No new dependencies.** Go's `text/template` handles variable substitution in Confluence storage format (XHTML) templates. Templates stored as `.xml` files in a templates directory, loaded via `//go:embed` for built-ins or from `~/.config/cf/templates/` for user-defined. |
+
+**Design notes:**
+- Use `text/template` not `html/template` because Confluence storage format is XHTML that needs literal `<` and `>` chars (html/template would escape them)
+- Template variables use Go template syntax: `{{.Title}}`, `{{.SpaceKey}}`
+- Built-in templates: blank page, meeting notes, decision record, status report
+- User templates override built-ins by name
+
+## Summary: Zero New Dependencies
+
+All v1.1 features are implementable using Go stdlib only. This is deliberate:
+
+| Feature | Stdlib Packages Used | External Dependency |
+|---------|---------------------|---------------------|
+| OAuth2 client_credentials | net/http, net/url, encoding/json | None |
+| OAuth2 3LO browser flow | net/http, crypto/rand, crypto/sha256, encoding/base64 | None |
+| Token persistence | os, encoding/json | None |
+| Attachment upload | mime/multipart, io, os | None |
+| Watch/polling | time, context, encoding/json | None |
+| Output presets | encoding/json, os | None |
+| Content templates | text/template, embed, os | None |
 
 ## Alternatives Considered
 
-| Recommended | Alternative | When to Use Alternative |
-|-------------|-------------|-------------------------|
-| spf13/cobra | urfave/cli v3 | Never for this project — cobra is the constraint. Even without the constraint, cobra's persistent-flags + PersistentPreRunE hook is the right model for injecting the HTTP client into every command. |
-| pb33f/libopenapi | kin-openapi (getkin/kin-openapi) | kin-openapi if you need request/response validation at runtime. We only need spec parsing at code-generation time, and libopenapi's high-level model is cleaner for walking paths and extracting parameters. |
-| pb33f/libopenapi | oapi-codegen | oapi-codegen generates Go client/server stubs, not CLI commands. Our gen/ binary generates Cobra Command structs — oapi-codegen's output would require significant post-processing. Do not use. |
-| itchyny/gojq | jq binary (exec.Command) | Never — exec.Command introduces a hard dependency on jq being installed; gojq is embedded in the binary. |
-| tidwall/pretty | encoding/json with MarshalIndent | MarshalIndent re-parses the entire JSON payload. tidwall/pretty operates on the raw byte stream without unmarshaling, which is significantly faster on large Confluence page responses. |
-| filesystem cache (internal/cache) | groupcache / Redis / bbolt | External cache stores are over-engineered for a CLI tool. The os.UserCacheDir() + file-per-request approach from jr is sufficient, simple, and requires zero dependencies. |
+| Recommended | Alternative | Why Not |
+|-------------|-------------|---------|
+| Stdlib net/http for OAuth2 | golang.org/x/oauth2 | x/oauth2 adds 5+ transitive dependencies and its `TokenSource` abstraction is designed for long-running servers, not CLIs that make 1-2 requests per invocation. The jr pattern (hand-rolled `fetchOAuth2Token`) is simpler, already proven, and easier to debug. The only thing x/oauth2 gives us is automatic token refresh -- but for a CLI that runs for seconds, fetching a fresh token per invocation is fine. |
+| Stdlib net/http for local callback | pkg/browser (via exec) | For opening the browser during 3LO auth, use `exec.Command("open", url)` on macOS, `xdg-open` on Linux. No library needed for this. |
+| Stdlib mime/multipart for uploads | go-resty multipart | go-resty wraps net/http with its own abstractions. For a single upload endpoint, the stdlib multipart.Writer is simpler and avoids adding a dependency. |
+| Stdlib text/template for content | Sprig / pongo2 / Handlebars | Content templates need basic variable substitution only (title, space, date). Go's text/template provides `{{.Var}}` syntax, conditionals, and range -- more than enough. Sprig adds 100+ template functions we don't need. |
+| time.Ticker for polling | fsnotify / file watchers | We're polling a remote HTTP API, not watching local files. fsnotify is irrelevant. |
+| File-based token storage | OS keychain (keyring lib) | Keychain access libraries (go-keyring, zalando/go-keyring) add CGO dependencies on Linux and complicate cross-compilation. File-based storage with 0600 permissions is the standard pattern for CLI tools (cf. gh, gcloud). |
 
-## What NOT to Use
+## What NOT to Add
 
 | Avoid | Why | Use Instead |
 |-------|-----|-------------|
-| oapi-codegen | Generates HTTP client stubs and server handlers, not CLI commands. Output is incompatible with the hand-written + generated Cobra command architecture. | Custom gen/ binary (already in jr, copy directly) |
-| spf13/viper | Adds 20+ transitive dependencies and brings in HCL/TOML/etc. parsers. Config needs are simple: JSON file + env vars. jr solves this with encoding/json + os.Getenv directly. | encoding/json + os.Getenv (same as jr) |
-| mitchellh/go-homedir | Deprecated. Use os.UserHomeDir() (stdlib, Go 1.12+) and os.UserConfigDir() (Go 1.13+). | stdlib os package |
-| github.com/rs/zerolog or logrus | Structured logging libraries add dependencies and complexity. All output is JSON to stdout/stderr via encoding/json directly — no logging library needed. | encoding/json + fmt.Fprintf(os.Stderr) |
-| go-resty or cleanhttp | HTTP client abstractions. net/http stdlib is sufficient; the client layer is thin (auth injection, pagination, caching). Extra HTTP libraries obscure what headers/timeouts are actually set. | stdlib net/http with http.Client{Timeout: timeout} |
+| golang.org/x/oauth2 | Over-engineered for CLI use. Designed for long-running server token management with automatic refresh. Our CLI invocations are short-lived. Adds transitive deps including google.golang.org/appengine. | Stdlib net/http POST to token endpoint (copy jr pattern) |
+| go-keyring / keychain | CGO dependency on Linux (libsecret), breaks cross-compilation. Not needed when config dir has 0600 permissions. | File-based token storage in ~/.config/cf/tokens.json |
+| gorilla/websocket | Confluence has no WebSocket API for change notifications. Watch is polling-based. | time.Ticker + HTTP polling |
+| cobra-cli (scaffolding tool) | Commands are generated from OpenAPI spec, not scaffolded. Adding manual scaffolding tools would conflict with the gen/ pipeline. | Hand-written or generated Cobra commands |
+| html/template | Would HTML-escape the Confluence storage format XHTML, breaking `<ac:structured-macro>` tags. | text/template (no escaping) |
 
-## Stack Patterns by Variant
+## Config Schema Changes
 
-**If the Confluence OpenAPI spec changes format (e.g., moves from JSON to YAML):**
-- libopenapi handles both transparently — no change needed in gen/parser.go.
+The `AuthConfig` struct needs new fields (matching jr's existing pattern):
 
-**If OAuth2 support needs to be extended (e.g., Atlassian OAuth 2.0 3LO flow):**
-- Implement inside internal/client, not as an external oauth2 library. The current jr pattern (fetchOAuth2Token via client credentials grant) is the right template; extend it with PKCE if needed without adding golang.org/x/oauth2 as a dependency.
+```go
+type AuthConfig struct {
+    Type         string `json:"type"`                    // "basic", "bearer", "oauth2"
+    Username     string `json:"username,omitempty"`       // basic auth
+    Token        string `json:"token,omitempty"`          // basic/bearer
+    ClientID     string `json:"client_id,omitempty"`      // oauth2
+    ClientSecret string `json:"client_secret,omitempty"`  // oauth2
+    TokenURL     string `json:"token_url,omitempty"`      // oauth2 (default: https://auth.atlassian.com/oauth/token)
+    Scopes       string `json:"scopes,omitempty"`         // oauth2 (space-separated)
+    CloudID      string `json:"cloud_id,omitempty"`       // oauth2 (Atlassian site identifier)
+}
+```
 
-**If shell completions are needed:**
-- cobra provides bash/zsh/fish/powershell completion generation via `rootCmd.GenBashCompletion` etc. No additional library required.
+The `Profile` struct needs a presets field:
+
+```go
+type Profile struct {
+    // ... existing fields ...
+    Presets map[string]Preset `json:"presets,omitempty"`
+}
+
+type Preset struct {
+    JQ     string `json:"jq,omitempty"`
+    Fields string `json:"fields,omitempty"`
+}
+```
 
 ## Version Compatibility
 
-| Package | Compatible With | Notes |
-|---------|-----------------|-------|
-| cobra v1.10.2 | pflag v1.0.10 | cobra v1.10.x requires pflag v1.0.9+. |
-| libopenapi v0.34.3 | go.yaml.in/yaml/v4 v4.0.0-rc.4 | libopenapi migrated from gopkg.in/yaml.v3 to go.yaml.in/yaml/v4 around v0.30. Do not mix old yaml v3 and new yaml v4 in the same gen/ binary. |
-| Go 1.26.1 | All listed libraries | All libraries support Go 1.21+ module toolchain directive. No compatibility issues with 1.26. |
+| Component | Compatible With | Notes |
+|-----------|-----------------|-------|
+| OAuth2 client_credentials | Atlassian service accounts | Token URL: `https://auth.atlassian.com/oauth/token`. Requires org admin to create service account + OAuth2 credential. |
+| OAuth2 3LO | Atlassian developer console app | Requires app registration at `developer.atlassian.com/console`. Callback URL must be `http://localhost:{port}/callback`. |
+| Attachment v1 API | Confluence Cloud v1 REST API | NOT part of v2 API. Must use `/wiki/rest/api/content/{id}/child/attachment`. Auth headers (basic/bearer/oauth2) work the same as v2. |
+| mime/multipart | All Go versions 1.1+ | Stable stdlib package, no compatibility concerns. |
+| text/template | All Go versions 1.0+ | Stable stdlib package. |
+| time.Ticker | All Go versions 1.0+ | Stable stdlib package. |
 
 ## Sources
 
-- [pkg.go.dev/github.com/spf13/cobra](https://pkg.go.dev/github.com/spf13/cobra) — confirmed v1.10.2, Dec 2024 (HIGH confidence)
-- [pkg.go.dev/github.com/pb33f/libopenapi](https://pkg.go.dev/github.com/pb33f/libopenapi) — confirmed v0.34.3, Mar 2026 (HIGH confidence)
-- [pkg.go.dev/github.com/itchyny/gojq](https://pkg.go.dev/github.com/itchyny/gojq) — confirmed v0.12.18, Dec 2025 (HIGH confidence)
-- [pkg.go.dev/github.com/tidwall/pretty](https://pkg.go.dev/github.com/tidwall/pretty) — confirmed v1.2.1 (HIGH confidence)
-- [pkg.go.dev/github.com/spf13/pflag](https://pkg.go.dev/github.com/spf13/pflag) — confirmed v1.0.10, Sep 2025 (HIGH confidence)
-- [go.dev/doc/devel/release](https://go.dev/doc/devel/release) — Go 1.26.1 current stable (HIGH confidence)
-- [github.com/golangci/golangci-lint/releases](https://github.com/golangci/golangci-lint/releases) — golangci-lint v2.11.3 current (MEDIUM confidence — version from WebSearch, not directly fetched)
-- Reference implementation: `/Users/quan.hoang/quanhh/quanhoang/jira-cli-v2/go.mod` — primary source for dependency selection (HIGH confidence)
+- [Atlassian OAuth 2.0 3LO for Confluence Cloud](https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/) -- authorization URL, token URL, flow details (HIGH confidence)
+- [Atlassian Service Account OAuth2 Credentials](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/) -- client_credentials grant confirmed for Confluence Cloud (HIGH confidence)
+- [Confluence Scopes for OAuth 2.0](https://developer.atlassian.com/cloud/confluence/scopes-for-oauth-2-3LO-and-forge-apps/) -- classic and granular scopes (HIGH confidence)
+- [Confluence v1 Attachment API](https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments/) -- upload endpoint, headers, multipart format (HIGH confidence)
+- [Atlassian Community: Client Credentials Support](https://community.developer.atlassian.com/t/does-atlassian-supports-ouath-2-0-client-credentials-grant-flow-for-token-generation/73705) -- historical context on 2LO support (MEDIUM confidence)
+- Reference implementation: `/Users/quan.hoang/quanhh/quanhoang/jira-cli-v2/internal/client/client.go` lines 102-131 -- proven `fetchOAuth2Token` pattern (HIGH confidence)
+- Reference implementation: `/Users/quan.hoang/quanhh/quanhoang/jira-cli-v2/internal/config/config.go` -- OAuth2 config struct pattern (HIGH confidence)
+- [Go stdlib mime/multipart](https://pkg.go.dev/mime/multipart) -- multipart form-data encoding (HIGH confidence)
+- [Go stdlib text/template](https://pkg.go.dev/text/template) -- template engine (HIGH confidence)
 
 ---
-*Stack research for: Confluence Cloud CLI (Go + Cobra + OpenAPI codegen)*
+*Stack research for: Confluence Cloud CLI v1.1 -- OAuth2, attachments, watch, presets, templates*
 *Researched: 2026-03-20*

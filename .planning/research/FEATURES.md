@@ -1,8 +1,12 @@
 # Feature Research
 
-**Domain:** Confluence CLI for AI agents (structured JSON access to Confluence Cloud)
+**Domain:** Confluence CLI v1.1 -- Extended capabilities (OAuth2, blog posts, attachments, custom content, watch, presets, templates)
 **Researched:** 2026-03-20
-**Confidence:** HIGH (reference implementation examined directly; Confluence v2 API surveyed; competing CLIs reviewed)
+**Confidence:** HIGH (core features verified against v2 API docs), MEDIUM (OAuth2 2LO availability for Confluence confirmed but newer feature), HIGH (attachment upload v1 fallback well-documented)
+
+## Context
+
+This research covers the **v1.1 milestone only** -- new features to add on top of the already-built v1.0 foundation. Existing capabilities (pages CRUD, spaces, search, comments, labels, batch, audit, policy, avatar analysis, auth profiles) are not repeated here.
 
 ---
 
@@ -10,213 +14,216 @@
 
 ### Table Stakes (Users Expect These)
 
-Features agents and automation scripts assume exist. Missing these = the tool is not usable.
+Features that any v1.1 "extended content coverage" release must have. Without these, the version bump is not justified.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Pages CRUD (get, create, update, delete) | Core Confluence resource; every competing CLI has this | MEDIUM | v2 API: `GET/POST/PUT/DELETE /pages/{id}`. Body is Atlassian Storage Format (XHTML). Pass through as-is — no conversion. |
-| Space listing and get | Spaces are the top-level namespace; agents need to discover them before operating on pages | LOW | `GET /spaces`, `GET /spaces/{id}`. Supports pagination. |
-| CQL search | Confluence Query Language is the standard discovery mechanism across all content types | MEDIUM | `GET /search?cql=...`. Returns mixed content types. Pagination required. CQL supports pages, blog posts, comments, attachments, labels. |
-| Pure JSON stdout | AI agents cannot parse human-readable output; every command must emit JSON to stdout, errors to stderr | LOW | Already the design mandate. Mirrors jr exactly. |
-| Semantic exit codes | Agents need to distinguish auth failure (retry) from not-found (recoverable) from server error (transient) | LOW | Map HTTP status ranges → exit codes. Pattern established in jr: ExitOK=0, ExitError=1, ExitValidation=2. |
-| Multi-profile configuration | Agents operate against multiple Confluence instances or with different auth contexts | LOW | `~/.config/cf/config.json`. Profiles selectable with `--profile` flag or `CF_PROFILE` env var. |
-| Auth: Basic + Bearer | Atlassian Cloud supports both API token (basic) and PAT/service account bearer tokens | LOW | Both are already supported by the underlying HTTP auth layer in jr. OAuth2 can be deferred. |
-| Automatic pagination | List endpoints return paginated results; agents need complete result sets without manual cursor handling | MEDIUM | Confluence v2 uses cursor-based pagination (`cursor` parameter). Must auto-follow and merge results. `--no-paginate` flag to opt out. |
-| JQ filtering on all output | Agents slice large JSON responses down to needed fields in a single invocation | LOW | `--jq` persistent flag applied after every API call. gojq library used in jr — same in cf. |
-| Raw API command (`raw`) | OpenAPI codegen cannot map 100% of endpoints; agents need escape hatch for unmapped operations | LOW | `cf raw GET /wiki/rest/api/v2/...` — passes request through, applies JQ, respects profile auth. |
-| Help / schema discovery as JSON | AI agents cannot parse plain-text help; `--help` output must be parseable or use JSON schema introspection | LOW | Mirror jr's `schema` command: outputs command tree and parameter schemas as JSON to stdout. |
-| Configure command | First-time setup for non-agent users; agents use env vars but humans need interactive init | LOW | `cf configure --base-url <url> --token <token>` stores to config profile. |
+| Blog post CRUD | Blog posts are a first-class v2 API resource alongside pages. Any tool claiming "content coverage" must include them. Agents doing content automation (meeting notes, status updates, announcements) need blog posts. | LOW | v2 endpoints mirror pages exactly: `POST/GET/PUT/DELETE /wiki/api/v2/blogposts`. Same body structure (spaceId, title, body with representation+value, status). Reuse 90% of pages.go -- version auto-increment, body format, status handling are identical. Create `blogposts.go` following same pattern as pages.go. |
+| OAuth2 3LO (browser flow) | Atlassian is pushing OAuth2; many enterprise orgs disable API tokens or PATs. CLI tools without OAuth2 get locked out of these environments. This is the most-requested auth gap. | MEDIUM | Authorization code grant flow. Steps: (1) start local HTTP server on `127.0.0.1:<random-port>` for callback, (2) open browser to `https://auth.atlassian.com/authorize` with client_id, scope, redirect_uri, state, response_type=code, prompt=consent, (3) receive auth code at callback, (4) exchange code for access+refresh tokens at `https://auth.atlassian.com/oauth/token`, (5) call accessible-resources to get cloudId, (6) store tokens in profile. Must include `offline_access` scope for refresh token. Token refresh uses rotating refresh tokens. Go libraries: `cli/oauth` (GitHub CLI's own library) or `int128/oauth2cli`. API base changes to `https://api.atlassian.com/ex/confluence/{cloudId}/wiki/api/v2/...`. |
+| Attachment listing and metadata | Attachments are core Confluence content. Agents processing pages need to discover what files are attached. Not being able to list/get attachment metadata is a gap. | LOW | v2 API: `GET /attachments` (list all), `GET /attachments/{id}` (get one), `GET /pages/{id}/attachments` (per page), `GET /blogposts/{id}/attachments` (per blog post). Standard cursor pagination. Returns metadata: id, title, mediaType, fileSize, downloadUrl. Same fetch pattern as other list commands. |
+| Attachment upload | Most users dealing with attachments need upload, not just read. Agents attaching generated reports, images, or exports need this. | MEDIUM | **No v2 upload endpoint exists** (tracked as CONFCLOUD-77196). Must use v1: `POST /wiki/rest/api/content/{id}/child/attachment` with `multipart/form-data` and `X-Atlassian-Token: nocheck` header. Requires adding multipart request support to internal/client (currently handles only JSON bodies). Need v1 path support (client currently assumes v2 base path `/wiki/api/v2`). Flags: `--file path/to/file`, `--content-type` (auto-detect from extension if omitted), `--comment "description"`. |
 
 ### Differentiators (Competitive Advantage)
 
-Features that distinguish `cf` from existing Confluence CLIs — specifically optimized for AI agent consumption.
+Features that set cf apart from other Confluence CLI tools, particularly for the AI-agent audience. None of the competing tools (atlassian-python-api, confluence-go-api, pchuri/confluence-cli) offer these.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| OpenAPI-generated commands | Every Confluence v2 endpoint available automatically; no manual gaps as Atlassian adds endpoints | HIGH | Core architectural differentiator vs hand-written CLIs (pchuri/confluence-cli, farbodsz/confluence-cli, cfl). Codegen from `dac-static.atlassian.com/cloud/confluence/openapi-v2.v3.json`. Generated commands live under `cmd/generated/`. |
-| Operation policy (allow/deny lists per profile) | Agents can be scoped to read-only or specific resource types without trusting the agent not to write | MEDIUM | Profile config: `allowed_operations: ["page get", "space get"]` or `denied_operations: ["page delete"]`. Glob patterns. Enforced pre-request. Critical for AI agent governance. |
-| Audit logging | Every API call an agent makes is logged with timestamp, profile, operation, HTTP method/path/status | MEDIUM | Append-only NDJSON file. `--audit` flag or `audit_log: true` in profile. Non-fatal if log open fails. Enables post-hoc review of agent actions. |
-| Batch command | Agents frequently need N operations; spawning N processes is expensive; batch executes from JSON array in one invocation | HIGH | Input: JSON array of `{command, args, jq}`. Output: JSON array of `{index, exit_code, data, error}`. Allows partial failure reporting. |
-| Dry-run mode | Agents can preview what a write would do before committing; useful during development and in cautious workflows | LOW | `--dry-run` flag prints request JSON to stdout without executing. Applies at client layer. |
-| Preset system | Agents repeat the same `--jq` + `--fields` combination; presets name and reuse these output shapes | MEDIUM | User-defined named presets stored in config. `--preset page-summary` expands to `--fields id,title,version --jq .results[]`. Makes agent prompts shorter and more reliable. |
-| Response caching for GET | Agents reading the same page repeatedly (context-gathering loops) waste API quota; caching is free deduplication | MEDIUM | `--cache 5m` TTL on GET requests. Stored in `~/.cache/cf/`. LRU or file-based. Pattern from jr. |
-| Verbose mode for debugging | When an agent misbehaves, `--verbose` lets developers see raw HTTP request/response on stderr without changing stdout | LOW | Logs method, URL, status, response time to stderr as JSON lines. Stdout stays clean. |
-| Version as JSON | `cf --version` outputs `{"version":"1.0.0"}` not a human string — agents can parse build info | LOW | Override Cobra's version template. Trivial to implement. |
-| `--fields` sparse fieldset | Agents only need a subset of fields; requesting full page objects wastes context window tokens | LOW | Maps to Confluence `body-format` and sparse field selection where API supports it. Falls back to post-response JQ projection. |
+| OAuth2 client credentials / 2LO | Service accounts with zero user interaction -- critical for CI/CD pipelines and autonomous agent execution. No other Confluence CLI supports this. | LOW | `POST https://auth.atlassian.com/oauth/token` with `grant_type=client_credentials`, client_id, client_secret. Returns bearer token valid 60 minutes. No refresh token needed -- just re-request when expired. Admin creates service account credential in Atlassian admin console and selects Confluence scopes. Simpler than 3LO. Store client_id+client_secret in profile, request token on demand. |
+| Watch command (polling + NDJSON) | Agents can subscribe to content changes without cron jobs or external schedulers. Enables reactive workflows. Unique for Confluence CLI tools. | MEDIUM | Poll `GET /pages/{id}` or CQL search at configurable interval. Compare version numbers between polls. Emit NDJSON events to stdout: `{"event":"changed","id":"...","version":5,"title":"...","timestamp":"..."}`. Flags: `--interval 30s` (default), `--pages id1,id2` or `--cql "space=DEV AND type=page"`, `--space KEY`. Use Go `time.Ticker` + `context.WithCancel`. Exit on SIGINT/SIGTERM. First poll emits `{"event":"baseline",...}` for each item. |
+| Output presets | Named JQ + field combinations stored in config. Agents call `--preset compact` instead of remembering complex JQ expressions. Reduces prompt engineering effort and makes agent invocations more reliable. | LOW | Store in config.json under `presets` key: `{"compact": {"jq": ".results[] \| {id,title}", "fields": "id,title"}}`. Apply via `--preset` flag on any command. Ship with built-in defaults (e.g., `brief`, `ids-only`, `full`). User presets override built-ins. Resolution: `--jq` flag > preset jq > no filter. Pure config feature, zero API work needed. |
+| Content templates (local) | Reusable content skeletons for page/blog creation. Agents create consistent content (meeting notes, decision logs, status reports) without remembering Confluence storage format syntax. | LOW | Local template files in `~/.config/cf/templates/` containing storage-format XHTML with Go template variables (`{{.Title}}`, `{{.Date}}`, `{{.SpaceKey}}`, `{{.Custom.key}}`). Commands: `cf templates list`, `cf templates show <name>`. Usage: `cf pages create --template meeting-notes --var key=value`. Go `text/template` stdlib -- no external deps. No Confluence template API needed (v2 has no template endpoints; v1 templates are Confluence-internal and fragile). |
+| Custom content type CRUD | Full CRUD on app-defined custom content types (e.g., Confluence Questions, database entries, forms). Enables advanced integrations that competing CLIs cannot reach. | MEDIUM | v2 API: `POST/GET/PUT/DELETE /wiki/api/v2/custom-content`. Requires `type` parameter (app-defined string like `ac:my-app:my-type`). Same body structure as pages (title, body with representation+value, status, version). Users must know their app's custom content type string. Scope per-space or per-page/blogpost. Niche but uniquely powerful for teams using Confluence Connect apps. |
 
 ### Anti-Features (Commonly Requested, Often Problematic)
 
 | Feature | Why Requested | Why Problematic | Alternative |
 |---------|---------------|-----------------|-------------|
-| Markdown ↔ Storage Format conversion | Humans want to write in Markdown; LLMs generate Markdown naturally | Atlassian Storage Format is XHTML-based with Confluence-specific macros. Lossless round-tripping is not achievable. Conversion adds a moving-target dependency (third-party libs break on complex macros, tables, panels). Agents handle raw format fine once they know what it is. | Pass storage format as-is. Document the format for agents. Provide a `--format storage` flag to be explicit. |
-| Confluence v1 API support | Some older docs or tutorials reference v1 endpoints | v1 is legacy. Atlassian is deprecating it. Maintaining dual-version support doubles the surface area and creates confusion. All new endpoints are v2-only. | v2 API only. `raw` command handles one-off v1 calls if ever needed. |
-| Interactive TUI / prompts | Nice for human developers unfamiliar with flags | Interactive mode breaks agent invocation entirely. Any prompt causes the process to hang waiting for stdin. Also incompatible with `--dry-run` inspection patterns. | Non-interactive flags only. `configure` command uses flags, not prompts. `--help` outputs schema. |
-| Content rendering / HTML preview | Humans want to read rendered Confluence pages in terminal | Agents consume structured data, not rendered HTML. Rendering adds an HTML parser dependency. Output is ambiguous (HTML vs JSON on stdout). | Return raw storage format. Agents extract text with JQ. Humans use Confluence UI. |
-| Real-time push / webhooks | Agents want to react to page changes without polling | Webhooks require a running server, not a CLI. Adds infrastructure complexity incompatible with the CLI model. | `watch` command (polling) covers the agent use case. Low-frequency polling is sufficient for most automation. |
-| OAuth2 browser flow | Enterprise users want SSO login | OAuth2 device/browser flows are interactive (require browser redirect). They block non-interactive agent execution. | API token (basic auth) and PAT bearer tokens cover all agent scenarios. OAuth2 can be added later as a non-default auth type for human-interactive use. |
-| Bulk content export (PDF/Word) | Some CLI tools offer export formats | Export endpoints produce binary blobs (PDF/Word), not JSON. Breaks the JSON-stdout contract. Agents cannot process binary output. | `raw` command for one-off export if needed. Not a first-class feature. |
+| Confluence API template integration | "Create pages from Confluence templates via API" | v2 API has zero template endpoints. v1 template API requires: fetch template body, extract storage format, handle blueprint variables, process inline images. Template images are known broken (Atlassian bug -- images returned without id/URL). Mixing v1 template calls with v2 page creation adds fragility and version confusion. | Local template system (see differentiators). Store storage-format snippets locally under version control. Simpler, more reliable, portable across instances. |
+| Markdown-to-storage-format conversion | "Let me write content in Markdown" | Already explicitly out of scope in PROJECT.md. Atlassian Storage Format has Confluence-specific macros, panels, layouts that Markdown cannot represent. Lossy round-tripping. Conversion libraries break on edge cases. Adds a heavy dependency. | Pass raw storage format. Agents generate storage format directly. Provide example templates showing common patterns. |
+| Real-time WebSocket streaming | "Watch should use WebSockets for instant updates" | Confluence has no WebSocket API. Would require building a proxy/relay service. Completely incompatible with CLI tool model. | Polling-based watch with configurable interval (default 30s). NDJSON output is streaming-friendly for piping. |
+| Attachment inline preview/rendering | "Show me the attachment contents in terminal" | CLI is not a rendering environment. Adding image/PDF rendering introduces heavy dependencies. Agents consume metadata, not visual content. | Return attachment metadata (filename, mediaType, fileSize, downloadUrl). Agents download files separately with `curl` or `cf raw`. |
+| OAuth2 device code flow | "Support headless OAuth without a browser" | Atlassian does not support the OAuth2 device authorization grant. Only authorization code (3LO) and client credentials (2LO) are available. Implementing unsupported flows wastes effort. | Use client credentials (2LO) for headless/CI environments. Use 3LO browser flow for interactive human use. These two cover all scenarios. |
+| Bulk content export (PDF/Word) | "Export pages as PDF for offline reading" | Export endpoints produce binary blobs, not JSON. Breaks the JSON-stdout contract. Agents cannot meaningfully process binary output. | `cf raw GET /wiki/rest/api/content/{id}/export/pdf > file.pdf` for one-off needs. Not a first-class feature. |
 
 ---
 
 ## Feature Dependencies
 
 ```
-[OpenAPI codegen]
-    └──produces──> [Generated commands] (all resource CRUD)
-                       └──requires──> [HTTP client with auth]
-                                          └──requires──> [Profile / config system]
+OAuth2 3LO (browser flow)
+    └──requires──> Token storage in config profiles (access_token, refresh_token, expiry, cloudId)
+    └──requires──> Token refresh middleware in internal/client (transparent refresh before API calls)
+    └──requires──> Dynamic base URL (api.atlassian.com/ex/confluence/{cloudId} instead of direct instance URL)
 
-[Profile / config system]
-    └──enables──> [Multi-profile auth]
-    └──enables──> [Operation policy]
-    └──enables──> [Audit logging]
-    └──enables──> [Preset system]
+OAuth2 2LO (client credentials)
+    └──requires──> Config profile extension (client_id, client_secret fields)
+    └──requires──> Token cache with TTL in internal/client (simpler than 3LO -- no refresh token)
+    └──requires──> Dynamic base URL (same as 3LO)
 
-[HTTP client with auth]
-    └──enables──> [Automatic pagination]
-    └──enables──> [Response caching]
-    └──enables──> [JQ filtering]
-    └──enables──> [Dry-run mode]
-    └──enables──> [Verbose mode]
+Blog post CRUD
+    └──reuses──> Pages pattern (version auto-increment, body format, status handling)
+    └──reuses──> Labels subsystem (already supports any content-id)
+    └──reuses──> Comments subsystem (already supports any content-id)
 
-[Generated commands]
-    └──enhances──> [Raw command] (escape hatch for unmapped endpoints)
+Attachment upload
+    └──requires──> Multipart form-data support in internal/client (NEW capability)
+    └──requires──> v1 API path support in internal/client (currently only v2 base path)
 
-[Batch command]
-    └──requires──> [Generated commands] (dispatches to them)
-    └──requires──> [Semantic exit codes] (reports per-op exit codes)
+Attachment list/get
+    └──reuses──> Standard fetch + pagination pattern (no new client capabilities)
 
-[CQL search]
-    └──requires──> [Automatic pagination] (search results are paginated)
+Custom content CRUD
+    └──reuses──> Pages pattern (version auto-increment, body format)
+    └──requires──> --type flag for custom content type string
 
-[Preset system]
-    └──enhances──> [JQ filtering] (presets expand to --jq defaults)
-    └──enhances──> [--fields] (presets expand to --fields defaults)
+Watch command
+    └──requires──> Pages/Blogposts GET (already exists)
+    └──requires──> CQL search (already exists, for space-level watching)
+    └──enhances──> Output presets (watch output can use presets for event formatting)
 
-[Operation policy] ──conflicts with──> [Dry-run mode as a bypass]
-    Note: policy must be enforced even in dry-run — dry-run shows what would happen but must still validate policy
+Output presets
+    └──requires──> Config extension (presets key in config.json)
+    └──enhances──> ALL existing commands (global --preset flag in root.go)
+    └──independent──> No API changes needed
+
+Content templates
+    └──enhances──> Pages create, Blogposts create (--template flag)
+    └──independent──> No API dependency, pure local feature
+    └──independent──> No dependency on other v1.1 features
 ```
 
 ### Dependency Notes
 
-- **Generated commands require profile/config system:** The HTTP client is initialized in `PersistentPreRunE` from the resolved profile. All generated commands inherit this — none can run without it.
-- **Batch requires generated commands:** Batch dispatches operations by name (e.g., `"command": "page get"`) to the same codegen command registry. Must be built after codegen pipeline is established.
-- **Pagination required before CQL search:** CQL search returns paginated results. Auto-pagination must work correctly before search is reliable for agent use.
-- **Preset enhances JQ/fields but is non-blocking:** Agents can use `--jq` directly. Presets are a convenience layer, safe to defer to later phases.
-- **Policy must come with profiles:** If profiles exist without policy enforcement, the governance story is incomplete. Both belong in the same phase.
+- **Attachment upload requires v1 API path**: The client currently constructs paths under `/wiki/api/v2`. Upload needs `POST /wiki/rest/api/content/{id}/child/attachment`. Add a method like `client.FetchV1()` or accept absolute path override in `client.Fetch()`. Also need multipart body encoding -- currently only `json.Marshal` bodies.
+- **OAuth2 changes the API base URL**: With OAuth2, requests go through `api.atlassian.com/ex/confluence/{cloudId}` not the direct instance URL. The client must switch base URL based on auth type. This affects all commands transparently.
+- **OAuth2 3LO and 2LO share infrastructure**: Both need token endpoint interaction and dynamic base URLs. Build shared OAuth2 token management, then add 3LO (interactive) and 2LO (non-interactive) as two grant type implementations.
+- **Blog posts and custom content reuse pages patterns**: Version auto-increment, body format, status handling are identical across all three. Factor shared helpers (e.g., `fetchContentVersion`, `buildUpdateBody`) to avoid duplication.
+- **Output presets should be implemented early**: It enhances every command globally via a `--preset` flag in root.go's PersistentPreRunE. Low effort, high leverage. Do it before feature-specific commands.
+- **Watch depends on existing GET commands only**: No new API endpoints. Just polling + diff logic + NDJSON output formatting. Can be built independently after blog posts exist (to watch both pages and blog posts).
+- **Content templates are fully independent**: Local file system feature with Go stdlib `text/template`. No dependency on any API or other v1.1 feature. Can be built in any order.
 
 ---
 
 ## MVP Definition
 
-### Launch With (v1)
+### Launch With (v1.1 core)
 
-Minimum viable product — what an AI agent needs to perform real Confluence work.
+Must-have features that justify the v1.1 version bump. These complete content coverage and close the auth gap.
 
-- [ ] Profile / config system (`cf configure`, `~/.config/cf/config.json`, `--profile`, env vars) — nothing else works without auth
-- [ ] OpenAPI codegen pipeline — generates all CRUD commands from spec; establishes the pattern
-- [ ] Pages CRUD via generated commands — primary resource agents interact with
-- [ ] Space list/get via generated commands — discovery of spaces before page operations
-- [ ] CQL search — agents need search to find pages without knowing IDs upfront
-- [ ] Pure JSON stdout + errors to stderr — non-negotiable for agent consumption
-- [ ] Semantic exit codes — agents need to distinguish failure modes
-- [ ] Automatic pagination — list results must be complete; partial results silently break agents
-- [ ] JQ filtering (`--jq`) — agents reduce large responses in-call; reduces context window load
-- [ ] Raw command — escape hatch for any gap between codegen and real API needs
-- [ ] Schema command (JSON) — agents discover commands without parsing human-readable help
-- [ ] Dry-run mode — standard safety feature for write operations; low effort to include early
+- [ ] Blog post CRUD -- direct v2 API parity with pages, lowest effort among new features, highest coverage impact
+- [ ] OAuth2 3LO browser flow -- unblocks users in orgs that disabled API tokens; most-requested auth feature
+- [ ] Attachment list/get/delete -- read-side attachment support via v2 API, completes content discovery
+- [ ] Attachment upload -- write-side via v1 fallback, completes the attachment story
+- [ ] Output presets -- low effort, high agent value, enhances every existing and new command
 
-### Add After Validation (v1.x)
+### Add After Core (v1.1 extended)
 
-Features to add once core CRUD is working and agents are using it.
+Features that add differentiation once core content+auth is stable.
 
-- [ ] Operation policy (allow/deny) — add when agents are deployed in shared/governed environments
-- [ ] Audit logging — add when teams need accountability for agent actions
-- [ ] Response caching — add when agents report quota pressure or repeated reads slow down
-- [ ] Preset system — add when agents/users have established recurring output patterns
-- [ ] Comments CRUD via generated commands — secondary resource; not needed for page read/write
-- [ ] Label management via generated commands — useful for categorization workflows
-- [ ] Batch command — add when agent orchestration overhead (process spawning) is measurable
+- [ ] OAuth2 2LO client credentials -- when CI/CD and autonomous agent demand materializes
+- [ ] Watch command (polling + NDJSON) -- when agents request change-driven rather than request-driven access
+- [ ] Content templates (local) -- when users report friction creating repetitive content in storage format
 
-### Future Consideration (v2+)
+### Future Consideration (v1.2+)
 
-- [ ] OAuth2 auth type — add only if human-interactive use cases emerge beyond API tokens
-- [ ] Watch/polling command — add if agents need reactive (change-driven) rather than request-driven access
-- [ ] Blog post CRUD — add when agents need to publish blog content (niche use case)
-- [ ] Space permissions management — add if agent needs to provision access (admin scenario)
-- [ ] Content version history/diff — add if agents need change tracking workflows
+- [ ] Custom content CRUD -- niche use case, value depends on which Connect apps target users have installed
+- [ ] Space-level watch (poll all pages in a space via CQL) -- scaling concern, needs rate limit awareness with new Atlassian quota system (enforced March 2026)
 
 ---
 
 ## Feature Prioritization Matrix
 
-| Feature | Agent Value | Implementation Cost | Priority |
-|---------|-------------|---------------------|----------|
-| Profile / config system | HIGH | LOW | P1 |
-| OpenAPI codegen pipeline | HIGH | HIGH | P1 |
-| Pages CRUD | HIGH | LOW (via codegen) | P1 |
-| Space list/get | HIGH | LOW (via codegen) | P1 |
-| CQL search | HIGH | MEDIUM | P1 |
-| Pure JSON stdout + stderr | HIGH | LOW | P1 |
-| Semantic exit codes | HIGH | LOW | P1 |
-| Automatic pagination | HIGH | MEDIUM | P1 |
-| JQ filtering | HIGH | LOW | P1 |
-| Raw command | HIGH | LOW | P1 |
-| Schema discovery (JSON) | MEDIUM | LOW | P1 |
-| Dry-run mode | MEDIUM | LOW | P1 |
-| Operation policy | HIGH | MEDIUM | P2 |
-| Audit logging | MEDIUM | MEDIUM | P2 |
-| Preset system | MEDIUM | MEDIUM | P2 |
-| Response caching | MEDIUM | MEDIUM | P2 |
-| Comments CRUD | MEDIUM | LOW (via codegen) | P2 |
-| Label management | MEDIUM | LOW (via codegen) | P2 |
-| Batch command | MEDIUM | HIGH | P2 |
-| Watch/polling | LOW | HIGH | P3 |
-| OAuth2 auth | LOW | HIGH | P3 |
-| Blog post CRUD | LOW | LOW (via codegen) | P3 |
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Blog post CRUD | HIGH | LOW | P1 |
+| OAuth2 3LO (browser flow) | HIGH | MEDIUM | P1 |
+| Attachment list/get/delete | HIGH | LOW | P1 |
+| Attachment upload (v1 fallback) | HIGH | MEDIUM | P1 |
+| Output presets | MEDIUM | LOW | P1 |
+| OAuth2 2LO (client credentials) | MEDIUM | LOW | P2 |
+| Content templates (local) | MEDIUM | LOW | P2 |
+| Watch command (polling + NDJSON) | MEDIUM | MEDIUM | P2 |
+| Custom content CRUD | LOW | MEDIUM | P3 |
 
 **Priority key:**
-- P1: Must have for launch — agent cannot function without it
-- P2: Should have — adds significant value once core works
-- P3: Nice to have — defer until P2 is stable
+- P1: Must have for v1.1 launch -- completes content type coverage and auth story
+- P2: Should have -- adds differentiation for agent and automation users
+- P3: Nice to have -- serves niche use cases, defer until P2 is validated
 
 ---
 
 ## Competitor Feature Analysis
 
-| Feature | pchuri/confluence-cli (Python) | cfl / atlassian-cli (Go) | Appfire Confluence CLI (Java) | cf (this project) |
-|---------|-------------------------------|--------------------------|-------------------------------|-------------------|
-| Output format | Human text + optional JSON | Markdown-first, human text | Human text | Pure JSON always |
-| AI agent optimized | Partial (read-only mode) | No | No | Yes (primary design goal) |
-| OpenAPI codegen | No (hand-written) | No (hand-written) | No (hand-written) | Yes |
-| JQ filtering | No | No | No | Yes (persistent flag) |
-| Semantic exit codes | Basic (0/1) | Basic | Basic | Yes (typed exit codes) |
-| Operation policy | No | No | No | Yes (allow/deny globs) |
-| Audit logging | No | No | No | Yes (NDJSON) |
-| Batch operations | No | No | No | Yes |
-| Preset system | No | No | No | Yes |
-| Pagination | Manual | Auto | Auto | Auto |
-| Auth: Basic + Bearer | Yes | Yes | Yes | Yes |
-| Auth: OAuth2 | No | No | Yes | Deferred |
-| Dry-run mode | No | No | No | Yes |
-| Response caching | No | No | No | Yes |
-| Markdown conversion | Yes (differentiator) | Yes (core feature) | Partial | No (anti-feature) |
-| Confluence v2 API | Partial | Partial | No (v1 focus) | Yes (v2 only) |
-| Confluence v1 API | Yes | Yes | Yes | No (anti-feature) |
+| Feature | atlassian-python-api | confluence-go-api | pchuri/confluence-cli | cf v1.1 (this release) |
+|---------|---------------------|-------------------|----------------------|------------------------|
+| Blog post CRUD | Yes (v1 API) | Partial | No | v2 API, version auto-increment |
+| OAuth2 any flow | No (basic/token only) | No | No | 3LO browser + 2LO client credentials |
+| Attachment upload | Yes (v1 multipart) | Yes (v1 multipart) | No | v1 fallback with multipart |
+| Attachment list | Yes (v1) | Yes (v1) | No | v2 API with pagination |
+| Custom content CRUD | No | No | No | v2 API with type parameter |
+| Watch/polling | No | No | No | NDJSON streaming events |
+| Output presets | N/A (library) | N/A (library) | No | Named JQ+fields in config |
+| Content templates | `create_or_update_template()` (v1 API) | No | No | Local templates with Go text/template |
+| Agent-optimized output | No | No | No | JSON-only stdout, semantic exit codes, JQ built-in |
+
+---
+
+## Key API Details for Implementation
+
+### Blog Post v2 Endpoints
+- `GET /wiki/api/v2/blogposts` -- list (cursor pagination, `space-id` filter)
+- `POST /wiki/api/v2/blogposts` -- create (`spaceId`, `title`, `body`, `status`)
+- `GET /wiki/api/v2/blogposts/{id}` -- get by ID
+- `PUT /wiki/api/v2/blogposts/{id}` -- update (`id`, `title`, `body`, `status`, `version`)
+- `DELETE /wiki/api/v2/blogposts/{id}` -- delete/trash
+
+### Attachment v2 Endpoints (read + delete only)
+- `GET /wiki/api/v2/attachments` -- list all
+- `GET /wiki/api/v2/attachments/{id}` -- get by ID
+- `GET /wiki/api/v2/pages/{id}/attachments` -- list for page
+- `GET /wiki/api/v2/blogposts/{id}/attachments` -- list for blog post
+- `GET /wiki/api/v2/custom-content/{id}/attachments` -- list for custom content
+- `DELETE /wiki/api/v2/attachments/{id}` -- delete
+
+### Attachment v1 Endpoint (upload -- no v2 equivalent)
+- `POST /wiki/rest/api/content/{id}/child/attachment` -- multipart upload
+  - Header: `X-Atlassian-Token: nocheck` (XSRF protection bypass)
+  - Body: `multipart/form-data` with `file` field (the actual file)
+  - Optional fields: `comment` (attachment description), `minorEdit` (boolean)
+
+### Custom Content v2 Endpoints
+- `GET /wiki/api/v2/custom-content` -- list (requires `type` query param)
+- `POST /wiki/api/v2/custom-content` -- create (`type`, `spaceId`, `pageId`/`blogPostId`, `title`, `body`, `status`)
+- `GET /wiki/api/v2/custom-content/{id}` -- get by ID
+- `PUT /wiki/api/v2/custom-content/{id}` -- update (includes `version`)
+- `DELETE /wiki/api/v2/custom-content/{id}` -- delete/trash
+
+### OAuth2 Endpoints
+- **Authorization** (3LO): `https://auth.atlassian.com/authorize?audience=api.atlassian.com&client_id={id}&scope={scopes}&redirect_uri={uri}&state={state}&response_type=code&prompt=consent`
+- **Token exchange**: `POST https://auth.atlassian.com/oauth/token` (both 3LO code exchange and 2LO client credentials)
+- **Accessible resources**: `GET https://api.atlassian.com/oauth/token/accessible-resources` (returns cloudId for site)
+- **API base with OAuth**: `https://api.atlassian.com/ex/confluence/{cloudId}/wiki/api/v2/...`
+- **Key scopes**: `read:confluence-content.all`, `write:confluence-content`, `manage:confluence-configuration`, `offline_access` (for refresh tokens)
 
 ---
 
 ## Sources
 
-- [pchuri/confluence-cli — GitHub](https://github.com/pchuri/confluence-cli) — feature list and README reviewed directly
-- [open-cli-collective/atlassian-cli (cfl) — GitHub](https://github.com/open-cli-collective/atlassian-cli) — feature list reviewed
-- [Confluence Cloud REST API v2 — Atlassian Developer](https://developer.atlassian.com/cloud/confluence/rest/v2/) — resource categories enumerated
-- [Appfire Confluence CLI — Atlassian Marketplace](https://marketplace.atlassian.com/apps/284/confluence-command-line-interface-cli) — enterprise feature comparison
-- [CQL field reference — Atlassian Developer](https://developer.atlassian.com/server/confluence/cql-field-reference/) — CQL scope and limitations
-- [MCP vs CLI for AI agents — CircleCI blog](https://circleci.com/blog/mcp-vs-cli/) — CLI vs MCP tradeoffs for agent context
-- [Why CLI Tools Are Beating MCP for AI Agents — Jan Reinhard, 2026](https://jannikreinhard.com/2026/02/22/why-cli-tools-are-beating-mcp-for-ai-agents/) — CLI efficiency advantage
-- Reference implementation: `/Users/quan.hoang/quanhh/quanhoang/jira-cli-v2` — examined directly (root.go, workflow.go, batch.go, watch.go, policy.go, preset.go)
+- [Confluence REST API v2 -- Blog Post endpoints](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/)
+- [Confluence REST API v2 -- Attachment endpoints](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/)
+- [Confluence REST API v2 -- Custom Content endpoints](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-custom-content/)
+- [Confluence REST API v2 -- Introduction (all resource groups)](https://developer.atlassian.com/cloud/confluence/rest/v2/intro/)
+- [OAuth 2.0 (3LO) apps -- Confluence Cloud](https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/)
+- [Implementing OAuth 2.0 (3LO)](https://developer.atlassian.com/cloud/oauth/getting-started/implementing-oauth-3lo/)
+- [OAuth 2.0 credentials for service accounts (2LO)](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/)
+- [Custom content overview](https://developer.atlassian.com/cloud/confluence/custom-content/)
+- [Attachment upload via v1 REST API](https://support.atlassian.com/confluence/kb/using-the-confluence-rest-api-to-upload-an-attachment-to-one-or-more-pages/)
+- [Missing v2 attachment upload endpoint (CONFCLOUD-77196)](https://jira.atlassian.com/browse/CONFCLOUD-77196)
+- [cli/oauth -- GitHub CLI's OAuth library for Go](https://github.com/cli/oauth)
+- [oauth2cli -- Go OAuth2 CLI helper](https://pkg.go.dev/github.com/int128/oauth2cli)
+- [Confluence REST API v1 -- Template endpoints](https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-template/)
 
 ---
-*Feature research for: Confluence CLI (cf) — AI agent domain*
+*Feature research for: Confluence CLI v1.1 extended capabilities*
 *Researched: 2026-03-20*
