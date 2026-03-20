@@ -287,7 +287,11 @@ func deleteProfileByName(cmd *cobra.Command, name string) error {
 // testConnection performs a GET /wiki/api/v2/spaces?limit=1 against baseURL to verify credentials.
 func testConnection(baseURL, authType, username, token string) error {
 	baseURL = strings.TrimRight(baseURL, "/")
-	testURL := baseURL + "/wiki/api/v2/spaces?limit=1"
+	prefix := "/wiki/api/v2"
+	if strings.HasSuffix(baseURL, prefix) {
+		prefix = ""
+	}
+	testURL := baseURL + prefix + "/spaces?limit=1"
 	req, err := http.NewRequest("GET", testURL, nil)
 	if err != nil {
 		return err
