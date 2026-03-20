@@ -3,6 +3,8 @@ package client
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -456,8 +458,11 @@ func (c *Client) fetchPage(ctx context.Context, method, rawURL, path string) ([]
 
 // cacheAuthContext returns a string that uniquely identifies the auth configuration,
 // so that different profiles/credentials produce different cache keys for the same URL.
+// The token is hashed to avoid keeping raw credentials in memory longer than necessary.
 func (c *Client) cacheAuthContext() string {
-	return c.BaseURL + "\x00" + c.Auth.Type + "\x00" + c.Auth.Username + "\x00" + c.Auth.Token
+	h := sha256.Sum256([]byte(c.Auth.Token))
+	tokenHash := hex.EncodeToString(h[:8]) // 8 bytes is enough to distinguish tokens
+	return c.BaseURL + "\x00" + c.Auth.Type + "\x00" + c.Auth.Username + "\x00" + tokenHash
 }
 
 // VerboseLog writes a structured JSON log entry to stderr when verbose mode is enabled.
@@ -517,11 +522,35 @@ func (c *Client) Fetch(ctx context.Context, method, path string, body io.Reader)
 		apiErr.WriteJSON(c.Stderr)
 		return nil, cferrors.ExitError
 	}
+	// Determine operation name for audit logging.
+	operationName := c.Operation
+	if operationName == "" {
+		operationName = fmt.Sprintf("%s %s", method, path)
+	}
+
 	if resp.StatusCode >= 400 {
 		apiErr := cferrors.NewFromHTTP(resp.StatusCode, strings.TrimSpace(string(respBody)), method, path, resp)
 		apiErr.WriteJSON(c.Stderr)
-		return nil, apiErr.ExitCode()
+		exitCode := apiErr.ExitCode()
+		c.AuditLogger.Log(audit.Entry{
+			Profile:   c.Profile,
+			Operation: operationName,
+			Method:    method,
+			Path:      path,
+			Status:    resp.StatusCode,
+			Exit:      exitCode,
+		})
+		return nil, exitCode
 	}
+
+	c.AuditLogger.Log(audit.Entry{
+		Profile:   c.Profile,
+		Operation: operationName,
+		Method:    method,
+		Path:      path,
+		Status:    resp.StatusCode,
+		Exit:      cferrors.ExitOK,
+	})
 	return respBody, cferrors.ExitOK
 }
 
@@ -553,4 +582,14 @@ func (c *Client) WriteOutput(data []byte) int {
 
 	fmt.Fprintf(c.Stdout, "%s\n", strings.TrimRight(string(data), "\n"))
 	return cferrors.ExitOK
+}
+
+// SearchV1Domain extracts the scheme+host from a BaseURL.
+// BaseURL is "https://domain/wiki/api/v2" in production, so we split on "/wiki/"
+// to get just "https://domain".
+func SearchV1Domain(baseURL string) string {
+	if idx := strings.Index(baseURL, "/wiki/"); idx > 0 {
+		return baseURL[:idx]
+	}
+	return baseURL
 }

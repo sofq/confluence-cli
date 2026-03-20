@@ -233,12 +233,13 @@ func exchangeCode(clientID, clientSecret, code, redirectURI, verifier string) (*
 // and falls back to the full browser-based authorization flow.
 func ThreeLO(clientID, clientSecret, scopes, cloudID string, store *FileStore) (*Token, error) {
 	// 1. Check store for unexpired token.
-	if cached := store.Load(); cached != nil && !cached.Expired(60*time.Second) {
+	cached := store.Load()
+	if cached != nil && !cached.Expired(60*time.Second) {
 		return cached, nil
 	}
 
-	// 2. Try refresh if refresh token exists.
-	if cached := store.Load(); cached != nil && cached.RefreshToken != "" {
+	// 2. Try refresh if refresh token exists (reuse loaded token to avoid TOCTOU).
+	if cached != nil && cached.RefreshToken != "" {
 		tok, err := refreshToken(clientID, clientSecret, cached.RefreshToken, store)
 		if err == nil {
 			return tok, nil

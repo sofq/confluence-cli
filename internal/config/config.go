@@ -110,7 +110,7 @@ func LoadFrom(path string) (*Config, error) {
 // permissions, creating any missing parent directories.
 // Config contains only strings and maps, so json.MarshalIndent cannot fail.
 func SaveTo(cfg *Config, path string) error {
-	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 		return err
 	}
 

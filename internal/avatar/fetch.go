@@ -37,16 +37,6 @@ func StripStorageHTML(s string) string {
 	return strings.Join(strings.Fields(s), " ")
 }
 
-// searchV1Domain extracts the scheme+host from c.BaseURL.
-// c.BaseURL is "https://domain/wiki/api/v2" in production, so we split on "/wiki/"
-// to get just "https://domain".
-func searchV1Domain(baseURL string) string {
-	if idx := strings.Index(baseURL, "/wiki/"); idx > 0 {
-		return baseURL[:idx]
-	}
-	return baseURL
-}
-
 // contentPage is the Confluence v1 content API response structure.
 type contentPage struct {
 	Results []struct {
@@ -75,7 +65,7 @@ func FetchUserPages(c *client.Client, accountID string) ([]PageRecord, error) {
 	cql := fmt.Sprintf(`creator = "%s" AND type = page ORDER BY lastModified DESC`,
 		escapeCQLString(accountID))
 
-	domain := searchV1Domain(c.BaseURL)
+	domain := client.SearchV1Domain(c.BaseURL)
 
 	q := url.Values{}
 	q.Set("cql", cql)
@@ -87,7 +77,7 @@ func FetchUserPages(c *client.Client, accountID string) ([]PageRecord, error) {
 	const maxPages = 200
 
 	for nextURL != "" && len(records) < maxPages {
-		body, err := fetchContentV1(c, nextURL)
+		body, err := fetchContentV1(context.TODO(), c, nextURL)
 		if err != nil {
 			return nil, err
 		}
@@ -125,8 +115,8 @@ func FetchUserPages(c *client.Client, accountID string) ([]PageRecord, error) {
 
 // fetchContentV1 performs a single GET request against a v1 content URL.
 // It applies auth from c and returns the raw response body or an error.
-func fetchContentV1(c *client.Client, fullURL string) ([]byte, error) {
-	req, err := http.NewRequestWithContext(context.Background(), "GET", fullURL, nil)
+func fetchContentV1(ctx context.Context, c *client.Client, fullURL string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", fullURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("avatar: failed to create request: %w", err)
 	}
@@ -141,7 +131,7 @@ func fetchContentV1(c *client.Client, fullURL string) ([]byte, error) {
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 	if err != nil {
 		return nil, fmt.Errorf("avatar: failed to read response body: %w", err)
 	}

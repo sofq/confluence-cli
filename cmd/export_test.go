@@ -24,9 +24,9 @@ func DoPageUpdate(ctx context.Context, c *client.Client, id, title, storageValue
 	return doPageUpdate(ctx, c, id, title, storageValue, versionNumber)
 }
 
-// SearchV1Domain exposes the package-private searchV1Domain helper for tests.
+// SearchV1Domain exposes client.SearchV1Domain for tests.
 func SearchV1Domain(baseURL string) string {
-	return searchV1Domain(baseURL)
+	return client.SearchV1Domain(baseURL)
 }
 
 // ExecuteBatchOps exposes executeBatchOp for direct testing without the full CLI

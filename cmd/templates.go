@@ -3,6 +3,7 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 
@@ -45,8 +46,11 @@ var templates_list = &cobra.Command{
 
 // resolveTemplate loads a template by name, parses --var flags into a map,
 // renders the template, and returns the rendered result. It writes JSON errors
-// to stderr and returns an AlreadyWrittenError on failure.
-func resolveTemplate(templateName string, varFlags []string) (*cftemplate.RenderedTemplate, error) {
+// to w and returns an AlreadyWrittenError on failure.
+func resolveTemplate(w io.Writer, templateName string, varFlags []string) (*cftemplate.RenderedTemplate, error) {
+	if w == nil {
+		w = os.Stderr
+	}
 	varMap := make(map[string]string)
 	for _, v := range varFlags {
 		parts := strings.SplitN(v, "=", 2)
@@ -55,7 +59,7 @@ func resolveTemplate(templateName string, varFlags []string) (*cftemplate.Render
 				ErrorType: "validation_error",
 				Message:   fmt.Sprintf("invalid --var format %q: expected key=value", v),
 			}
-			apiErr.WriteJSON(os.Stderr)
+			apiErr.WriteJSON(w)
 			return nil, &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 		}
 		varMap[parts[0]] = parts[1]
@@ -67,7 +71,7 @@ func resolveTemplate(templateName string, varFlags []string) (*cftemplate.Render
 			ErrorType: "config_error",
 			Message:   "template not found: " + err.Error(),
 		}
-		apiErr.WriteJSON(os.Stderr)
+		apiErr.WriteJSON(w)
 		return nil, &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
 	}
 
@@ -77,7 +81,7 @@ func resolveTemplate(templateName string, varFlags []string) (*cftemplate.Render
 			ErrorType: "validation_error",
 			Message:   "template render failed: " + err.Error(),
 		}
-		apiErr.WriteJSON(os.Stderr)
+		apiErr.WriteJSON(w)
 		return nil, &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 	}
 

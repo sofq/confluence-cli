@@ -139,7 +139,7 @@ var blogposts_workflow_create = &cobra.Command{
 				apiErr.WriteJSON(c.Stderr)
 				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 			}
-			rendered, resolveErr := resolveTemplate(templateName, varFlags)
+			rendered, resolveErr := resolveTemplate(c.Stderr, templateName, varFlags)
 			if resolveErr != nil {
 				return resolveErr
 			}

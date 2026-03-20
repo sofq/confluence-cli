@@ -81,7 +81,7 @@ var attachments_workflow_upload = &cobra.Command{
 		}
 
 		// Construct v1 URL.
-		domain := searchV1Domain(c.BaseURL)
+		domain := client.SearchV1Domain(c.BaseURL)
 		fullURL := domain + "/wiki/rest/api/content/" + url.PathEscape(pageID) + "/child/attachment"
 
 		// DryRun: stat file and emit JSON without making HTTP call.

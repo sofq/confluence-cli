@@ -19,16 +19,6 @@ var searchCmd = &cobra.Command{
 	RunE:  runSearch,
 }
 
-// searchV1Domain extracts the scheme+host from c.BaseURL.
-// c.BaseURL is "https://domain/wiki/api/v2" in production, so we split on "/wiki/api"
-// to get just "https://domain".
-func searchV1Domain(baseURL string) string {
-	if idx := strings.Index(baseURL, "/wiki/"); idx > 0 {
-		return baseURL[:idx]
-	}
-	return baseURL
-}
-
 // fetchV1 performs a single HTTP GET against a v1 URL (full absolute URL).
 // It applies auth from c and writes error JSON to c.Stderr on failure.
 func fetchV1(cmd *cobra.Command, c *client.Client, fullURL string) ([]byte, int) {
@@ -85,7 +75,7 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	// c.BaseURL is "https://domain/wiki/api/v2" in production.
 	// v1 search API is at "https://domain/wiki/rest/api/search".
 	// We extract the domain and build the v1 URL directly.
-	domain := searchV1Domain(c.BaseURL)
+	domain := client.SearchV1Domain(c.BaseURL)
 
 	q := url.Values{}
 	q.Set("cql", cqlQuery)

@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 )
@@ -265,7 +266,7 @@ func TestDiscoverCloudIDMultipleSites(t *testing.T) {
 		t.Fatal("expected error for multiple sites, got nil")
 	}
 	errMsg := err.Error()
-	if !contains(errMsg, "Site One") || !contains(errMsg, "Site Two") {
+	if !strings.Contains(errMsg, "Site One") || !strings.Contains(errMsg, "Site Two") {
 		t.Errorf("error should list site names, got: %s", errMsg)
 	}
 }
@@ -285,7 +286,7 @@ func TestDiscoverCloudIDZeroSites(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error for zero sites, got nil")
 	}
-	if !contains(err.Error(), "no accessible") {
+	if !strings.Contains(err.Error(), "no accessible") {
 		t.Errorf("error = %q, should mention 'no accessible'", err.Error())
 	}
 }
@@ -303,7 +304,7 @@ func TestCallbackTimeout(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected timeout error, got nil")
 	}
-	if !contains(err.Error(), "timed out") {
+	if !strings.Contains(err.Error(), "timed out") {
 		t.Errorf("error = %q, should mention 'timed out'", err.Error())
 	}
 	if elapsed > 2*time.Second {
@@ -327,7 +328,7 @@ func TestCallbackStateMismatch(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected state mismatch error, got nil")
 	}
-	if !contains(err.Error(), "state mismatch") {
+	if !strings.Contains(err.Error(), "state mismatch") {
 		t.Errorf("error = %q, should mention 'state mismatch'", err.Error())
 	}
 }

@@ -83,10 +83,15 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	enc := json.NewEncoder(c.Stdout)
 	enc.SetEscapeHTML(false)
 
-	seen := make(map[string]string) // contentID -> modifiedAt
+	seen := make(map[string]time.Time) // contentID -> modifiedAt (parsed)
 
 	// Initial poll immediately.
-	pollAndEmit(ctx, cmd, c, cqlQuery, seen, enc)
+	consecutiveErrors := 0
+	if err := pollAndEmit(ctx, cmd, c, cqlQuery, seen, enc); err != nil {
+		consecutiveErrors++
+	} else {
+		consecutiveErrors = 0
+	}
 
 	// If max-polls is set and we've done enough, emit shutdown and return.
 	if maxPolls > 0 && maxPolls <= 1 {
@@ -97,6 +102,7 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	ticker := time.NewTicker(interval)
 	defer ticker.Stop()
 
+	const maxConsecutiveErrors = 5
 	pollsDone := 1
 	for {
 		select {
@@ -104,7 +110,15 @@ func runWatch(cmd *cobra.Command, args []string) error {
 			_ = enc.Encode(map[string]string{"type": "shutdown"})
 			return nil
 		case <-ticker.C:
-			pollAndEmit(ctx, cmd, c, cqlQuery, seen, enc)
+			if err := pollAndEmit(ctx, cmd, c, cqlQuery, seen, enc); err != nil {
+				consecutiveErrors++
+				if consecutiveErrors >= maxConsecutiveErrors {
+					_ = enc.Encode(map[string]any{"type": "error", "message": fmt.Sprintf("stopping after %d consecutive poll failures", maxConsecutiveErrors)})
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
+				}
+			} else {
+				consecutiveErrors = 0
+			}
 			pollsDone++
 			if maxPolls > 0 && pollsDone >= maxPolls {
 				_ = enc.Encode(map[string]string{"type": "shutdown"})
@@ -115,10 +129,11 @@ func runWatch(cmd *cobra.Command, args []string) error {
 }
 
 // pollAndEmit performs a single CQL search poll and emits NDJSON change events
-// for any content that has been modified since last seen.
-func pollAndEmit(ctx context.Context, cmd *cobra.Command, c *client.Client, cqlQuery string, seen map[string]string, enc *json.Encoder) {
+// for any content that has been modified since last seen. Returns an error if
+// the poll failed (errors are also written to stderr).
+func pollAndEmit(ctx context.Context, cmd *cobra.Command, c *client.Client, cqlQuery string, seen map[string]time.Time, enc *json.Encoder) error {
 	fullCQL := buildWatchCQL(cqlQuery, seen)
-	domain := searchV1Domain(c.BaseURL)
+	domain := client.SearchV1Domain(c.BaseURL)
 
 	q := url.Values{}
 	q.Set("cql", fullCQL)
@@ -130,30 +145,30 @@ func pollAndEmit(ctx context.Context, cmd *cobra.Command, c *client.Client, cqlQ
 	for nextURL != "" && pageCount < 5 {
 		body, code := fetchV1(cmd, c, nextURL)
 		if code != cferrors.ExitOK {
-			// Check if shutdown caused the error.
 			if ctx.Err() != nil {
-				return
+				return ctx.Err()
 			}
-			// Real error already written to stderr by fetchV1. Continue on next interval.
-			return
+			return fmt.Errorf("poll failed with exit code %d", code)
 		}
 
 		var page watchSearchResponse
 		if err := json.Unmarshal(body, &page); err != nil {
 			apiErr := &cferrors.APIError{ErrorType: "connection_error", Message: "failed to parse search response: " + err.Error()}
 			apiErr.WriteJSON(c.Stderr)
-			return
+			return fmt.Errorf("parse error: %w", err)
 		}
 
 		for _, result := range page.Results {
 			contentID := result.Content.ID
-			modifiedAt := result.Content.Version.When
-			if modifiedAt == "" {
-				modifiedAt = result.LastModified
+			modifiedAtStr := result.Content.Version.When
+			if modifiedAtStr == "" {
+				modifiedAtStr = result.LastModified
 			}
 
+			modifiedAt := parseTimestamp(modifiedAtStr)
+
 			// Dedup: skip if already seen with same or newer timestamp.
-			if prev, ok := seen[contentID]; ok && prev >= modifiedAt {
+			if prev, ok := seen[contentID]; ok && !modifiedAt.After(prev) {
 				continue
 			}
 			seen[contentID] = modifiedAt
@@ -165,7 +180,7 @@ func pollAndEmit(ctx context.Context, cmd *cobra.Command, c *client.Client, cqlQ
 				Title:       result.Content.Title,
 				SpaceID:     result.Content.Space.ID.String(),
 				Modifier:    result.Content.Version.By.DisplayName,
-				ModifiedAt:  modifiedAt,
+				ModifiedAt:  modifiedAtStr,
 			}
 			_ = enc.Encode(event)
 		}
@@ -184,25 +199,43 @@ func pollAndEmit(ctx context.Context, cmd *cobra.Command, c *client.Client, cqlQ
 	}
 
 	// Prune seen entries older than 48 hours to prevent unbounded growth.
-	pruneThreshold := time.Now().UTC().Add(-48 * time.Hour).Format(time.RFC3339)
+	pruneThreshold := time.Now().UTC().Add(-48 * time.Hour)
 	for id, ts := range seen {
-		if ts < pruneThreshold {
+		if ts.Before(pruneThreshold) {
 			delete(seen, id)
 		}
 	}
+
+	return nil
+}
+
+// parseTimestamp parses a Confluence timestamp (RFC3339 or with milliseconds).
+// Returns the current time as fallback if parsing fails entirely.
+func parseTimestamp(s string) time.Time {
+	formats := []string{
+		time.RFC3339,
+		"2006-01-02T15:04:05.999Z07:00",
+		"2006-01-02T15:04:05.000Z",
+		"2006-01-02T15:04:05Z",
+	}
+	for _, f := range formats {
+		if t, err := time.Parse(f, s); err == nil {
+			return t
+		}
+	}
+	return time.Now()
 }
 
 // buildWatchCQL combines the user's CQL query with a lastModified date filter
-// and ORDER BY clause.
-func buildWatchCQL(userCQL string, seen map[string]string) string {
-	var dateFilter string
-	if len(seen) == 0 {
-		// First poll: look back 1 day.
-		dateFilter = time.Now().UTC().Add(-24 * time.Hour).Format("2006-01-02")
-	} else {
-		// Subsequent polls: use today's date.
-		dateFilter = time.Now().UTC().Format("2006-01-02")
-	}
+// and ORDER BY clause. Always uses a 1-day lookback because CQL lastModified
+// only supports date granularity (not time). The seen map handles dedup for
+// content already emitted.
+// Note: userCQL is wrapped in parentheses but not escaped — it is trusted
+// user input from the --cql flag.
+func buildWatchCQL(userCQL string, seen map[string]time.Time) string {
+	// Always look back 1 day to avoid missing changes near midnight UTC.
+	// The seen map (with proper timestamp comparison) prevents duplicate emissions.
+	dateFilter := time.Now().UTC().Add(-24 * time.Hour).Format("2006-01-02")
 	return fmt.Sprintf("(%s) AND lastModified >= \"%s\" ORDER BY lastModified DESC", userCQL, dateFilter)
 }
 

@@ -64,6 +64,9 @@ func List() ([]string, error) {
 // Load reads and parses the template file for the given name.
 // Looks for {Dir()}/{name}.json.
 func Load(name string) (*Template, error) {
+	if strings.ContainsAny(name, "/\\") {
+		return nil, fmt.Errorf("template name must not contain path separators")
+	}
 	path := filepath.Join(Dir(), name+".json")
 	data, err := os.ReadFile(path)
 	if err != nil {

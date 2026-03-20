@@ -143,7 +143,7 @@ var labels_add = &cobra.Command{
 		encoded, _ := json.Marshal(items)
 
 		// v1 API: c.BaseURL is "https://domain/wiki/api/v2", extract domain.
-		domain := searchV1Domain(c.BaseURL)
+		domain := client.SearchV1Domain(c.BaseURL)
 		fullURL := domain + fmt.Sprintf("/wiki/rest/api/content/%s/label", url.PathEscape(pageID))
 
 		respBody, code := fetchV1WithBody(cmd, c, "POST", fullURL, bytes.NewReader(encoded))
@@ -179,7 +179,7 @@ var labels_remove = &cobra.Command{
 		}
 
 		// v1 API: extract domain from c.BaseURL.
-		domain := searchV1Domain(c.BaseURL)
+		domain := client.SearchV1Domain(c.BaseURL)
 		fullURL := domain + fmt.Sprintf("/wiki/rest/api/content/%s/label?name=%s",
 			url.PathEscape(pageID), url.QueryEscape(labelName))
 
