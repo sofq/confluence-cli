@@ -5,6 +5,7 @@ package cmd
 import (
 	"context"
 
+	"github.com/sofq/confluence-cli/cmd/generated"
 	"github.com/sofq/confluence-cli/internal/client"
 )
 
@@ -26,6 +27,24 @@ func DoPageUpdate(ctx context.Context, c *client.Client, id, title, storageValue
 // SearchV1Domain exposes the package-private searchV1Domain helper for tests.
 func SearchV1Domain(baseURL string) string {
 	return searchV1Domain(baseURL)
+}
+
+// ExecuteBatchOps exposes executeBatchOp for direct testing without the full CLI
+// entrypoint. It builds the opMap from generated.AllSchemaOps() and executes each
+// op using a background context and the provided client.
+func ExecuteBatchOps(c *client.Client, ops []BatchOp) []BatchResult {
+	allOps := generated.AllSchemaOps()
+	opMap := make(map[string]generated.SchemaOp, len(allOps))
+	for _, op := range allOps {
+		key := op.Resource + " " + op.Verb
+		opMap[key] = op
+	}
+	ctx := context.Background()
+	results := make([]BatchResult, len(ops))
+	for i, bop := range ops {
+		results[i] = executeBatchOp(ctx, c, i, bop, opMap)
+	}
+	return results
 }
 
 // LabelsAddValidation validates the inputs for the labels add command without
