@@ -45,7 +45,7 @@ Give AI agents and automation reliable, structured access to Confluence content 
 - [x] Blog post CRUD operations — v1.1 Phase 7
 - [x] Attachment upload and management — v1.1 Phase 8
 - [x] Custom content type operations — v1.1 Phase 9
-- [ ] Watch command for polling content changes (NDJSON events)
+- [x] Watch command for polling content changes (NDJSON events) — v1.1 Phase 11
 - [x] Output presets (named JQ + fields combinations) — v1.1 Phase 10
 - [x] Template system for content creation — v1.1 Phase 10
 
@@ -97,4 +97,4 @@ Give AI agents and automation reliable, structured access to Confluence content 
 | AI agent as primary user | Drives design toward structured JSON output, semantic exit codes | — Pending |
 
 ---
-*Last updated: 2026-03-20 after Phase 10 completion*
+*Last updated: 2026-03-20 after Phase 11 completion — v1.1 milestone complete*
