@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 03-pages-spaces-search-comments-and-labels/03-02-PLAN.md
-last_updated: "2026-03-20T03:11:19.366Z"
+stopped_at: Completed 03-pages-spaces-search-comments-and-labels/03-03-PLAN.md
+last_updated: "2026-03-20T03:11:29.000Z"
 progress:
   total_phases: 5
   completed_phases: 2
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 03 (pages-spaces-search-comments-and-labels) — EXECUTING
-Plan: 2 of 4
+Plan: 3 of 4
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Plan: 2 of 4
 | Phase 02-code-generation-pipeline P03 | 3 | 2 tasks | 29 files |
 | Phase 03-pages-spaces-search-comments-and-labels P01 | 3 | 2 tasks | 1 files |
 | Phase 03-pages-spaces-search-comments-and-labels P02 | 2 | 2 tasks | 3 files |
+| Phase 03-pages-spaces-search-comments-and-labels P03 | 4 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -91,6 +92,9 @@ Recent decisions affecting current work:
 - [Phase 03-pages-spaces-search-comments-and-labels]: get-by-id always injects body-format=storage query param; user can override with explicit --body-format flag
 - [Phase 03-pages-spaces-search-comments-and-labels]: init() in cmd/pages.go does NOT call mergeCommand or rootCmd.AddCommand — Plan 04 handles that wiring
 - [Phase 03-pages-spaces-search-comments-and-labels]: resolveSpaceID: numeric pass-through via strconv.ParseInt, alpha keys resolved via GET /spaces?keys=<KEY>; no rootCmd.AddCommand in spaces.go (Plan 04 wires via mergeCommand)
+- [Phase 03-pages-spaces-search-comments-and-labels P03]: c.BaseURL is "https://domain/wiki/api/v2" (includes v2 prefix) — v1 paths need domain extraction via strings.Index(baseURL, "/wiki/")
+- [Phase 03-pages-spaces-search-comments-and-labels P03]: v1 API calls (search, label add/remove) use direct net/http + c.ApplyAuth() to avoid URL doubling from c.Fetch() prepending c.BaseURL
+- [Phase 03-pages-spaces-search-comments-and-labels P03]: searchV1Domain() extracts scheme+host from c.BaseURL; reused by both search.go and labels.go
 
 ### Pending Todos
 
@@ -104,6 +108,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T03:11:19.364Z
-Stopped at: Completed 03-pages-spaces-search-comments-and-labels/03-02-PLAN.md
+Last session: 2026-03-20T03:11:29.000Z
+Stopped at: Completed 03-pages-spaces-search-comments-and-labels/03-03-PLAN.md
 Resume file: None

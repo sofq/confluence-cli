@@ -47,21 +47,21 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Search
 
-- [ ] **SRCH-01**: User can search content via CQL with `cf search --cql "<query>"`
-- [ ] **SRCH-02**: Search results are automatically paginated and merged
-- [ ] **SRCH-03**: Search handles long cursor strings without 413 errors
+- [x] **SRCH-01**: User can search content via CQL with `cf search --cql "<query>"`
+- [x] **SRCH-02**: Search results are automatically paginated and merged
+- [x] **SRCH-03**: Search handles long cursor strings without 413 errors
 
 ### Comments
 
-- [ ] **CMNT-01**: User can list comments on a page
-- [ ] **CMNT-02**: User can create a comment on a page (storage format body)
-- [ ] **CMNT-03**: User can delete a comment
+- [x] **CMNT-01**: User can list comments on a page
+- [x] **CMNT-02**: User can create a comment on a page (storage format body)
+- [x] **CMNT-03**: User can delete a comment
 
 ### Labels
 
-- [ ] **LABL-01**: User can list labels on content
-- [ ] **LABL-02**: User can add labels to content
-- [ ] **LABL-03**: User can remove labels from content
+- [x] **LABL-01**: User can list labels on content
+- [x] **LABL-02**: User can add labels to content
+- [x] **LABL-03**: User can remove labels from content
 
 ### Governance
 
@@ -141,15 +141,15 @@ Requirements for initial release. Each maps to roadmap phases.
 | SPCE-01 | Phase 3 | Complete |
 | SPCE-02 | Phase 3 | Complete |
 | SPCE-03 | Phase 3 | Complete |
-| SRCH-01 | Phase 3 | Pending |
-| SRCH-02 | Phase 3 | Pending |
-| SRCH-03 | Phase 3 | Pending |
-| CMNT-01 | Phase 3 | Pending |
-| CMNT-02 | Phase 3 | Pending |
-| CMNT-03 | Phase 3 | Pending |
-| LABL-01 | Phase 3 | Pending |
-| LABL-02 | Phase 3 | Pending |
-| LABL-03 | Phase 3 | Pending |
+| SRCH-01 | Phase 3 | Complete |
+| SRCH-02 | Phase 3 | Complete |
+| SRCH-03 | Phase 3 | Complete |
+| CMNT-01 | Phase 3 | Complete |
+| CMNT-02 | Phase 3 | Complete |
+| CMNT-03 | Phase 3 | Complete |
+| LABL-01 | Phase 3 | Complete |
+| LABL-02 | Phase 3 | Complete |
+| LABL-03 | Phase 3 | Complete |
 | GOVN-01 | Phase 4 | Pending |
 | GOVN-02 | Phase 4 | Pending |
 | GOVN-03 | Phase 4 | Pending |
