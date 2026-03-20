@@ -87,10 +87,10 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 
 ### Enhanced Auth
 
-- [ ] **AUTH-01**: User can authenticate via OAuth2 client credentials grant (2LO) for machine-to-machine access
+- [x] **AUTH-01**: User can authenticate via OAuth2 client credentials grant (2LO) for machine-to-machine access
 - [ ] **AUTH-02**: User can authenticate via OAuth2 authorization code grant (3LO) with PKCE via browser flow
 - [ ] **AUTH-03**: CLI automatically refreshes expired OAuth2 access tokens before API calls
-- [ ] **AUTH-04**: OAuth2 tokens are stored securely per profile in separate token files with 0600 permissions
+- [x] **AUTH-04**: OAuth2 tokens are stored securely per profile in separate token files with 0600 permissions
 
 ### Blog Posts
 
@@ -188,10 +188,10 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 | BTCH-03 | Phase 4 | Complete |
 | AVTR-01 | Phase 5 | Complete |
 | AVTR-02 | Phase 5 | Complete |
-| AUTH-01 | Phase 6 | Pending |
+| AUTH-01 | Phase 6 | Complete |
 | AUTH-02 | Phase 6 | Pending |
 | AUTH-03 | Phase 6 | Pending |
-| AUTH-04 | Phase 6 | Pending |
+| AUTH-04 | Phase 6 | Complete |
 | BLOG-01 | Phase 7 | Pending |
 | BLOG-02 | Phase 7 | Pending |
 | BLOG-03 | Phase 7 | Pending |

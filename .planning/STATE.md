@@ -2,14 +2,14 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Extended Capabilities
-status: ready_to_plan
-stopped_at: "Roadmap created for v1.1"
-last_updated: "2026-03-20T13:00:00.000Z"
+status: unknown
+stopped_at: Completed 06-01-PLAN.md (OAuth2 client credentials)
+last_updated: "2026-03-20T08:18:24.346Z"
 progress:
   total_phases: 6
   completed_phases: 0
-  total_plans: 0
-  completed_plans: 0
+  total_plans: 2
+  completed_plans: 1
 ---
 
 # Project State
@@ -19,31 +19,29 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 6 — OAuth2 Authentication
+**Current focus:** Phase 06 — oauth2-authentication
 
 ## Current Position
 
-Phase: 6 of 11 (OAuth2 Authentication) — first phase of v1.1
-Plan: —
-Status: Ready to plan
-Last activity: 2026-03-20 — v1.1 roadmap created (6 phases, 23 requirements mapped)
-
-Progress: [░░░░░░░░░░] 0%
+Phase: 06 (oauth2-authentication) — EXECUTING
+Current Plan: 2 of 2
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 0 (v1.1)
-- Average duration: -
-- Total execution time: 0 hours
+
+- Total plans completed: 1 (v1.1)
+- Average duration: 6min
+- Total execution time: 0.1 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| - | - | - | - |
+| 06-oauth2 | 1/2 | 6min | 6min |
 
 **Recent Trend (from v1.0):**
+
 - Last 5 plans: 5m, 6m, 10m, 4m, 18m
 - Trend: Variable (avatar analysis was outlier at 18m)
 
@@ -62,6 +60,9 @@ Recent decisions affecting current work:
 - [v1.1 research]: OAuth2 tokens stored separately from config.json (per-profile token files)
 - [v1.1 research]: Attachment upload uses v1 API fallback (no v2 upload endpoint)
 - [v1.1 research]: Zero new Go dependencies — all v1.1 features use stdlib only
+- [v1.1 06-01]: No TokenURL config field -- Atlassian single fixed endpoint as constant
+- [v1.1 06-01]: OAuth2 resolves to bearer before Client construction -- downstream unaware
+- [v1.1 06-01]: Token files use atomic write (temp + rename) for crash safety
 
 ### Pending Todos
 
@@ -75,5 +76,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-03-20
-Stopped at: v1.1 roadmap created, ready to plan Phase 6
+Stopped at: Completed 06-01-PLAN.md (OAuth2 client credentials)
 Resume file: None
