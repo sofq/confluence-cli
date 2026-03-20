@@ -1,16 +1,14 @@
 # Roadmap: Confluence CLI (`cf`)
 
-## Overview
+## Milestones
 
-Build `cf`, a Go CLI that exposes the full Confluence Cloud v2 REST API as shell commands, optimized for AI agent consumption. The project mirrors the existing `jr` (Jira CLI) architecture exactly: a core HTTP client and config layer (Phase 1), then an OpenAPI code-generation pipeline that produces all Cobra commands from the spec (Phase 2), then hand-written workflow wrappers for the primary resources — pages, spaces, search, comments, and labels (Phase 3), and finally governance and agent-optimization features including operation policy, audit logging, caching, and batch execution (Phase 4). The Avatar analysis capability ships as a standalone Phase 5.
+- ✅ **v1.0 Core CLI** - Phases 1-5 (shipped 2026-03-20)
+- 🚧 **v1.1 Extended Capabilities** - Phases 6-11 (in progress)
 
 ## Phases
 
-**Phase Numbering:**
-- Integer phases (1, 2, 3): Planned milestone work
-- Decimal phases (2.1, 2.2): Urgent insertions (marked with INSERTED)
-
-Decimal phases appear between their surrounding integers in numeric order.
+<details>
+<summary>✅ v1.0 Core CLI (Phases 1-5) - SHIPPED 2026-03-20</summary>
 
 - [x] **Phase 1: Core Scaffolding** - HTTP client, config profiles, auth, and the pure JSON output contract (completed 2026-03-20)
 - [x] **Phase 2: Code Generation Pipeline** - OpenAPI spec parser/generator producing all Cobra commands (completed 2026-03-20)
@@ -18,98 +16,159 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 4: Governance and Agent Optimization** - Operation policy, audit logging, response caching, and batch execution (completed 2026-03-20)
 - [x] **Phase 5: Avatar Analysis** - AI-ready writing style analysis from Confluence user content (completed 2026-03-20)
 
-## Phase Details
-
 ### Phase 1: Core Scaffolding
-**Goal**: AI agents and users can authenticate and make raw API calls, with all infrastructure guarantees (pure JSON stdout, structured JSON errors, semantic exit codes, JQ filtering, dry-run, verbose, pagination, caching, `cf raw`, `cf schema`, `cf --version`) in place.
+**Goal**: AI agents and users can authenticate and make raw API calls, with all infrastructure guarantees in place.
 **Depends on**: Nothing (first phase)
 **Requirements**: INFRA-01, INFRA-02, INFRA-03, INFRA-04, INFRA-05, INFRA-06, INFRA-07, INFRA-08, INFRA-09, INFRA-10, INFRA-11, INFRA-12, INFRA-13
-**Success Criteria** (what must be TRUE):
-  1. `cf configure` creates a profile with base URL, auth type, and credentials; `cf --profile <name>` or `CF_PROFILE` selects it
-  2. `cf raw GET /wiki/api/v2/pages` returns a pure JSON response to stdout and any error as structured JSON to stderr with a non-zero semantic exit code
-  3. Any command output can be filtered in-process with `--jq '.results[].title'` and the result is valid JSON
-  4. `cf raw GET /wiki/api/v2/pages --dry-run` prints the request that would be made without executing it
-  5. `cf --version` outputs version info as JSON and `cf schema` outputs the command tree and parameter schemas as JSON
 **Plans**: 4 plans
 
 Plans:
-- [x] 01-01-PLAN.md — Go module scaffold, internal packages (errors, config, jq, cache, generated stub)
-- [x] 01-02-PLAN.md — HTTP client with cursor-based pagination
-- [x] 01-03-PLAN.md — Cobra commands (root, configure, raw, version, schema)
-- [x] 01-04-PLAN.md — Test suite for all Phase 1 packages and commands (completed 2026-03-20)
+- [x] 01-01: Go module scaffold, internal packages
+- [x] 01-02: HTTP client with cursor-based pagination
+- [x] 01-03: Cobra commands (root, configure, raw, version, schema)
+- [x] 01-04: Test suite for all Phase 1 packages and commands
 
 ### Phase 2: Code Generation Pipeline
-**Goal**: The `gen/` pipeline reads `spec/confluence-v2.json` and produces `cmd/generated/` with a complete, compilable Cobra command tree covering all OpenAPI operations; generated commands can be overridden by hand-written wrappers.
+**Goal**: The gen/ pipeline reads the OpenAPI spec and produces all Cobra commands; generated commands can be overridden by hand-written wrappers.
 **Depends on**: Phase 1
 **Requirements**: CGEN-01, CGEN-02, CGEN-03, CGEN-04, CGEN-05
-**Success Criteria** (what must be TRUE):
-  1. Running `make generate` against the pinned spec produces `cmd/generated/*.go` files that compile without errors
-  2. Each generated command includes all path, query, and body parameters from the OpenAPI spec as Cobra flags
-  3. Commands are grouped by OpenAPI resource tag (pages, spaces, search, etc.) under corresponding subcommands
-  4. A hand-written workflow command registered via `mergeCommand` replaces the generated command for the same operation without build errors
 **Plans**: 3 plans
 
 Plans:
-- [x] 02-01-PLAN.md — Download spec, add libopenapi dependency, document spec gaps
-- [x] 02-02-PLAN.md — gen/ core: parser, grouper, generator, templates, unit tests
-- [ ] 02-03-PLAN.md — gen/main.go, conformance tests, make generate, commit generated output
+- [x] 02-01: Download spec, add libopenapi, document spec gaps
+- [x] 02-02: gen/ core: parser, grouper, generator, templates, unit tests
+- [x] 02-03: gen/main.go, conformance tests, make generate
 
 ### Phase 3: Pages, Spaces, Search, Comments, and Labels
-**Goal**: AI agents can perform all primary Confluence content operations — finding spaces, discovering pages via CQL, reading page bodies, creating and updating pages, managing comments and labels — with all Confluence v2 API edge cases handled correctly.
+**Goal**: AI agents can perform all primary Confluence content operations with all v2 API edge cases handled.
 **Depends on**: Phase 2
 **Requirements**: PAGE-01, PAGE-02, PAGE-03, PAGE-04, PAGE-05, SPCE-01, SPCE-02, SPCE-03, SRCH-01, SRCH-02, SRCH-03, CMNT-01, CMNT-02, CMNT-03, LABL-01, LABL-02, LABL-03
-**Success Criteria** (what must be TRUE):
-  1. `cf pages get <id>` returns a JSON response that includes a non-empty `body.storage.value` field
-  2. `cf pages update <id> --title "New Title"` succeeds even when run back-to-back without manually tracking version numbers (optimistic locking handled internally)
-  3. `cf search --cql "space = ENG AND type = page"` paginates through all results and returns a merged JSON array, including pages beyond the first cursor
-  4. `cf spaces list --key ENG` resolves the space key to a numeric ID and returns space details without a 404
-  5. `cf comments list --page-id <id>` and `cf labels list --content-id <id>` return JSON arrays; add and delete operations exit 0 on success
 **Plans**: 4 plans
 
 Plans:
-- [ ] 03-01-PLAN.md — cmd/pages.go: get-by-id (body-format=storage), create, update (version auto-increment + 409 retry), delete, list
-- [ ] 03-02-PLAN.md — cmd/spaces.go: resolveSpaceID helper, list and get-by-id with key resolution
-- [ ] 03-03-PLAN.md — cmd/search.go (CQL + manual v1 pagination), cmd/comments.go, cmd/labels.go (v1 add/remove)
-- [ ] 03-04-PLAN.md — Wire all commands into cmd/root.go + unit tests for all five workflow files
+- [x] 03-01: cmd/pages.go CRUD
+- [x] 03-02: cmd/spaces.go with key resolution
+- [x] 03-03: cmd/search.go, cmd/comments.go, cmd/labels.go
+- [x] 03-04: Wire all commands + unit tests
 
 ### Phase 4: Governance and Agent Optimization
-**Goal**: Production deployments of AI agents using `cf` can enforce operation policies, maintain an audit trail, reduce API quota consumption through caching, and execute multi-step workflows atomically via batch.
+**Goal**: Production deployments can enforce operation policies, maintain audit trails, and execute multi-step workflows via batch.
 **Depends on**: Phase 3
 **Requirements**: GOVN-01, GOVN-02, GOVN-03, GOVN-04, BTCH-01, BTCH-02, BTCH-03
-**Success Criteria** (what must be TRUE):
-  1. A profile with `allow: ["pages:read", "spaces:read"]` rejects a `cf pages create` call before the HTTP request is made, including in `--dry-run` mode, and exits with code 4
-  2. Every API call appended to the NDJSON audit log includes timestamp, profile, operation, method, path, and response status
-  3. `cf pages get <id> --cache 300` on a second invocation within the TTL returns the cached response without making an HTTP request
-  4. `cf batch --input ops.json` executes all operations and returns a JSON array with per-operation exit codes and data/error, continuing past individual failures
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01-PLAN.md — internal/policy and internal/audit packages; extend config.Profile and client.Client
-- [ ] 04-02-PLAN.md — Wire policy and audit into cmd/root.go; --audit flag; integration tests
-- [ ] 04-03-PLAN.md — cmd/batch.go command with full test suite
+- [x] 04-01: internal/policy and internal/audit packages
+- [x] 04-02: Wire policy and audit into cmd/root.go
+- [x] 04-03: cmd/batch.go command with test suite
 
 ### Phase 5: Avatar Analysis
-**Goal**: AI agents can obtain a structured JSON persona profile derived from a Confluence user's writing history for downstream use in content generation or style matching.
+**Goal**: AI agents can obtain structured JSON persona profiles from Confluence user writing history.
 **Depends on**: Phase 3
 **Requirements**: AVTR-01, AVTR-02
-**Success Criteria** (what must be TRUE):
-  1. `cf avatar analyze --user <accountId>` fetches the user's pages via CQL and outputs a structured JSON persona profile without error
-  2. The persona profile JSON contains fields consumable by an AI agent (e.g., tone, vocabulary level, structural patterns) without requiring post-processing
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — internal/avatar/ package: types, fetch (CQL + HTML strip), analyze_writing, build_profile
-- [ ] 05-02-PLAN.md — cmd/avatar.go analyze subcommand + wire into root.go + tests
+- [x] 05-01: internal/avatar/ package
+- [x] 05-02: cmd/avatar.go analyze subcommand + tests
+
+</details>
+
+### 🚧 v1.1 Extended Capabilities (In Progress)
+
+**Milestone Goal:** Add OAuth2 authentication, content type coverage (blogs, attachments, custom types), and advanced agent features (watch, output presets, content templates).
+
+- [ ] **Phase 6: OAuth2 Authentication** - Client credentials and browser-based OAuth2 with automatic token refresh
+- [ ] **Phase 7: Blog Posts** - Full CRUD for blog posts mirroring the pages pattern
+- [ ] **Phase 8: Attachments** - Attachment listing, metadata, upload (v1 API), and deletion
+- [ ] **Phase 9: Custom Content** - CRUD for custom content types via v2 API
+- [ ] **Phase 10: Output Presets and Templates** - Named output presets and content template system
+- [ ] **Phase 11: Watch** - Long-running content change polling with NDJSON event streaming
+
+## Phase Details
+
+### Phase 6: OAuth2 Authentication
+**Goal**: Users and service accounts can authenticate via OAuth2 (both machine-to-machine and interactive browser flow), with tokens managed transparently across sessions.
+**Depends on**: Phase 5 (v1.0 complete)
+**Requirements**: AUTH-01, AUTH-02, AUTH-03, AUTH-04
+**Success Criteria** (what must be TRUE):
+  1. `cf configure --auth-type oauth2` accepts client ID and client secret, and subsequent API calls authenticate via client credentials grant without user interaction
+  2. `cf configure --auth-type oauth2-3lo` initiates a browser-based authorization flow with PKCE, and the resulting tokens enable API access
+  3. An expired OAuth2 access token is automatically refreshed before the API call executes, without user intervention or visible errors
+  4. OAuth2 tokens are stored in `~/.config/cf/tokens/{profile}.json` with 0600 file permissions, separate from the main config file
+**Plans**: TBD
+
+### Phase 7: Blog Posts
+**Goal**: AI agents can perform full CRUD operations on Confluence blog posts with the same reliability as pages.
+**Depends on**: Phase 6
+**Requirements**: BLOG-01, BLOG-02, BLOG-03, BLOG-04, BLOG-05
+**Success Criteria** (what must be TRUE):
+  1. `cf blogposts list --space-id <id>` returns a paginated JSON array of blog posts in the space
+  2. `cf blogposts get <id>` returns a JSON response with `body.storage.value` containing the blog post content
+  3. `cf blogposts create --space-id <id> --title "Post" --body "<p>content</p>"` creates a blog post and returns its JSON representation
+  4. `cf blogposts update <id> --title "New Title"` succeeds with automatic version increment (same optimistic locking as pages)
+  5. `cf blogposts delete <id>` soft-deletes the blog post and exits 0
+**Plans**: TBD
+
+### Phase 8: Attachments
+**Goal**: Users can discover, inspect, upload, and remove file attachments on Confluence content.
+**Depends on**: Phase 7
+**Requirements**: ATCH-01, ATCH-02, ATCH-03, ATCH-04
+**Success Criteria** (what must be TRUE):
+  1. `cf attachments list --page-id <id>` returns a paginated JSON array of attachments on the content
+  2. `cf attachments get <id>` returns attachment metadata as JSON (file name, media type, size, download link)
+  3. `cf attachments upload --page-id <id> --file ./report.pdf` uploads the file via multipart/form-data (v1 API) and returns the attachment JSON
+  4. `cf attachments delete <id>` removes the attachment and exits 0
+**Plans**: TBD
+
+### Phase 9: Custom Content
+**Goal**: Users can manage custom content types (from Connect and Forge apps) through the same CRUD pattern as pages and blog posts.
+**Depends on**: Phase 7
+**Requirements**: CUST-01, CUST-02, CUST-03, CUST-04
+**Success Criteria** (what must be TRUE):
+  1. `cf custom-content list --type "ac:app:type"` returns a paginated JSON array of custom content of that type
+  2. `cf custom-content create --type "ac:app:type" --title "Item" --body "<ac:...>"` creates custom content and returns its JSON representation
+  3. `cf custom-content update <id>` updates the custom content with automatic version increment
+  4. `cf custom-content delete <id>` removes the custom content and exits 0
+**Plans**: TBD
+
+### Phase 10: Output Presets and Templates
+**Goal**: Users can save and reuse output formatting configurations and create content from reusable templates with variable substitution.
+**Depends on**: Phase 6
+**Requirements**: PRST-01, PRST-02, TMPL-01, TMPL-02
+**Success Criteria** (what must be TRUE):
+  1. User can define a named preset in profile config with a JQ expression and fields list, and it persists across sessions
+  2. `cf pages list --preset brief` applies the preset's JQ expression to the output, producing the configured subset of fields
+  3. `cf templates list` shows available content templates from `~/.config/cf/templates/`
+  4. `cf pages create --template meeting-notes --var "date=2026-03-20" --var "attendees=Alice,Bob"` creates a page with the template's storage format body and variables substituted
+**Plans**: TBD
+
+### Phase 11: Watch
+**Goal**: AI agents can reactively monitor Confluence content for changes via a long-running polling command that emits structured NDJSON events.
+**Depends on**: Phase 7
+**Requirements**: WTCH-01, WTCH-02
+**Success Criteria** (what must be TRUE):
+  1. `cf watch --cql "space = ENG" --interval 60` polls for content changes and emits one NDJSON line per detected change to stdout, each containing the content ID, type, title, modifier, and timestamp
+  2. Pressing Ctrl+C (SIGINT) or sending SIGTERM causes the watch command to emit a `{"type":"shutdown"}` event and exit cleanly without partial JSON lines or leaked connections
+**Plans**: TBD
 
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
+Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
 
-| Phase | Plans Complete | Status | Completed |
-|-------|----------------|--------|-----------|
-| 1. Core Scaffolding | 4/4 | Complete    | 2026-03-20 |
-| 2. Code Generation Pipeline | 2/3 | Complete    | 2026-03-20 |
-| 3. Pages, Spaces, Search, Comments, and Labels | 3/4 | Complete    | 2026-03-20 |
-| 4. Governance and Agent Optimization | 3/3 | Complete    | 2026-03-20 |
-| 5. Avatar Analysis | 1/2 | Complete    | 2026-03-20 |
+Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can execute in parallel after Phase 7 completes, since they have no mutual dependency. Phase 8 and 9 both depend on Phase 7 but not on each other.
+
+| Phase | Milestone | Plans Complete | Status | Completed |
+|-------|-----------|----------------|--------|-----------|
+| 1. Core Scaffolding | v1.0 | 4/4 | Complete | 2026-03-20 |
+| 2. Code Generation Pipeline | v1.0 | 3/3 | Complete | 2026-03-20 |
+| 3. Pages, Spaces, Search, Comments, and Labels | v1.0 | 4/4 | Complete | 2026-03-20 |
+| 4. Governance and Agent Optimization | v1.0 | 3/3 | Complete | 2026-03-20 |
+| 5. Avatar Analysis | v1.0 | 2/2 | Complete | 2026-03-20 |
+| 6. OAuth2 Authentication | v1.1 | 0/? | Not started | - |
+| 7. Blog Posts | v1.1 | 0/? | Not started | - |
+| 8. Attachments | v1.1 | 0/? | Not started | - |
+| 9. Custom Content | v1.1 | 0/? | Not started | - |
+| 10. Output Presets and Templates | v1.1 | 0/? | Not started | - |
+| 11. Watch | v1.1 | 0/? | Not started | - |

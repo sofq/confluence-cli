@@ -2,11 +2,11 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Extended Capabilities
-status: planning
-stopped_at: ""
-last_updated: "2026-03-20T12:00:00.000Z"
+status: ready_to_plan
+stopped_at: "Roadmap created for v1.1"
+last_updated: "2026-03-20T13:00:00.000Z"
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
@@ -19,20 +19,21 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Defining requirements for v1.1
+**Current focus:** Phase 6 — OAuth2 Authentication
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+Phase: 6 of 11 (OAuth2 Authentication) — first phase of v1.1
 Plan: —
-Status: Defining requirements
-Last activity: 2026-03-20 — Milestone v1.1 started
+Status: Ready to plan
+Last activity: 2026-03-20 — v1.1 roadmap created (6 phases, 23 requirements mapped)
+
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-
-- Total plans completed: 0
+- Total plans completed: 0 (v1.1)
 - Average duration: -
 - Total execution time: 0 hours
 
@@ -42,28 +43,9 @@ Last activity: 2026-03-20 — Milestone v1.1 started
 |-------|-------|-------|----------|
 | - | - | - | - |
 
-**Recent Trend:**
-
-- Last 5 plans: -
-- Trend: -
-
-*Updated after each plan completion*
-| Phase 01-core-scaffolding P01 | 5 | 2 tasks | 13 files |
-| Phase 01-core-scaffolding P02 | 5 | 1 tasks | 1 files |
-| Phase 01-core-scaffolding P03 | 5 | 2 tasks | 5 files |
-| Phase 01-core-scaffolding P04 | 5 | 2 tasks | 9 files |
-| Phase 02-code-generation-pipeline P01 | 4 | 2 tasks | 4 files |
-| Phase 02-code-generation-pipeline P02 | 9 | 2 tasks | 10 files |
-| Phase 02-code-generation-pipeline P03 | 3 | 2 tasks | 29 files |
-| Phase 03-pages-spaces-search-comments-and-labels P01 | 3 | 2 tasks | 1 files |
-| Phase 03-pages-spaces-search-comments-and-labels P02 | 2 | 2 tasks | 3 files |
-| Phase 03-pages-spaces-search-comments-and-labels P03 | 4 | 2 tasks | 3 files |
-| Phase 03-pages-spaces-search-comments-and-labels P04 | 9 | 2 tasks | 6 files |
-| Phase 04-governance-and-agent-optimization P01 | 5 | 2 tasks | 6 files |
-| Phase 04-governance-and-agent-optimization P03 | 6 | 2 tasks | 3 files |
-| Phase 04-governance-and-agent-optimization P02 | 10 | 2 tasks | 2 files |
-| Phase 05-avatar-analysis PP01 | 4 | 2 tasks | 7 files |
-| Phase 05-avatar-analysis P02 | 18 | 2 tasks | 4 files |
+**Recent Trend (from v1.0):**
+- Last 5 plans: 5m, 6m, 10m, 4m, 18m
+- Trend: Variable (avatar analysis was outlier at 18m)
 
 ## Accumulated Context
 
@@ -72,51 +54,14 @@ Last activity: 2026-03-20 — Milestone v1.1 started
 Decisions are logged in PROJECT.md Key Decisions table.
 Recent decisions affecting current work:
 
-- [Init]: Mirror `jr` architecture exactly — stack, patterns, and component boundaries copied directly
-- [Init]: Raw Confluence storage format only, no Markdown conversion — agents handle raw format
-- [Init]: Confluence v2 API only — cleaner API, no legacy v1 support (raw command covers one-off v1 calls)
-- [Init]: AI agent as primary user — drives pure JSON stdout, semantic exit codes, JQ filtering on all output
-- [Phase 01-core-scaffolding]: oauth2 auth type removed from Phase 1 validAuthTypes — basic + bearer only, Phase 4 deferred
-- [Phase 01-core-scaffolding]: cmd/root.go stub required for go mod tidy (main.go imports cmd package, cannot resolve locally without it)
-- [Phase 01-core-scaffolding]: CF_PROFILE env var precedence: overrides config default_profile but is overridden by --profile flag
-- [Phase 01-core-scaffolding]: encoding/json indent used for pretty-print instead of tidwall/pretty to avoid adding external dependency
-- [Phase 01-core-scaffolding]: oauth2 removed from ApplyAuth in client.go — Phase 1 supports only basic + bearer per INFRA-05
-- [Phase 01-core-scaffolding]: Phase 4 fields (AuditLogger, Policy, Operation, Profile) excluded from Client struct — clean phase boundary
-- [Phase 01-core-scaffolding P03]: Version variable declared in cmd/root.go (not version.go) — avoids undefined reference across package init order
-- [Phase 01-core-scaffolding P03]: configure testConnection uses /wiki/api/v2/spaces?limit=1 (Confluence v2) not /rest/api/3/myself (Jira)
-- [Phase 01-core-scaffolding P03]: schemaOutput uses encoding/json Indent for pretty-print (no tidwall/pretty dependency needed)
-- [Phase 01-core-scaffolding]: External test packages (_test suffix) used for all test files to ensure public API coverage
-- [Phase 01-core-scaffolding]: Cache tests use unique URL-based keys with t.Name() to avoid sync.Once Dir() cross-test pollution
-- [Phase 01-core-scaffolding]: Cobra flag state isolation handled by explicit --profile flags in configure tests rather than flag resets
-- [Phase 02-code-generation-pipeline]: libopenapi v0.34.3 added as indirect dep — go mod tidy skipped until gen/ package imports it in Plan 02
-- [Phase 02-code-generation-pipeline]: spec/confluence-v2.json pinned locally from dac-static.atlassian.com (596KB, 212 ops) — generator reads at build time not runtime
-- [Phase 02-code-generation-pipeline]: Five Confluence v2 API gaps documented in SPEC_GAPS.md: no attachment upload (v1-only), deprecated getChildPages, 18 EAP ops, array params as string flags, embeds undocumented
-- [Phase 02-code-generation-pipeline P02]: ExtractResource uses first non-param path segment for Confluence v2 paths (no /rest/api/3/ prefix)
-- [Phase 02-code-generation-pipeline P02]: gen/main.go included in Task 1 because generator.go is required for package compilation
-- [Phase 02-code-generation-pipeline P02]: TestGenerateResource verb adapted to get-by-id (DeriveVerb strips Page prefix from getPageById against pages resource)
-- [Phase 02-code-generation-pipeline]: Generated cmd/generated/ files committed to repo so go build works without make generate
-- [Phase 02-code-generation-pipeline]: TestConformance_GeneratedCodeMatchesSpec compares byte-for-byte to catch spec drift
-- [Phase 03-pages-spaces-search-comments-and-labels]: pages_workflow_list uses Use: 'get' to match generated subcommand name for mergeCommand override
-- [Phase 03-pages-spaces-search-comments-and-labels]: get-by-id always injects body-format=storage query param; user can override with explicit --body-format flag
-- [Phase 03-pages-spaces-search-comments-and-labels]: init() in cmd/pages.go does NOT call mergeCommand or rootCmd.AddCommand — Plan 04 handles that wiring
-- [Phase 03-pages-spaces-search-comments-and-labels]: resolveSpaceID: numeric pass-through via strconv.ParseInt, alpha keys resolved via GET /spaces?keys=<KEY>; no rootCmd.AddCommand in spaces.go (Plan 04 wires via mergeCommand)
-- [Phase 03-pages-spaces-search-comments-and-labels P03]: c.BaseURL is "https://domain/wiki/api/v2" (includes v2 prefix) — v1 paths need domain extraction via strings.Index(baseURL, "/wiki/")
-- [Phase 03-pages-spaces-search-comments-and-labels P03]: v1 API calls (search, label add/remove) use direct net/http + c.ApplyAuth() to avoid URL doubling from c.Fetch() prepending c.BaseURL
-- [Phase 03-pages-spaces-search-comments-and-labels P03]: searchV1Domain() extracts scheme+host from c.BaseURL; reused by both search.go and labels.go
-- [Phase 03-pages-spaces-search-comments-and-labels P04]: Cobra singleton flag state: tests using cmd.RootCommand() must pass explicit flag values (e.g. --cql "", --label "") to avoid cross-test contamination from prior test runs
-- [Phase 03-pages-spaces-search-comments-and-labels P04]: Labels "missing label" validation tested via exported LabelsAddValidation helper (StringSlice flags accumulate across cobra singleton reuse)
-- [Phase 03-pages-spaces-search-comments-and-labels P04]: v1 API test clients set CF_BASE_URL=srv.URL+/wiki/api/v2 so searchV1Domain() correctly extracts domain prefix
-- [Phase 04-governance-and-agent-optimization]: Policy uses path.Match standard library glob — no external deps
-- [Phase 04-governance-and-agent-optimization]: Policy.Check called BEFORE DryRun block in Do() so dry-run also enforces policy (GOVN-02)
-- [Phase 04-governance-and-agent-optimization]: doOnce() signature extended with operationName parameter for audit log entries
-- [Phase 04-governance-and-agent-optimization]: executeBatchOp takes context.Context directly (not *cobra.Command) so it can be tested without Cobra overhead
-- [Phase 04-governance-and-agent-optimization]: ExecuteBatchOps exported via export_test.go to enable direct policy testing without requiring PersistentPreRunE wiring
-- [Phase 04-governance-and-agent-optimization]: PersistentPostRun added to rootCmd for audit logger Close() — safe via nil receiver check
-- [Phase 04-governance-and-agent-optimization]: cobra singleton dry-run flag leaking across tests fixed by passing --dry-run=false explicitly in audit test
-- [Phase 05-avatar-analysis]: StripStorageHTML uses regexp + html.UnescapeString (no external HTML parser) for minimal dependencies
-- [Phase 05-avatar-analysis]: FetchUserPages uses v1 content API with CQL, page length thresholds page-appropriate (short<=100, long>=500 words)
-- [Phase 05-avatar-analysis]: avatarCmd registered via rootCmd.AddCommand (not mergeCommand) because no generated avatar command exists
-- [Phase 05-avatar-analysis]: Cobra singleton flag contamination: TestAvatarAnalyze_MissingUser passes --user '' explicitly to reset flag between test runs
+- [v1.0]: Mirror `jr` architecture exactly — stack, patterns, and component boundaries
+- [v1.0]: Raw Confluence storage format only, no Markdown conversion
+- [v1.0]: Confluence v2 API only (raw command covers one-off v1 calls)
+- [v1.0]: AI agent as primary user — pure JSON stdout, semantic exit codes
+- [v1.0]: c.BaseURL includes `/wiki/api/v2` — v1 paths need domain extraction
+- [v1.1 research]: OAuth2 tokens stored separately from config.json (per-profile token files)
+- [v1.1 research]: Attachment upload uses v1 API fallback (no v2 upload endpoint)
+- [v1.1 research]: Zero new Go dependencies — all v1.1 features use stdlib only
 
 ### Pending Todos
 
@@ -124,12 +69,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Pre-Phase 2]: libopenapi v0.34.3 API shape against the actual Confluence spec needs a spike before committing to generator templates
-- [Pre-Phase 3]: Attachment write operations are v1-only in the Confluence v2 API — decision needed during Phase 3 planning (implement v1 special case or defer and document in SPEC_GAPS.md)
-- [All phases]: Binary name `cf` collides with Cloud Foundry CLI in some CI environments — document explicitly; no code change required
+- [Pre-Phase 8]: SiteRoot() method needed before v1 attachment upload — URL prefix doubling bug (commit a6e99ef)
+- [Phase 11]: Atlassian rate limit point costs per endpoint not published — watch interval needs empirical validation
 
 ## Session Continuity
 
-Last session: 2026-03-20T04:19:41.844Z
-Stopped at: Completed 05-avatar-analysis/05-02-PLAN.md
+Last session: 2026-03-20
+Stopped at: v1.1 roadmap created, ready to plan Phase 6
 Resume file: None

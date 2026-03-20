@@ -133,7 +133,7 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 
 | Feature | Reason |
 |---------|--------|
-| Markdown ↔ Storage Format conversion | Lossless round-tripping not achievable; agents handle raw format |
+| Markdown <-> Storage Format conversion | Lossless round-tripping not achievable; agents handle raw format |
 | Confluence v1 API support | Legacy, being deprecated; `raw` command covers one-off v1 calls |
 | Interactive TUI / prompts | Breaks agent invocation; process hangs on stdin |
 | Content rendering / HTML preview | Agents consume structured data, not rendered HTML |
@@ -188,17 +188,40 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 | BTCH-03 | Phase 4 | Complete |
 | AVTR-01 | Phase 5 | Complete |
 | AVTR-02 | Phase 5 | Complete |
+| AUTH-01 | Phase 6 | Pending |
+| AUTH-02 | Phase 6 | Pending |
+| AUTH-03 | Phase 6 | Pending |
+| AUTH-04 | Phase 6 | Pending |
+| BLOG-01 | Phase 7 | Pending |
+| BLOG-02 | Phase 7 | Pending |
+| BLOG-03 | Phase 7 | Pending |
+| BLOG-04 | Phase 7 | Pending |
+| BLOG-05 | Phase 7 | Pending |
+| ATCH-01 | Phase 8 | Pending |
+| ATCH-02 | Phase 8 | Pending |
+| ATCH-03 | Phase 8 | Pending |
+| ATCH-04 | Phase 8 | Pending |
+| CUST-01 | Phase 9 | Pending |
+| CUST-02 | Phase 9 | Pending |
+| CUST-03 | Phase 9 | Pending |
+| CUST-04 | Phase 9 | Pending |
+| PRST-01 | Phase 10 | Pending |
+| PRST-02 | Phase 10 | Pending |
+| TMPL-01 | Phase 10 | Pending |
+| TMPL-02 | Phase 10 | Pending |
+| WTCH-01 | Phase 11 | Pending |
+| WTCH-02 | Phase 11 | Pending |
 
 **Coverage (v1.0):**
 - v1.0 requirements: 42 total
 - Mapped to phases: 42
-- Unmapped: 0 ✓
+- Unmapped: 0
 
 **Coverage (v1.1):**
-- v1.1 requirements: 22 total
-- Mapped to phases: 0 ⚠️ (awaiting roadmap)
-- Unmapped: 22
+- v1.1 requirements: 23 total
+- Mapped to phases: 23
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-20*
-*Last updated: 2026-03-20 after milestone v1.1 requirements definition*
+*Last updated: 2026-03-20 after v1.1 roadmap creation*
