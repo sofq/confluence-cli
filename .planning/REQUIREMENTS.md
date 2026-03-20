@@ -41,9 +41,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Spaces
 
-- [ ] **SPCE-01**: User can list all spaces with pagination
-- [ ] **SPCE-02**: User can get space details by ID
-- [ ] **SPCE-03**: CLI transparently resolves space keys to numeric IDs where needed
+- [x] **SPCE-01**: User can list all spaces with pagination
+- [x] **SPCE-02**: User can get space details by ID
+- [x] **SPCE-03**: CLI transparently resolves space keys to numeric IDs where needed
 
 ### Search
 
@@ -138,9 +138,9 @@ Requirements for initial release. Each maps to roadmap phases.
 | PAGE-03 | Phase 3 | Complete |
 | PAGE-04 | Phase 3 | Complete |
 | PAGE-05 | Phase 3 | Complete |
-| SPCE-01 | Phase 3 | Pending |
-| SPCE-02 | Phase 3 | Pending |
-| SPCE-03 | Phase 3 | Pending |
+| SPCE-01 | Phase 3 | Complete |
+| SPCE-02 | Phase 3 | Complete |
+| SPCE-03 | Phase 3 | Complete |
 | SRCH-01 | Phase 3 | Pending |
 | SRCH-02 | Phase 3 | Pending |
 | SRCH-03 | Phase 3 | Pending |
