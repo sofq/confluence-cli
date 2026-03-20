@@ -28,7 +28,7 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **CGEN-01**: CLI auto-generates Cobra commands from Confluence v2 OpenAPI spec
 - [x] **CGEN-02**: Generator groups operations by resource (pages, spaces, search, etc.)
 - [x] **CGEN-03**: Generated commands include all path/query/body parameters from spec
-- [ ] **CGEN-04**: Hand-written workflow commands can override generated commands via `mergeCommand`
+- [x] **CGEN-04**: Hand-written workflow commands can override generated commands via `mergeCommand`
 - [x] **CGEN-05**: Spec is pinned locally at `spec/confluence-v2.json` with known gaps documented
 
 ### Pages
@@ -131,7 +131,7 @@ Requirements for initial release. Each maps to roadmap phases.
 | CGEN-01 | Phase 2 | Complete |
 | CGEN-02 | Phase 2 | Complete |
 | CGEN-03 | Phase 2 | Complete |
-| CGEN-04 | Phase 2 | Pending |
+| CGEN-04 | Phase 2 | Complete |
 | CGEN-05 | Phase 2 | Complete |
 | PAGE-01 | Phase 3 | Pending |
 | PAGE-02 | Phase 3 | Pending |

@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-code-generation-pipeline/02-02-PLAN.md
-last_updated: "2026-03-20T03:00:00.000Z"
+stopped_at: Completed 02-code-generation-pipeline/02-03-PLAN.md
+last_updated: "2026-03-20T02:46:28.195Z"
 progress:
   total_phases: 5
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 7
-  completed_plans: 6
+  completed_plans: 7
 ---
 
 # Project State
@@ -52,6 +52,7 @@ Plan: 2 of 3
 | Phase 01-core-scaffolding P04 | 5 | 2 tasks | 9 files |
 | Phase 02-code-generation-pipeline P01 | 4 | 2 tasks | 4 files |
 | Phase 02-code-generation-pipeline P02 | 9 | 2 tasks | 10 files |
+| Phase 02-code-generation-pipeline P03 | 3 | 2 tasks | 29 files |
 
 ## Accumulated Context
 
@@ -82,6 +83,8 @@ Recent decisions affecting current work:
 - [Phase 02-code-generation-pipeline P02]: ExtractResource uses first non-param path segment for Confluence v2 paths (no /rest/api/3/ prefix)
 - [Phase 02-code-generation-pipeline P02]: gen/main.go included in Task 1 because generator.go is required for package compilation
 - [Phase 02-code-generation-pipeline P02]: TestGenerateResource verb adapted to get-by-id (DeriveVerb strips Page prefix from getPageById against pages resource)
+- [Phase 02-code-generation-pipeline]: Generated cmd/generated/ files committed to repo so go build works without make generate
+- [Phase 02-code-generation-pipeline]: TestConformance_GeneratedCodeMatchesSpec compares byte-for-byte to catch spec drift
 
 ### Pending Todos
 
@@ -95,6 +98,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T03:00:00.000Z
-Stopped at: Completed 02-code-generation-pipeline/02-02-PLAN.md
+Last session: 2026-03-20T02:46:28.193Z
+Stopped at: Completed 02-code-generation-pipeline/02-03-PLAN.md
 Resume file: None
