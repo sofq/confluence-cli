@@ -44,7 +44,7 @@ Give AI agents and automation reliable, structured access to Confluence content 
 - [x] Secure per-profile token storage (0600 perms) — v1.1 Phase 6
 - [x] Blog post CRUD operations — v1.1 Phase 7
 - [x] Attachment upload and management — v1.1 Phase 8
-- [ ] Custom content type operations
+- [x] Custom content type operations — v1.1 Phase 9
 - [ ] Watch command for polling content changes (NDJSON events)
 - [ ] Output presets (named JQ + fields combinations)
 - [ ] Template system for content creation
@@ -97,4 +97,4 @@ Give AI agents and automation reliable, structured access to Confluence content 
 | AI agent as primary user | Drives design toward structured JSON output, semantic exit codes | — Pending |
 
 ---
-*Last updated: 2026-03-20 after Phase 8 completion*
+*Last updated: 2026-03-20 after Phase 9 completion*
