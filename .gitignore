@@ -1,0 +1,6 @@
+# Build output
+cf
+*.test
+
+# Claude Code state
+.claude/
