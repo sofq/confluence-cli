@@ -74,7 +74,7 @@ Plans:
 
 </details>
 
-### 🚧 v1.1 Extended Capabilities (In Progress)
+### v1.1 Extended Capabilities (In Progress)
 
 **Milestone Goal:** Add OAuth2 authentication, content type coverage (blogs, attachments, custom types), and advanced agent features (watch, output presets, content templates).
 
@@ -96,7 +96,11 @@ Plans:
   2. `cf configure --auth-type oauth2-3lo` initiates a browser-based authorization flow with PKCE, and the resulting tokens enable API access
   3. An expired OAuth2 access token is automatically refreshed before the API call executes, without user intervention or visible errors
   4. OAuth2 tokens are stored in `~/.config/cf/tokens/{profile}.json` with 0600 file permissions, separate from the main config file
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 06-01-PLAN.md -- Config schema + token store + OAuth2 client credentials (2LO)
+- [ ] 06-02-PLAN.md -- 3LO browser flow with PKCE + automatic token refresh
 
 ### Phase 7: Blog Posts
 **Goal**: AI agents can perform full CRUD operations on Confluence blog posts with the same reliability as pages.
@@ -155,7 +159,7 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 6 → 7 → 8 → 9 → 10 → 11
+Phases execute in numeric order: 6 -> 7 -> 8 -> 9 -> 10 -> 11
 
 Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can execute in parallel after Phase 7 completes, since they have no mutual dependency. Phase 8 and 9 both depend on Phase 7 but not on each other.
 
@@ -166,7 +170,7 @@ Note: Phase 9 (Custom Content) and Phase 10 (Output Presets and Templates) can e
 | 3. Pages, Spaces, Search, Comments, and Labels | v1.0 | 4/4 | Complete | 2026-03-20 |
 | 4. Governance and Agent Optimization | v1.0 | 3/3 | Complete | 2026-03-20 |
 | 5. Avatar Analysis | v1.0 | 2/2 | Complete | 2026-03-20 |
-| 6. OAuth2 Authentication | v1.1 | 0/? | Not started | - |
+| 6. OAuth2 Authentication | v1.1 | 0/2 | In Progress | - |
 | 7. Blog Posts | v1.1 | 0/? | Not started | - |
 | 8. Attachments | v1.1 | 0/? | Not started | - |
 | 9. Custom Content | v1.1 | 0/? | Not started | - |
