@@ -17,9 +17,13 @@ var goos = runtime.GOOS
 
 // AuthConfig holds authentication credentials for a profile.
 type AuthConfig struct {
-	Type     string `json:"type"`
-	Username string `json:"username,omitempty"`
-	Token    string `json:"token,omitempty"`
+	Type         string `json:"type"`
+	Username     string `json:"username,omitempty"`
+	Token        string `json:"token,omitempty"`
+	ClientID     string `json:"client_id,omitempty"`
+	ClientSecret string `json:"client_secret,omitempty"`
+	Scopes       string `json:"scopes,omitempty"`
+	CloudID      string `json:"cloud_id,omitempty"`
 }
 
 // Profile holds the configuration for a named Confluence instance.
@@ -40,10 +44,13 @@ type Config struct {
 // FlagOverrides carries values supplied via CLI flags. Empty string means
 // "not set by flag".
 type FlagOverrides struct {
-	BaseURL  string
-	AuthType string
-	Username string
-	Token    string
+	BaseURL      string
+	AuthType     string
+	Username     string
+	Token        string
+	ClientID     string
+	ClientSecret string
+	CloudID      string
 }
 
 // ResolvedConfig is the final, merged configuration ready for use.
@@ -124,8 +131,10 @@ func availableProfiles(cfg *Config) string {
 }
 
 // validAuthTypes is the set of accepted authentication types.
-// Phase 1 supports only basic and bearer; oauth2 is deferred to Phase 4.
-var validAuthTypes = map[string]bool{"basic": true, "bearer": true}
+var validAuthTypes = map[string]bool{
+	"basic": true, "bearer": true,
+	"oauth2": true, "oauth2-3lo": true,
+}
 
 // ValidAuthType reports whether s is a recognized authentication type (case-insensitive).
 func ValidAuthType(s string) bool {
@@ -160,11 +169,16 @@ func Resolve(configPath, profileName string, flags *FlagOverrides) (*ResolvedCon
 	}
 
 	var fileBaseURL, fileAuthType, fileUsername, fileToken string
+	var fileClientID, fileClientSecret, fileScopes, fileCloudID string
 	if p, ok := cfg.Profiles[name]; ok {
 		fileBaseURL = p.BaseURL
 		fileAuthType = p.Auth.Type
 		fileUsername = p.Auth.Username
 		fileToken = p.Auth.Token
+		fileClientID = p.Auth.ClientID
+		fileClientSecret = p.Auth.ClientSecret
+		fileScopes = p.Auth.Scopes
+		fileCloudID = p.Auth.CloudID
 	} else if profileName != "" {
 		// Explicit --profile that doesn't exist should give a clear error.
 		return nil, fmt.Errorf("profile %q not found; available profiles: %s", name, availableProfiles(cfg))
@@ -175,6 +189,9 @@ func Resolve(configPath, profileName string, flags *FlagOverrides) (*ResolvedCon
 	envAuthType := os.Getenv("CF_AUTH_TYPE")
 	envUsername := os.Getenv("CF_AUTH_USER")
 	envToken := os.Getenv("CF_AUTH_TOKEN")
+	envClientID := os.Getenv("CF_AUTH_CLIENT_ID")
+	envClientSecret := os.Getenv("CF_AUTH_CLIENT_SECRET")
+	envCloudID := os.Getenv("CF_AUTH_CLOUD_ID")
 
 	// 3. Merge: start with file values, then layer env vars.
 	baseURL := fileBaseURL
@@ -197,6 +214,23 @@ func Resolve(configPath, profileName string, flags *FlagOverrides) (*ResolvedCon
 		token = envToken
 	}
 
+	clientID := fileClientID
+	if envClientID != "" {
+		clientID = envClientID
+	}
+
+	clientSecret := fileClientSecret
+	if envClientSecret != "" {
+		clientSecret = envClientSecret
+	}
+
+	scopes := fileScopes
+
+	cloudID := fileCloudID
+	if envCloudID != "" {
+		cloudID = envCloudID
+	}
+
 	// 4. CLI flags (highest priority).
 	if flags != nil {
 		if flags.BaseURL != "" {
@@ -211,6 +245,15 @@ func Resolve(configPath, profileName string, flags *FlagOverrides) (*ResolvedCon
 		if flags.Token != "" {
 			token = flags.Token
 		}
+		if flags.ClientID != "" {
+			clientID = flags.ClientID
+		}
+		if flags.ClientSecret != "" {
+			clientSecret = flags.ClientSecret
+		}
+		if flags.CloudID != "" {
+			cloudID = flags.CloudID
+		}
 	}
 
 	// 5. Apply defaults.
@@ -220,9 +263,22 @@ func Resolve(configPath, profileName string, flags *FlagOverrides) (*ResolvedCon
 
 	// 6. Validate auth type.
 	if !ValidAuthType(authType) {
-		return nil, fmt.Errorf("invalid auth type %q; must be one of: basic, bearer", authType)
+		return nil, fmt.Errorf("invalid auth type %q; must be one of: basic, bearer, oauth2, oauth2-3lo", authType)
 	}
 	authType = strings.ToLower(authType)
+
+	// 6b. Validate OAuth2 required fields.
+	if authType == "oauth2" || authType == "oauth2-3lo" {
+		if clientID == "" {
+			return nil, fmt.Errorf("auth type %q requires client_id; set via config, CF_AUTH_CLIENT_ID, or --client-id flag", authType)
+		}
+		if clientSecret == "" {
+			return nil, fmt.Errorf("auth type %q requires client_secret; set via config, CF_AUTH_CLIENT_SECRET, or --client-secret flag", authType)
+		}
+		if cloudID == "" && authType == "oauth2" {
+			return nil, fmt.Errorf("auth type %q requires cloud_id; set via config, CF_AUTH_CLOUD_ID, or --cloud-id flag", authType)
+		}
+	}
 
 	// 7. Trim trailing slash from BaseURL.
 	baseURL = strings.TrimRight(baseURL, "/")
@@ -230,10 +286,36 @@ func Resolve(configPath, profileName string, flags *FlagOverrides) (*ResolvedCon
 	return &ResolvedConfig{
 		BaseURL: baseURL,
 		Auth: AuthConfig{
-			Type:     authType,
-			Username: username,
-			Token:    token,
+			Type:         authType,
+			Username:     username,
+			Token:        token,
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			Scopes:       scopes,
+			CloudID:      cloudID,
 		},
 		ProfileName: name,
 	}, nil
+}
+
+// TokenDir returns the OS-appropriate directory for storing OAuth2 token files.
+func TokenDir() string {
+	if v := os.Getenv("CF_TOKEN_DIR"); v != "" {
+		return v
+	}
+	switch goos {
+	case "darwin":
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, "Library", "Application Support", "cf", "tokens")
+	case "windows":
+		appdata := os.Getenv("APPDATA")
+		if appdata == "" {
+			home, _ := os.UserHomeDir()
+			return filepath.Join(home, "AppData", "Roaming", "cf", "tokens")
+		}
+		return filepath.Join(appdata, "cf", "tokens")
+	default:
+		home, _ := os.UserHomeDir()
+		return filepath.Join(home, ".config", "cf", "tokens")
+	}
 }

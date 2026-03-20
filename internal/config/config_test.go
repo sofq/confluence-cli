@@ -1,7 +1,10 @@
 package config_test
 
 import (
+	"encoding/json"
+	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -251,5 +254,282 @@ func TestResolveEmptyBaseURL(t *testing.T) {
 	}
 	if resolved.BaseURL != "" {
 		t.Errorf("BaseURL should be empty for unconfigured instance, got: %q", resolved.BaseURL)
+	}
+}
+
+func TestValidAuthTypeOAuth2(t *testing.T) {
+	tests := []struct {
+		input string
+		want  bool
+	}{
+		{"oauth2", true},
+		{"oauth2-3lo", true},
+		{"OAuth2", true},
+		{"basic", true},
+		{"bearer", true},
+		{"invalid", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.input, func(t *testing.T) {
+			if got := config.ValidAuthType(tt.input); got != tt.want {
+				t.Errorf("ValidAuthType(%q) = %v, want %v", tt.input, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestResolveOAuth2FromProfile(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+
+	cfg := &config.Config{
+		DefaultProfile: "oauth",
+		Profiles: map[string]config.Profile{
+			"oauth": {
+				BaseURL: "https://mysite.atlassian.net",
+				Auth: config.AuthConfig{
+					Type:         "oauth2",
+					ClientID:     "file-client-id",
+					ClientSecret: "file-client-secret",
+					CloudID:      "file-cloud-id",
+					Scopes:       "read:confluence-content.all",
+				},
+			},
+		},
+	}
+	if err := config.SaveTo(cfg, path); err != nil {
+		t.Fatalf("SaveTo failed: %v", err)
+	}
+
+	t.Setenv("CF_PROFILE", "")
+	t.Setenv("CF_BASE_URL", "")
+	t.Setenv("CF_AUTH_TYPE", "")
+	t.Setenv("CF_AUTH_TOKEN", "")
+	t.Setenv("CF_AUTH_USER", "")
+	t.Setenv("CF_AUTH_CLIENT_ID", "")
+	t.Setenv("CF_AUTH_CLIENT_SECRET", "")
+	t.Setenv("CF_AUTH_CLOUD_ID", "")
+
+	resolved, err := config.Resolve(path, "", nil)
+	if err != nil {
+		t.Fatalf("Resolve failed: %v", err)
+	}
+	if resolved.Auth.ClientID != "file-client-id" {
+		t.Errorf("ClientID = %q, want %q", resolved.Auth.ClientID, "file-client-id")
+	}
+	if resolved.Auth.ClientSecret != "file-client-secret" {
+		t.Errorf("ClientSecret = %q, want %q", resolved.Auth.ClientSecret, "file-client-secret")
+	}
+	if resolved.Auth.CloudID != "file-cloud-id" {
+		t.Errorf("CloudID = %q, want %q", resolved.Auth.CloudID, "file-cloud-id")
+	}
+	if resolved.Auth.Scopes != "read:confluence-content.all" {
+		t.Errorf("Scopes = %q, want %q", resolved.Auth.Scopes, "read:confluence-content.all")
+	}
+}
+
+func TestResolveOAuth2EnvOverrides(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+
+	cfg := &config.Config{
+		DefaultProfile: "oauth",
+		Profiles: map[string]config.Profile{
+			"oauth": {
+				BaseURL: "https://mysite.atlassian.net",
+				Auth: config.AuthConfig{
+					Type:         "oauth2",
+					ClientID:     "file-client-id",
+					ClientSecret: "file-client-secret",
+					CloudID:      "file-cloud-id",
+				},
+			},
+		},
+	}
+	if err := config.SaveTo(cfg, path); err != nil {
+		t.Fatalf("SaveTo failed: %v", err)
+	}
+
+	t.Setenv("CF_PROFILE", "")
+	t.Setenv("CF_BASE_URL", "")
+	t.Setenv("CF_AUTH_TYPE", "")
+	t.Setenv("CF_AUTH_TOKEN", "")
+	t.Setenv("CF_AUTH_USER", "")
+	t.Setenv("CF_AUTH_CLIENT_ID", "env-client-id")
+	t.Setenv("CF_AUTH_CLIENT_SECRET", "env-client-secret")
+	t.Setenv("CF_AUTH_CLOUD_ID", "env-cloud-id")
+
+	resolved, err := config.Resolve(path, "", nil)
+	if err != nil {
+		t.Fatalf("Resolve failed: %v", err)
+	}
+	if resolved.Auth.ClientID != "env-client-id" {
+		t.Errorf("ClientID = %q, want env override %q", resolved.Auth.ClientID, "env-client-id")
+	}
+	if resolved.Auth.ClientSecret != "env-client-secret" {
+		t.Errorf("ClientSecret = %q, want env override", resolved.Auth.ClientSecret)
+	}
+	if resolved.Auth.CloudID != "env-cloud-id" {
+		t.Errorf("CloudID = %q, want env override", resolved.Auth.CloudID)
+	}
+}
+
+func TestResolveOAuth2FlagOverrides(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+
+	cfg := &config.Config{
+		DefaultProfile: "oauth",
+		Profiles: map[string]config.Profile{
+			"oauth": {
+				BaseURL: "https://mysite.atlassian.net",
+				Auth: config.AuthConfig{
+					Type:         "oauth2",
+					ClientID:     "file-client-id",
+					ClientSecret: "file-client-secret",
+					CloudID:      "file-cloud-id",
+				},
+			},
+		},
+	}
+	if err := config.SaveTo(cfg, path); err != nil {
+		t.Fatalf("SaveTo failed: %v", err)
+	}
+
+	t.Setenv("CF_PROFILE", "")
+	t.Setenv("CF_BASE_URL", "")
+	t.Setenv("CF_AUTH_TYPE", "")
+	t.Setenv("CF_AUTH_TOKEN", "")
+	t.Setenv("CF_AUTH_USER", "")
+	t.Setenv("CF_AUTH_CLIENT_ID", "env-client-id")
+	t.Setenv("CF_AUTH_CLIENT_SECRET", "")
+	t.Setenv("CF_AUTH_CLOUD_ID", "")
+
+	flags := &config.FlagOverrides{
+		ClientID:     "flag-client-id",
+		ClientSecret: "flag-client-secret",
+		CloudID:      "flag-cloud-id",
+	}
+
+	resolved, err := config.Resolve(path, "", flags)
+	if err != nil {
+		t.Fatalf("Resolve failed: %v", err)
+	}
+	if resolved.Auth.ClientID != "flag-client-id" {
+		t.Errorf("ClientID = %q, want flag override %q", resolved.Auth.ClientID, "flag-client-id")
+	}
+	if resolved.Auth.ClientSecret != "flag-client-secret" {
+		t.Errorf("ClientSecret = %q, want flag override", resolved.Auth.ClientSecret)
+	}
+	if resolved.Auth.CloudID != "flag-cloud-id" {
+		t.Errorf("CloudID = %q, want flag override", resolved.Auth.CloudID)
+	}
+}
+
+func TestResolveOAuth2MissingClientID(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "config.json")
+
+	cfg := &config.Config{
+		DefaultProfile: "oauth",
+		Profiles: map[string]config.Profile{
+			"oauth": {
+				BaseURL: "https://mysite.atlassian.net",
+				Auth: config.AuthConfig{
+					Type:         "oauth2",
+					ClientSecret: "secret",
+					CloudID:      "cloud",
+				},
+			},
+		},
+	}
+	if err := config.SaveTo(cfg, path); err != nil {
+		t.Fatalf("SaveTo failed: %v", err)
+	}
+
+	t.Setenv("CF_PROFILE", "")
+	t.Setenv("CF_BASE_URL", "")
+	t.Setenv("CF_AUTH_TYPE", "")
+	t.Setenv("CF_AUTH_TOKEN", "")
+	t.Setenv("CF_AUTH_USER", "")
+	t.Setenv("CF_AUTH_CLIENT_ID", "")
+	t.Setenv("CF_AUTH_CLIENT_SECRET", "")
+	t.Setenv("CF_AUTH_CLOUD_ID", "")
+
+	_, err := config.Resolve(path, "", nil)
+	if err == nil {
+		t.Fatal("expected error for missing client_id, got nil")
+	}
+	if !strings.Contains(err.Error(), "client_id") {
+		t.Errorf("error should mention client_id, got: %v", err)
+	}
+}
+
+func TestTokenDir(t *testing.T) {
+	t.Setenv("CF_TOKEN_DIR", "")
+
+	dir := config.TokenDir()
+	switch runtime.GOOS {
+	case "darwin":
+		if !strings.Contains(dir, "Library/Application Support/cf/tokens") {
+			t.Errorf("TokenDir() on darwin = %q, want Library/Application Support/cf/tokens", dir)
+		}
+	default:
+		if !strings.Contains(dir, ".config/cf/tokens") {
+			t.Errorf("TokenDir() = %q, want .config/cf/tokens", dir)
+		}
+	}
+}
+
+func TestTokenDirEnvOverride(t *testing.T) {
+	t.Setenv("CF_TOKEN_DIR", "/tmp/custom-tokens")
+	dir := config.TokenDir()
+	if dir != "/tmp/custom-tokens" {
+		t.Errorf("TokenDir() = %q, want /tmp/custom-tokens", dir)
+	}
+}
+
+func TestOAuth2RoundTrip(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "config.json")
+
+	original := &config.Config{
+		DefaultProfile: "oauth",
+		Profiles: map[string]config.Profile{
+			"oauth": {
+				BaseURL: "https://mysite.atlassian.net",
+				Auth: config.AuthConfig{
+					Type:         "oauth2",
+					ClientID:     "my-client-id",
+					ClientSecret: "my-secret",
+					Scopes:       "read:confluence-content.all",
+					CloudID:      "my-cloud-id",
+				},
+			},
+		},
+	}
+	if err := config.SaveTo(original, path); err != nil {
+		t.Fatalf("SaveTo failed: %v", err)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile failed: %v", err)
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(data, &raw); err != nil {
+		t.Fatalf("Unmarshal failed: %v", err)
+	}
+
+	loaded, err := config.LoadFrom(path)
+	if err != nil {
+		t.Fatalf("LoadFrom failed: %v", err)
+	}
+	p := loaded.Profiles["oauth"]
+	if p.Auth.ClientID != "my-client-id" {
+		t.Errorf("ClientID = %q, want %q", p.Auth.ClientID, "my-client-id")
+	}
+	if p.Auth.CloudID != "my-cloud-id" {
+		t.Errorf("CloudID = %q, want %q", p.Auth.CloudID, "my-cloud-id")
 	}
 }
