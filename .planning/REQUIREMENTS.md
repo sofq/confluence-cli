@@ -65,10 +65,10 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Governance
 
-- [ ] **GOVN-01**: User can configure allowed/denied operations per profile (glob patterns)
-- [ ] **GOVN-02**: Policy is enforced pre-request, even in dry-run mode
-- [ ] **GOVN-03**: Every API call is logged to NDJSON audit file with timestamp, profile, operation, method, path, status
-- [ ] **GOVN-04**: Audit logging is configurable per-profile or per-invocation via `--audit` flag
+- [x] **GOVN-01**: User can configure allowed/denied operations per profile (glob patterns)
+- [x] **GOVN-02**: Policy is enforced pre-request, even in dry-run mode
+- [x] **GOVN-03**: Every API call is logged to NDJSON audit file with timestamp, profile, operation, method, path, status
+- [x] **GOVN-04**: Audit logging is configurable per-profile or per-invocation via `--audit` flag
 
 ### Batch
 
@@ -150,10 +150,10 @@ Requirements for initial release. Each maps to roadmap phases.
 | LABL-01 | Phase 3 | Complete |
 | LABL-02 | Phase 3 | Complete |
 | LABL-03 | Phase 3 | Complete |
-| GOVN-01 | Phase 4 | Pending |
-| GOVN-02 | Phase 4 | Pending |
-| GOVN-03 | Phase 4 | Pending |
-| GOVN-04 | Phase 4 | Pending |
+| GOVN-01 | Phase 4 | Complete |
+| GOVN-02 | Phase 4 | Complete |
+| GOVN-03 | Phase 4 | Complete |
+| GOVN-04 | Phase 4 | Complete |
 | BTCH-01 | Phase 4 | Pending |
 | BTCH-02 | Phase 4 | Pending |
 | BTCH-03 | Phase 4 | Pending |
