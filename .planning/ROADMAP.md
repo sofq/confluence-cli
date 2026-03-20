@@ -95,7 +95,11 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `cf avatar analyze --user <accountId>` fetches the user's pages via CQL and outputs a structured JSON persona profile without error
   2. The persona profile JSON contains fields consumable by an AI agent (e.g., tone, vocabulary level, structural patterns) without requiring post-processing
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 05-01-PLAN.md — internal/avatar/ package: types, fetch (CQL + HTML strip), analyze_writing, build_profile
+- [ ] 05-02-PLAN.md — cmd/avatar.go analyze subcommand + wire into root.go + tests
 
 ## Progress
 
@@ -108,4 +112,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 2. Code Generation Pipeline | 2/3 | Complete    | 2026-03-20 |
 | 3. Pages, Spaces, Search, Comments, and Labels | 3/4 | Complete    | 2026-03-20 |
 | 4. Governance and Agent Optimization | 3/3 | Complete    | 2026-03-20 |
-| 5. Avatar Analysis | 0/? | Not started | - |
+| 5. Avatar Analysis | 0/2 | Not started | - |
