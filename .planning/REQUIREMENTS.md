@@ -81,24 +81,53 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **AVTR-01**: User can analyze a Confluence user's writing style from their content
 - [x] **AVTR-02**: Avatar analysis outputs structured JSON persona profile for AI agent consumption
 
-## v2 Requirements
+## v1.1 Requirements
+
+Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap phases.
 
 ### Enhanced Auth
 
-- **AUTH-01**: OAuth2 client credentials grant support
-- **AUTH-02**: OAuth2 browser flow for interactive use
+- [ ] **AUTH-01**: User can authenticate via OAuth2 client credentials grant (2LO) for machine-to-machine access
+- [ ] **AUTH-02**: User can authenticate via OAuth2 authorization code grant (3LO) with PKCE via browser flow
+- [ ] **AUTH-03**: CLI automatically refreshes expired OAuth2 access tokens before API calls
+- [ ] **AUTH-04**: OAuth2 tokens are stored securely per profile in separate token files with 0600 permissions
 
-### Content Types
+### Blog Posts
 
-- **CONT-01**: Blog post CRUD operations
-- **CONT-02**: Attachment upload and management
-- **CONT-03**: Custom content type operations
+- [ ] **BLOG-01**: User can list blog posts in a space with pagination
+- [ ] **BLOG-02**: User can get a blog post by ID with content body (storage format)
+- [ ] **BLOG-03**: User can create a blog post in a space with title and storage format body
+- [ ] **BLOG-04**: User can update a blog post with automatic version increment
+- [ ] **BLOG-05**: User can delete a blog post
 
-### Advanced Features
+### Attachments
 
-- **ADVN-01**: Watch command for polling content changes (NDJSON events)
-- **ADVN-02**: Output presets (named JQ + fields combinations)
-- **ADVN-03**: Template system for content creation
+- [ ] **ATCH-01**: User can list attachments on content
+- [ ] **ATCH-02**: User can get attachment metadata by ID
+- [ ] **ATCH-03**: User can upload an attachment to content (v1 API multipart)
+- [ ] **ATCH-04**: User can delete an attachment
+
+### Custom Content
+
+- [ ] **CUST-01**: User can list custom content of a given type
+- [ ] **CUST-02**: User can create custom content with type, title, and body
+- [ ] **CUST-03**: User can update custom content
+- [ ] **CUST-04**: User can delete custom content
+
+### Output Presets
+
+- [ ] **PRST-01**: User can define named output presets in profile config (JQ expression + fields)
+- [ ] **PRST-02**: User can apply a preset to any command output via `--preset <name>`
+
+### Content Templates
+
+- [ ] **TMPL-01**: User can list available content templates
+- [ ] **TMPL-02**: User can create content from a template with variable substitution
+
+### Watch
+
+- [ ] **WTCH-01**: User can watch content for changes via `cf watch --cql <query>` with NDJSON event output
+- [ ] **WTCH-02**: Watch command handles graceful shutdown on SIGINT/SIGTERM
 
 ## Out of Scope
 
@@ -160,11 +189,16 @@ Requirements for initial release. Each maps to roadmap phases.
 | AVTR-01 | Phase 5 | Complete |
 | AVTR-02 | Phase 5 | Complete |
 
-**Coverage:**
-- v1 requirements: 42 total
+**Coverage (v1.0):**
+- v1.0 requirements: 42 total
 - Mapped to phases: 42
 - Unmapped: 0 ✓
 
+**Coverage (v1.1):**
+- v1.1 requirements: 22 total
+- Mapped to phases: 0 ⚠️ (awaiting roadmap)
+- Unmapped: 22
+
 ---
 *Requirements defined: 2026-03-20*
-*Last updated: 2026-03-20 after initial definition*
+*Last updated: 2026-03-20 after milestone v1.1 requirements definition*
