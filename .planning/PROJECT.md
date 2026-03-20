@@ -42,7 +42,7 @@ Give AI agents and automation reliable, structured access to Confluence content 
 - [x] OAuth2 browser flow for interactive use — v1.1 Phase 6
 - [x] Automatic OAuth2 token refresh — v1.1 Phase 6
 - [x] Secure per-profile token storage (0600 perms) — v1.1 Phase 6
-- [ ] Blog post CRUD operations
+- [x] Blog post CRUD operations — v1.1 Phase 7
 - [ ] Attachment upload and management
 - [ ] Custom content type operations
 - [ ] Watch command for polling content changes (NDJSON events)
@@ -97,4 +97,4 @@ Give AI agents and automation reliable, structured access to Confluence content 
 | AI agent as primary user | Drives design toward structured JSON output, semantic exit codes | — Pending |
 
 ---
-*Last updated: 2026-03-20 after Phase 6 completion*
+*Last updated: 2026-03-20 after Phase 7 completion*
