@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-core-scaffolding/01-02-PLAN.md
-last_updated: "2026-03-20T00:55:15.401Z"
+stopped_at: Completed 01-core-scaffolding/01-03-PLAN.md
+last_updated: "2026-03-20T00:59:28Z"
 progress:
   total_phases: 5
   completed_phases: 0
   total_plans: 4
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -24,7 +24,7 @@ See: .planning/PROJECT.md (updated 2026-03-20)
 ## Current Position
 
 Phase: 01 (core-scaffolding) — EXECUTING
-Plan: 1 of 4
+Plan: 3 of 4
 
 ## Performance Metrics
 
@@ -48,6 +48,7 @@ Plan: 1 of 4
 *Updated after each plan completion*
 | Phase 01-core-scaffolding P01 | 5 | 2 tasks | 13 files |
 | Phase 01-core-scaffolding P02 | 5 | 1 tasks | 1 files |
+| Phase 01-core-scaffolding P03 | 5 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,9 @@ Recent decisions affecting current work:
 - [Phase 01-core-scaffolding]: encoding/json indent used for pretty-print instead of tidwall/pretty to avoid adding external dependency
 - [Phase 01-core-scaffolding]: oauth2 removed from ApplyAuth in client.go — Phase 1 supports only basic + bearer per INFRA-05
 - [Phase 01-core-scaffolding]: Phase 4 fields (AuditLogger, Policy, Operation, Profile) excluded from Client struct — clean phase boundary
+- [Phase 01-core-scaffolding P03]: Version variable declared in cmd/root.go (not version.go) — avoids undefined reference across package init order
+- [Phase 01-core-scaffolding P03]: configure testConnection uses /wiki/api/v2/spaces?limit=1 (Confluence v2) not /rest/api/3/myself (Jira)
+- [Phase 01-core-scaffolding P03]: schemaOutput uses encoding/json Indent for pretty-print (no tidwall/pretty dependency needed)
 
 ### Pending Todos
 
@@ -79,6 +83,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T00:55:15.399Z
-Stopped at: Completed 01-core-scaffolding/01-02-PLAN.md
+Last session: 2026-03-20T00:59:28Z
+Stopped at: Completed 01-core-scaffolding/01-03-PLAN.md
 Resume file: None

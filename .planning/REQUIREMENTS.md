@@ -17,11 +17,11 @@ Requirements for initial release. Each maps to roadmap phases.
 - [x] **INFRA-06**: User can apply JQ filter to any command output via `--jq` flag
 - [x] **INFRA-07**: CLI automatically paginates list endpoints and merges results (cursor-based)
 - [x] **INFRA-08**: User can cache GET responses with configurable TTL via `--cache` flag
-- [ ] **INFRA-09**: User can make raw API calls via `cf raw <METHOD> <path>`
+- [x] **INFRA-09**: User can make raw API calls via `cf raw <METHOD> <path>`
 - [x] **INFRA-10**: User can preview write operations without executing via `--dry-run` flag
 - [x] **INFRA-11**: User can inspect HTTP request/response details via `--verbose` flag (output to stderr)
-- [ ] **INFRA-12**: `cf --version` outputs version info as JSON
-- [ ] **INFRA-13**: User can discover command tree and parameter schemas as JSON via `cf schema`
+- [x] **INFRA-12**: `cf --version` outputs version info as JSON
+- [x] **INFRA-13**: User can discover command tree and parameter schemas as JSON via `cf schema`
 
 ### Code Generation
 
@@ -123,11 +123,11 @@ Requirements for initial release. Each maps to roadmap phases.
 | INFRA-06 | Phase 1 | Complete |
 | INFRA-07 | Phase 1 | Complete |
 | INFRA-08 | Phase 1 | Complete |
-| INFRA-09 | Phase 1 | Pending |
+| INFRA-09 | Phase 1 | Complete |
 | INFRA-10 | Phase 1 | Complete |
 | INFRA-11 | Phase 1 | Complete |
-| INFRA-12 | Phase 1 | Pending |
-| INFRA-13 | Phase 1 | Pending |
+| INFRA-12 | Phase 1 | Complete |
+| INFRA-13 | Phase 1 | Complete |
 | CGEN-01 | Phase 2 | Pending |
 | CGEN-02 | Phase 2 | Pending |
 | CGEN-03 | Phase 2 | Pending |
