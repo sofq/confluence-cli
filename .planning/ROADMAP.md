@@ -81,7 +81,12 @@ Plans:
   2. Every API call appended to the NDJSON audit log includes timestamp, profile, operation, method, path, and response status
   3. `cf pages get <id> --cache 300` on a second invocation within the TTL returns the cached response without making an HTTP request
   4. `cf batch --input ops.json` executes all operations and returns a JSON array with per-operation exit codes and data/error, continuing past individual failures
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 04-01-PLAN.md — internal/policy and internal/audit packages; extend config.Profile and client.Client
+- [ ] 04-02-PLAN.md — Wire policy and audit into cmd/root.go; --audit flag; integration tests
+- [ ] 04-03-PLAN.md — cmd/batch.go command with full test suite
 
 ### Phase 5: Avatar Analysis
 **Goal**: AI agents can obtain a structured JSON persona profile derived from a Confluence user's writing history for downstream use in content generation or style matching.
@@ -102,5 +107,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 | 1. Core Scaffolding | 4/4 | Complete    | 2026-03-20 |
 | 2. Code Generation Pipeline | 2/3 | Complete    | 2026-03-20 |
 | 3. Pages, Spaces, Search, Comments, and Labels | 3/4 | Complete    | 2026-03-20 |
-| 4. Governance and Agent Optimization | 0/? | Not started | - |
+| 4. Governance and Agent Optimization | 0/3 | Not started | - |
 | 5. Avatar Analysis | 0/? | Not started | - |
