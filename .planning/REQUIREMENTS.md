@@ -102,10 +102,10 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 
 ### Attachments
 
-- [ ] **ATCH-01**: User can list attachments on content
-- [ ] **ATCH-02**: User can get attachment metadata by ID
-- [ ] **ATCH-03**: User can upload an attachment to content (v1 API multipart)
-- [ ] **ATCH-04**: User can delete an attachment
+- [x] **ATCH-01**: User can list attachments on content
+- [x] **ATCH-02**: User can get attachment metadata by ID
+- [x] **ATCH-03**: User can upload an attachment to content (v1 API multipart)
+- [x] **ATCH-04**: User can delete an attachment
 
 ### Custom Content
 
@@ -197,10 +197,10 @@ Requirements for milestone v1.1 (Extended Capabilities). Each maps to roadmap ph
 | BLOG-03 | Phase 7 | Complete |
 | BLOG-04 | Phase 7 | Complete |
 | BLOG-05 | Phase 7 | Complete |
-| ATCH-01 | Phase 8 | Pending |
-| ATCH-02 | Phase 8 | Pending |
-| ATCH-03 | Phase 8 | Pending |
-| ATCH-04 | Phase 8 | Pending |
+| ATCH-01 | Phase 8 | Complete |
+| ATCH-02 | Phase 8 | Complete |
+| ATCH-03 | Phase 8 | Complete |
+| ATCH-04 | Phase 8 | Complete |
 | CUST-01 | Phase 9 | Pending |
 | CUST-02 | Phase 9 | Pending |
 | CUST-03 | Phase 9 | Pending |

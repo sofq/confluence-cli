@@ -4,11 +4,11 @@ milestone: v1.1
 milestone_name: Extended Capabilities
 status: unknown
 stopped_at: Phase 8 context gathered
-last_updated: "2026-03-20T10:16:10.222Z"
+last_updated: "2026-03-20T10:39:38.615Z"
 progress:
   total_phases: 6
   completed_phases: 2
-  total_plans: 3
+  total_plans: 4
   completed_plans: 3
 ---
 
@@ -19,19 +19,19 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 07 — blog-posts
+**Current focus:** Phase 08 — attachments
 
 ## Current Position
 
-Phase: 07 (blog-posts) — EXECUTING
-Plan: 1 of 1
+Phase: 08 (attachments) — COMPLETE
+Plan: 1 of 1 (all complete)
 
 ## Performance Metrics
 
 **Velocity:**
 
-- Total plans completed: 1 (v1.1)
-- Average duration: 6min
+- Total plans completed: 2 (v1.1)
+- Average duration: 5min
 - Total execution time: 0.1 hours
 
 **By Phase:**
@@ -47,6 +47,7 @@ Plan: 1 of 1
 
 | Phase 06 P02 | 4min | 2 tasks | 4 files |
 | Phase 07-blog-posts P01 | 3min | 2 tasks | 4 files |
+| Phase 08-attachments P01 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -69,6 +70,8 @@ Recent decisions affecting current work:
 - [Phase 06]: PKCE included defensively -- Atlassian does not enforce but OAuth 2.1 recommends
 - [Phase 06]: CloudID stored in Token struct so 3LO discovery persists across invocations
 - [Phase 07-blog-posts]: No parent-id flag on create-blog-post -- blog posts do not nest
+- [Phase 08-attachments]: Upload uses v1 API multipart POST -- no v2 upload endpoint exists
+- [Phase 08-attachments]: X-Atlassian-Token: no-check header required for upload to prevent XSRF 403
 
 ### Pending Todos
 
@@ -81,6 +84,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T10:16:10.214Z
-Stopped at: Phase 8 context gathered
-Resume file: .planning/phases/08-attachments/08-CONTEXT.md
+Last session: 2026-03-20T10:43:29Z
+Stopped at: Completed 08-01-PLAN.md
+Resume file: .planning/phases/08-attachments/08-01-SUMMARY.md
