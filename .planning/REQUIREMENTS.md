@@ -72,9 +72,9 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Batch
 
-- [ ] **BTCH-01**: User can execute multiple operations from JSON array input via `cf batch`
-- [ ] **BTCH-02**: Batch output is JSON array with per-operation exit codes and data/error
-- [ ] **BTCH-03**: Batch supports partial failure (some ops succeed, some fail)
+- [x] **BTCH-01**: User can execute multiple operations from JSON array input via `cf batch`
+- [x] **BTCH-02**: Batch output is JSON array with per-operation exit codes and data/error
+- [x] **BTCH-03**: Batch supports partial failure (some ops succeed, some fail)
 
 ### Avatar
 
@@ -154,9 +154,9 @@ Requirements for initial release. Each maps to roadmap phases.
 | GOVN-02 | Phase 4 | Complete |
 | GOVN-03 | Phase 4 | Complete |
 | GOVN-04 | Phase 4 | Complete |
-| BTCH-01 | Phase 4 | Pending |
-| BTCH-02 | Phase 4 | Pending |
-| BTCH-03 | Phase 4 | Pending |
+| BTCH-01 | Phase 4 | Complete |
+| BTCH-02 | Phase 4 | Complete |
+| BTCH-03 | Phase 4 | Complete |
 | AVTR-01 | Phase 5 | Pending |
 | AVTR-02 | Phase 5 | Pending |
 
