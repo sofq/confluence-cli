@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 01-core-scaffolding/01-04-PLAN.md
-last_updated: "2026-03-20T01:12:51.429Z"
+stopped_at: Completed 02-code-generation-pipeline/02-01-PLAN.md
+last_updated: "2026-03-20T02:30:49.013Z"
 progress:
   total_phases: 5
   completed_phases: 1
-  total_plans: 4
-  completed_plans: 4
+  total_plans: 7
+  completed_plans: 5
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 01 — core-scaffolding
+**Current focus:** Phase 02 — code-generation-pipeline
 
 ## Current Position
 
-Phase: 01 (core-scaffolding) — EXECUTING
-Plan: 3 of 4
+Phase: 02 (code-generation-pipeline) — EXECUTING
+Plan: 1 of 3
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Plan: 3 of 4
 | Phase 01-core-scaffolding P02 | 5 | 1 tasks | 1 files |
 | Phase 01-core-scaffolding P03 | 5 | 2 tasks | 5 files |
 | Phase 01-core-scaffolding P04 | 5 | 2 tasks | 9 files |
+| Phase 02-code-generation-pipeline P01 | 4 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -74,6 +75,9 @@ Recent decisions affecting current work:
 - [Phase 01-core-scaffolding]: External test packages (_test suffix) used for all test files to ensure public API coverage
 - [Phase 01-core-scaffolding]: Cache tests use unique URL-based keys with t.Name() to avoid sync.Once Dir() cross-test pollution
 - [Phase 01-core-scaffolding]: Cobra flag state isolation handled by explicit --profile flags in configure tests rather than flag resets
+- [Phase 02-code-generation-pipeline]: libopenapi v0.34.3 added as indirect dep — go mod tidy skipped until gen/ package imports it in Plan 02
+- [Phase 02-code-generation-pipeline]: spec/confluence-v2.json pinned locally from dac-static.atlassian.com (596KB, 212 ops) — generator reads at build time not runtime
+- [Phase 02-code-generation-pipeline]: Five Confluence v2 API gaps documented in SPEC_GAPS.md: no attachment upload (v1-only), deprecated getChildPages, 18 EAP ops, array params as string flags, embeds undocumented
 
 ### Pending Todos
 
@@ -87,6 +91,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T01:09:01.194Z
-Stopped at: Completed 01-core-scaffolding/01-04-PLAN.md
+Last session: 2026-03-20T02:30:49.011Z
+Stopped at: Completed 02-code-generation-pipeline/02-01-PLAN.md
 Resume file: None
