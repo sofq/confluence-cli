@@ -67,7 +67,7 @@ func TestBatch_ValidSingleOp(t *testing.T) {
 	os.Stderr = errW
 
 	root := cmd.RootCommand()
-	root.SetArgs([]string{"batch", "--input", inputFile})
+	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
 	root.Execute()
 
 	outW.Close()
@@ -143,7 +143,7 @@ func TestBatch_PartialFailure(t *testing.T) {
 	os.Stderr = errW
 
 	root := cmd.RootCommand()
-	root.SetArgs([]string{"batch", "--input", inputFile})
+	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
 	root.Execute()
 
 	outW.Close()
@@ -208,7 +208,7 @@ func TestBatch_UnknownCommand(t *testing.T) {
 	os.Stdout = outW
 
 	root := cmd.RootCommand()
-	root.SetArgs([]string{"batch", "--input", inputFile})
+	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
 	root.Execute()
 
 	outW.Close()
@@ -259,7 +259,7 @@ func TestBatch_InvalidJSON(t *testing.T) {
 	os.Stdout = outW
 
 	root := cmd.RootCommand()
-	root.SetArgs([]string{"batch", "--input", inputFile})
+	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
 	root.Execute()
 
 	errW.Close()
@@ -313,7 +313,7 @@ func TestBatch_MissingRequiredPathParam(t *testing.T) {
 	os.Stdout = outW
 
 	root := cmd.RootCommand()
-	root.SetArgs([]string{"batch", "--input", inputFile})
+	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
 	root.Execute()
 
 	outW.Close()
@@ -361,7 +361,7 @@ func TestBatch_MaxBatchExceeded(t *testing.T) {
 	os.Stdout = outW
 
 	root := cmd.RootCommand()
-	root.SetArgs([]string{"batch", "--input", inputFile, "--max-batch", "2"})
+	root.SetArgs([]string{"batch", "--input", inputFile, "--max-batch", "2", "--dry-run=false"})
 	root.Execute()
 
 	errW.Close()
@@ -403,7 +403,7 @@ func TestBatch_EmptyArray(t *testing.T) {
 	os.Stdout = outW
 
 	root := cmd.RootCommand()
-	root.SetArgs([]string{"batch", "--input", inputFile})
+	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
 	err := root.Execute()
 
 	outW.Close()
@@ -497,7 +497,7 @@ func TestBatch_JQFilter(t *testing.T) {
 	os.Stdout = outW
 
 	root := cmd.RootCommand()
-	root.SetArgs([]string{"batch", "--input", inputFile, "--jq", ".[0].exit_code"})
+	root.SetArgs([]string{"batch", "--input", inputFile, "--jq", ".[0].exit_code", "--dry-run=false"})
 	root.Execute()
 
 	outW.Close()
@@ -541,7 +541,7 @@ func TestBatch_MultiOpSuccess(t *testing.T) {
 
 	root := cmd.RootCommand()
 	// Pass --jq "" to reset any jq flag state from prior test runs (cobra singleton).
-	root.SetArgs([]string{"batch", "--input", inputFile, "--jq", ""})
+	root.SetArgs([]string{"batch", "--input", inputFile, "--jq", "", "--dry-run=false"})
 	root.Execute()
 
 	outW.Close()

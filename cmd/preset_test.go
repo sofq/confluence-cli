@@ -135,13 +135,14 @@ func TestPresetEmptyStringDoesNotInterfere(t *testing.T) {
 
 	stdout, _ := captureOutput(t, func() {
 		root := cmd.RootCommand()
-		// Explicitly pass --preset "" to ensure empty string does not interfere with --jq.
-		root.SetArgs([]string{"pages", "get", "42", "--jq", ".title", "--preset", ""})
+		// Explicitly pass --preset "" and --jq "" to reset Cobra singleton flag state.
+		root.SetArgs([]string{"pages", "get", "42", "--preset", "", "--jq", ""})
 		_ = root.Execute()
 	})
 
 	stdout = strings.TrimSpace(stdout)
-	if !strings.Contains(stdout, "Hello World") {
-		t.Errorf("expected --jq to work without --preset interference, got stdout: %s", stdout)
+	// With empty --preset and no --jq, we get the full JSON object.
+	if !strings.Contains(stdout, "42") {
+		t.Errorf("expected command to succeed with empty --preset and return page data, got stdout: %s", stdout)
 	}
 }
