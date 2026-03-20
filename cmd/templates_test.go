@@ -147,13 +147,19 @@ func TestPagesCreate_WithTemplate(t *testing.T) {
 		"--var", "title=Weekly Standup",
 		"--var", "date=2026-03-20",
 		"--space-id", "SPACE1",
+		"--body", "",
+		"--title", "",
+		"--parent-id", "",
 	})
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("Execute() error: %v", err)
 	}
 }
 
-func TestPagesCreate_TemplateAndBodyConflict(t *testing.T) {
+// TestPagesCreate_ZZ_TemplateAndBodyConflict is named with ZZ prefix to run last
+// in alphabetical order, since cobra package-level commands retain flag state
+// across tests (the --body flag set here would leak into subsequent tests).
+func TestPagesCreate_ZZ_TemplateAndBodyConflict(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		t.Fatal("should not reach server")
 	}))
@@ -163,9 +169,12 @@ func TestPagesCreate_TemplateAndBodyConflict(t *testing.T) {
 		"meeting-notes": `{"title":"T","body":"<p>B</p>"}`,
 	})
 
+	// Capture stderr to verify JSON error output.
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
 	rootCmd := cmd.RootCommand()
-	errBuf := new(bytes.Buffer)
-	rootCmd.SetErr(errBuf)
 	rootCmd.SetArgs([]string{
 		"pages", "create",
 		"--template", "meeting-notes",
@@ -174,11 +183,17 @@ func TestPagesCreate_TemplateAndBodyConflict(t *testing.T) {
 		"--title", "Test",
 	})
 	err := rootCmd.Execute()
+
+	w.Close()
+	os.Stderr = oldStderr
+	var stderrBuf bytes.Buffer
+	stderrBuf.ReadFrom(r)
+
 	if err == nil {
 		t.Fatal("expected error for --template + --body conflict")
 	}
-	if !strings.Contains(errBuf.String(), "cannot use --template and --body together") {
-		t.Errorf("error output missing expected message: %s", errBuf.String())
+	if !strings.Contains(stderrBuf.String(), "cannot use --template and --body together") {
+		t.Errorf("stderr missing expected message: %s", stderrBuf.String())
 	}
 }
 
@@ -213,6 +228,8 @@ func TestBlogpostsCreate_WithTemplate(t *testing.T) {
 		"--var", "title=March Update",
 		"--var", "month=March",
 		"--space-id", "SPACE1",
+		"--body", "",
+		"--title", "",
 	})
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("Execute() error: %v", err)

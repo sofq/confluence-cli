@@ -30,6 +30,7 @@ var skipClientCommands = map[string]bool{
 	"completion": true,
 	"help":       true,
 	"schema":     true,
+	"templates":  true,
 }
 
 var rootCmd = &cobra.Command{
@@ -294,6 +295,7 @@ func init() {
 	mergeCommand(rootCmd, blogpostsCmd) // Phase 7: blog post workflow overrides
 	mergeCommand(rootCmd, attachmentsCmd)    // Phase 8: attachment workflow overrides
 	mergeCommand(rootCmd, custom_contentCmd) // Phase 9: custom content workflow overrides
+	rootCmd.AddCommand(templatesCmd)              // Phase 10: content template operations
 
 	// Override cobra's default help output so that "cf" with no args and
 	// "cf help <resource>" emit JSON errors to stderr instead of plain text

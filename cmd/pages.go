@@ -130,6 +130,28 @@ var pages_workflow_create = &cobra.Command{
 		title, _ := cmd.Flags().GetString("title")
 		bodyVal, _ := cmd.Flags().GetString("body")
 		parentID, _ := cmd.Flags().GetString("parent-id")
+		templateName, _ := cmd.Flags().GetString("template")
+		varFlags, _ := cmd.Flags().GetStringArray("var")
+
+		// Template resolution (before validation so template can provide title/body/space-id).
+		if templateName != "" {
+			if bodyVal != "" {
+				apiErr := &cferrors.APIError{ErrorType: "validation_error", Message: "cannot use --template and --body together"}
+				apiErr.WriteJSON(c.Stderr)
+				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+			}
+			rendered, resolveErr := resolveTemplate(templateName, varFlags)
+			if resolveErr != nil {
+				return resolveErr
+			}
+			if title == "" {
+				title = rendered.Title
+			}
+			bodyVal = rendered.Body
+			if spaceID == "" && rendered.SpaceID != "" {
+				spaceID = rendered.SpaceID
+			}
+		}
 
 		// Validate required flags.
 		if strings.TrimSpace(spaceID) == "" {
@@ -283,6 +305,8 @@ func init() {
 	pages_workflow_create.Flags().String("title", "", "Page title (required)")
 	pages_workflow_create.Flags().String("body", "", "Page body in storage format XML (required)")
 	pages_workflow_create.Flags().String("parent-id", "", "Parent page ID (optional)")
+	pages_workflow_create.Flags().String("template", "", "Content template name to use")
+	pages_workflow_create.Flags().StringArray("var", nil, "Template variable in key=value format (repeatable)")
 
 	// update flags
 	pages_workflow_update.Flags().String("id", "", "Page ID to update (required)")
