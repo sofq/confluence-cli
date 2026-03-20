@@ -36,7 +36,7 @@ Plans:
 - [x] 01-01-PLAN.md — Go module scaffold, internal packages (errors, config, jq, cache, generated stub)
 - [x] 01-02-PLAN.md — HTTP client with cursor-based pagination
 - [x] 01-03-PLAN.md — Cobra commands (root, configure, raw, version, schema)
-- [ ] 01-04-PLAN.md — Test suite for all Phase 1 packages and commands
+- [x] 01-04-PLAN.md — Test suite for all Phase 1 packages and commands (completed 2026-03-20)
 
 ### Phase 2: Code Generation Pipeline
 **Goal**: The `gen/` pipeline reads `spec/confluence-v2.json` and produces `cmd/generated/` with a complete, compilable Cobra command tree covering all OpenAPI operations; generated commands can be overridden by hand-written wrappers.
@@ -88,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Scaffolding | 4/4 | Complete   | 2026-03-20 |
+| 1. Core Scaffolding | 4/4 | Complete    | 2026-03-20 |
 | 2. Code Generation Pipeline | 0/? | Not started | - |
 | 3. Pages, Spaces, Search, Comments, and Labels | 0/? | Not started | - |
 | 4. Governance and Agent Optimization | 0/? | Not started | - |
