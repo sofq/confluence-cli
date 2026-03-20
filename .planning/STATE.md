@@ -3,13 +3,13 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-stopped_at: Completed 02-code-generation-pipeline/02-03-PLAN.md
-last_updated: "2026-03-20T02:49:55.814Z"
+stopped_at: Completed 03-pages-spaces-search-comments-and-labels/03-01-PLAN.md
+last_updated: "2026-03-20T03:10:29.885Z"
 progress:
   total_phases: 5
   completed_phases: 2
-  total_plans: 7
-  completed_plans: 7
+  total_plans: 11
+  completed_plans: 8
 ---
 
 # Project State
@@ -19,12 +19,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-20)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 02 — code-generation-pipeline
+**Current focus:** Phase 03 — pages-spaces-search-comments-and-labels
 
 ## Current Position
 
-Phase: 02 (code-generation-pipeline) — EXECUTING
-Plan: 2 of 3
+Phase: 03 (pages-spaces-search-comments-and-labels) — EXECUTING
+Plan: 2 of 4
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Plan: 2 of 3
 | Phase 02-code-generation-pipeline P01 | 4 | 2 tasks | 4 files |
 | Phase 02-code-generation-pipeline P02 | 9 | 2 tasks | 10 files |
 | Phase 02-code-generation-pipeline P03 | 3 | 2 tasks | 29 files |
+| Phase 03-pages-spaces-search-comments-and-labels P01 | 3 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -85,6 +86,9 @@ Recent decisions affecting current work:
 - [Phase 02-code-generation-pipeline P02]: TestGenerateResource verb adapted to get-by-id (DeriveVerb strips Page prefix from getPageById against pages resource)
 - [Phase 02-code-generation-pipeline]: Generated cmd/generated/ files committed to repo so go build works without make generate
 - [Phase 02-code-generation-pipeline]: TestConformance_GeneratedCodeMatchesSpec compares byte-for-byte to catch spec drift
+- [Phase 03-pages-spaces-search-comments-and-labels]: pages_workflow_list uses Use: 'get' to match generated subcommand name for mergeCommand override
+- [Phase 03-pages-spaces-search-comments-and-labels]: get-by-id always injects body-format=storage query param; user can override with explicit --body-format flag
+- [Phase 03-pages-spaces-search-comments-and-labels]: init() in cmd/pages.go does NOT call mergeCommand or rootCmd.AddCommand — Plan 04 handles that wiring
 
 ### Pending Todos
 
@@ -98,6 +102,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-20T02:46:28.193Z
-Stopped at: Completed 02-code-generation-pipeline/02-03-PLAN.md
+Last session: 2026-03-20T03:10:23.125Z
+Stopped at: Completed 03-pages-spaces-search-comments-and-labels/03-01-PLAN.md
 Resume file: None

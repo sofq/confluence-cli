@@ -33,11 +33,11 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Pages
 
-- [ ] **PAGE-01**: User can get a page by ID with content body (storage format)
-- [ ] **PAGE-02**: User can create a page in a space with title and storage format body
-- [ ] **PAGE-03**: User can update a page with automatic version increment (handles 409 conflicts)
-- [ ] **PAGE-04**: User can delete a page (soft-delete to trash)
-- [ ] **PAGE-05**: User can list pages in a space with pagination
+- [x] **PAGE-01**: User can get a page by ID with content body (storage format)
+- [x] **PAGE-02**: User can create a page in a space with title and storage format body
+- [x] **PAGE-03**: User can update a page with automatic version increment (handles 409 conflicts)
+- [x] **PAGE-04**: User can delete a page (soft-delete to trash)
+- [x] **PAGE-05**: User can list pages in a space with pagination
 
 ### Spaces
 
@@ -133,11 +133,11 @@ Requirements for initial release. Each maps to roadmap phases.
 | CGEN-03 | Phase 2 | Complete |
 | CGEN-04 | Phase 2 | Complete |
 | CGEN-05 | Phase 2 | Complete |
-| PAGE-01 | Phase 3 | Pending |
-| PAGE-02 | Phase 3 | Pending |
-| PAGE-03 | Phase 3 | Pending |
-| PAGE-04 | Phase 3 | Pending |
-| PAGE-05 | Phase 3 | Pending |
+| PAGE-01 | Phase 3 | Complete |
+| PAGE-02 | Phase 3 | Complete |
+| PAGE-03 | Phase 3 | Complete |
+| PAGE-04 | Phase 3 | Complete |
+| PAGE-05 | Phase 3 | Complete |
 | SPCE-01 | Phase 3 | Pending |
 | SPCE-02 | Phase 3 | Pending |
 | SPCE-03 | Phase 3 | Pending |
