@@ -78,8 +78,8 @@ Requirements for initial release. Each maps to roadmap phases.
 
 ### Avatar
 
-- [ ] **AVTR-01**: User can analyze a Confluence user's writing style from their content
-- [ ] **AVTR-02**: Avatar analysis outputs structured JSON persona profile for AI agent consumption
+- [x] **AVTR-01**: User can analyze a Confluence user's writing style from their content
+- [x] **AVTR-02**: Avatar analysis outputs structured JSON persona profile for AI agent consumption
 
 ## v2 Requirements
 
@@ -157,8 +157,8 @@ Requirements for initial release. Each maps to roadmap phases.
 | BTCH-01 | Phase 4 | Complete |
 | BTCH-02 | Phase 4 | Complete |
 | BTCH-03 | Phase 4 | Complete |
-| AVTR-01 | Phase 5 | Pending |
-| AVTR-02 | Phase 5 | Pending |
+| AVTR-01 | Phase 5 | Complete |
+| AVTR-02 | Phase 5 | Complete |
 
 **Coverage:**
 - v1 requirements: 42 total
