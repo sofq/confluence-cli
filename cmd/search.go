@@ -3,6 +3,8 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"net/url"
 	"strings"
 
@@ -15,6 +17,56 @@ var searchCmd = &cobra.Command{
 	Use:   "search",
 	Short: "Search Confluence content via CQL",
 	RunE:  runSearch,
+}
+
+// searchV1Domain extracts the scheme+host from c.BaseURL.
+// c.BaseURL is "https://domain/wiki/api/v2" in production, so we split on "/wiki/api"
+// to get just "https://domain".
+func searchV1Domain(baseURL string) string {
+	if idx := strings.Index(baseURL, "/wiki/"); idx > 0 {
+		return baseURL[:idx]
+	}
+	return baseURL
+}
+
+// fetchV1 performs a single HTTP GET against a v1 URL (full absolute URL).
+// It applies auth from c and writes error JSON to c.Stderr on failure.
+func fetchV1(cmd *cobra.Command, c *client.Client, fullURL string) ([]byte, int) {
+	req, err := http.NewRequestWithContext(cmd.Context(), "GET", fullURL, nil)
+	if err != nil {
+		apiErr := &cferrors.APIError{ErrorType: "connection_error", Message: "failed to create request: " + err.Error()}
+		apiErr.WriteJSON(c.Stderr)
+		return nil, cferrors.ExitError
+	}
+	req.Header.Set("Accept", "application/json")
+	if err := c.ApplyAuth(req); err != nil {
+		apiErr := &cferrors.APIError{ErrorType: "auth_error", Message: err.Error()}
+		apiErr.WriteJSON(c.Stderr)
+		return nil, cferrors.ExitAuth
+	}
+
+	resp, err := c.HTTPClient.Do(req)
+	if err != nil {
+		apiErr := &cferrors.APIError{ErrorType: "connection_error", Message: err.Error()}
+		apiErr.WriteJSON(c.Stderr)
+		return nil, cferrors.ExitError
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		apiErr := &cferrors.APIError{ErrorType: "connection_error", Message: "reading response body: " + err.Error()}
+		apiErr.WriteJSON(c.Stderr)
+		return nil, cferrors.ExitError
+	}
+
+	if resp.StatusCode >= 400 {
+		apiErr := cferrors.NewFromHTTP(resp.StatusCode, strings.TrimSpace(string(body)), "GET", fullURL, resp)
+		apiErr.WriteJSON(c.Stderr)
+		return nil, apiErr.ExitCode()
+	}
+
+	return body, cferrors.ExitOK
 }
 
 func runSearch(cmd *cobra.Command, args []string) error {
@@ -30,25 +82,26 @@ func runSearch(cmd *cobra.Command, args []string) error {
 		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 	}
 
-	// c.BaseURL is the domain only (e.g. "https://example.atlassian.net").
-	// c.Fetch() builds: fullURL = c.BaseURL + path.
-	// So passing "/wiki/rest/api/search?cql=..." gives the correct v1 URL.
+	// c.BaseURL is "https://domain/wiki/api/v2" in production.
+	// v1 search API is at "https://domain/wiki/rest/api/search".
+	// We extract the domain and build the v1 URL directly.
+	domain := searchV1Domain(c.BaseURL)
+
 	q := url.Values{}
 	q.Set("cql", cqlQuery)
 	q.Set("limit", "25")
-	initialPath := "/wiki/rest/api/search?" + q.Encode()
+	nextURL := domain + "/wiki/rest/api/search?" + q.Encode()
 
 	var allResults []json.RawMessage
 
-	nextPath := initialPath
 	for {
 		// SRCH-03: guard against excessively long cursor URLs (e.g. from Atlassian cursor bloat).
-		if len(nextPath) > 4000 {
-			fmt.Fprintf(c.Stderr, `{"type":"warning","message":"search cursor URL too long (%d chars); stopping pagination early"}`+"\n", len(nextPath))
+		if len(nextURL) > 4000 {
+			fmt.Fprintf(c.Stderr, `{"type":"warning","message":"search cursor URL too long (%d chars); stopping pagination early"}`+"\n", len(nextURL))
 			break
 		}
 
-		body, code := c.Fetch(cmd.Context(), "GET", nextPath, nil)
+		body, code := fetchV1(cmd, c, nextURL)
 		if code != cferrors.ExitOK {
 			return &cferrors.AlreadyWrittenError{Code: code}
 		}
@@ -72,20 +125,15 @@ func runSearch(cmd *cobra.Command, args []string) error {
 			break
 		}
 
-		// Build next path from _links.next.
-		// _links.next may be an absolute URL (e.g. "https://domain/wiki/rest/api/search?cursor=...")
-		// or a relative path (e.g. "/wiki/rest/api/search?cursor=...").
-		// Since c.BaseURL is the domain only, we need just the path+query portion.
+		// _links.next may be an absolute URL or a relative path.
+		// Normalize to an absolute URL using the domain we already have.
 		nextLink := page.Links.Next
 		if strings.HasPrefix(nextLink, "http") {
-			parsed, err := url.Parse(nextLink)
-			if err != nil {
-				break
-			}
-			// RequestURI returns path+query, e.g. "/wiki/rest/api/search?cursor=..."
-			nextPath = parsed.RequestURI()
+			// Already absolute — use as-is.
+			nextURL = nextLink
 		} else {
-			nextPath = nextLink
+			// Relative path — prepend domain.
+			nextURL = domain + nextLink
 		}
 	}
 
