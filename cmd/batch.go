@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -156,8 +157,9 @@ func runBatch(cmd *cobra.Command, args []string) error {
 
 	// Execute each operation and collect results.
 	results := make([]BatchResult, len(ops))
+	ctx := cmd.Context()
 	for i, bop := range ops {
-		results[i] = executeBatchOp(cmd, baseClient, i, bop, opMap)
+		results[i] = executeBatchOp(ctx, baseClient, i, bop, opMap)
 	}
 
 	// Write all results as a JSON array to stdout.
@@ -211,7 +213,7 @@ func runBatch(cmd *cobra.Command, args []string) error {
 
 // executeBatchOp runs a single batch operation and returns its result.
 func executeBatchOp(
-	cmd *cobra.Command,
+	ctx context.Context,
 	baseClient *client.Client,
 	index int,
 	bop BatchOp,
@@ -293,7 +295,7 @@ func executeBatchOp(
 		body = strings.NewReader(bodyStr)
 	}
 
-	exitCode := opClient.Do(cmd.Context(), schemaOp.Method, path, query, body)
+	exitCode := opClient.Do(ctx, schemaOp.Method, path, query, body)
 
 	return buildBatchResult(index, exitCode, &stdoutBuf, &stderrBuf, baseClient.Verbose)
 }
