@@ -22,7 +22,7 @@ Give AI agents and automation reliable, structured access to Confluence content 
 - [x] Space listing and management — v1.0
 - [x] Comments on content (create, read, delete) — v1.0
 - [x] Label management on content — v1.0
-- [x] Multi-auth support (basic/bearer) with profiles — v1.0
+- [x] Multi-auth support (basic/bearer/oauth2/oauth2-3lo) with profiles — v1.0, v1.1 Phase 6
 - [x] JQ filtering on all JSON output — v1.0
 - [x] Raw API command for unmapped endpoints — v1.0
 - [x] Pure JSON stdout for agent consumption — v1.0
@@ -38,8 +38,10 @@ Give AI agents and automation reliable, structured access to Confluence content 
 
 ### Active
 
-- [ ] OAuth2 client credentials grant support
-- [ ] OAuth2 browser flow for interactive use
+- [x] OAuth2 client credentials grant support — v1.1 Phase 6
+- [x] OAuth2 browser flow for interactive use — v1.1 Phase 6
+- [x] Automatic OAuth2 token refresh — v1.1 Phase 6
+- [x] Secure per-profile token storage (0600 perms) — v1.1 Phase 6
 - [ ] Blog post CRUD operations
 - [ ] Attachment upload and management
 - [ ] Custom content type operations
@@ -95,4 +97,4 @@ Give AI agents and automation reliable, structured access to Confluence content 
 | AI agent as primary user | Drives design toward structured JSON output, semantic exit codes | — Pending |
 
 ---
-*Last updated: 2026-03-20 after milestone v1.1 start*
+*Last updated: 2026-03-20 after Phase 6 completion*
