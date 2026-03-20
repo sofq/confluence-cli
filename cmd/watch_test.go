@@ -150,7 +150,7 @@ func TestWatch_Dedup_SameResults(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	stdout, _ := runWatchCommand(t, srv.URL, "--cql", "space = ENG", "--max-polls", "2")
+	stdout, _ := runWatchCommand(t, srv.URL, "--cql", "space = ENG", "--max-polls", "2", "--interval", "100ms")
 
 	lines := strings.Split(strings.TrimSpace(stdout), "\n")
 	var changeLines []string
@@ -183,7 +183,7 @@ func TestWatch_Dedup_UpdatedVersion(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	stdout, _ := runWatchCommand(t, srv.URL, "--cql", "space = ENG", "--max-polls", "2")
+	stdout, _ := runWatchCommand(t, srv.URL, "--cql", "space = ENG", "--max-polls", "2", "--interval", "100ms")
 
 	lines := strings.Split(strings.TrimSpace(stdout), "\n")
 	var changeLines []string
@@ -223,7 +223,7 @@ func TestWatch_HTTPError_ContinuesPolling(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	stdout, stderr := runWatchCommand(t, srv.URL, "--cql", "space = ENG", "--max-polls", "2")
+	stdout, stderr := runWatchCommand(t, srv.URL, "--cql", "space = ENG", "--max-polls", "2", "--interval", "100ms")
 
 	// Should have error on stderr
 	if !strings.Contains(stderr, "server_error") && !strings.Contains(stderr, "error") {

@@ -296,6 +296,7 @@ func init() {
 	mergeCommand(rootCmd, attachmentsCmd)    // Phase 8: attachment workflow overrides
 	mergeCommand(rootCmd, custom_contentCmd) // Phase 9: custom content workflow overrides
 	rootCmd.AddCommand(templatesCmd)              // Phase 10: content template operations
+	rootCmd.AddCommand(watchCmd)                  // Phase 11: content change watcher
 
 	// Override cobra's default help output so that "cf" with no args and
 	// "cf help <resource>" emit JSON errors to stderr instead of plain text
