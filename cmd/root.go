@@ -99,30 +99,61 @@ var rootCmd = &cobra.Command{
 		}
 
 		// OAuth2 token resolution: fetch/cache token, switch to bearer for downstream.
-		if resolved.Auth.Type == "oauth2" {
+		if resolved.Auth.Type == "oauth2" || resolved.Auth.Type == "oauth2-3lo" {
 			store := oauth2.NewFileStore(config.TokenDir(), resolved.ProfileName)
-			token, err := oauth2.ClientCredentials(
-				resolved.Auth.ClientID,
-				resolved.Auth.ClientSecret,
-				resolved.Auth.Scopes,
-				store,
-			)
-			if err != nil {
+			var token *oauth2.Token
+			var tokenErr error
+
+			switch resolved.Auth.Type {
+			case "oauth2":
+				token, tokenErr = oauth2.ClientCredentials(
+					resolved.Auth.ClientID,
+					resolved.Auth.ClientSecret,
+					resolved.Auth.Scopes,
+					store,
+				)
+			case "oauth2-3lo":
+				token, tokenErr = oauth2.ThreeLO(
+					resolved.Auth.ClientID,
+					resolved.Auth.ClientSecret,
+					resolved.Auth.Scopes,
+					resolved.Auth.CloudID,
+					store,
+				)
+			}
+			if tokenErr != nil {
 				apiErr := &cferrors.APIError{
 					ErrorType: "auth_error",
 					Status:    0,
-					Message:   "OAuth2 token fetch failed: " + err.Error(),
+					Message:   "OAuth2 token fetch failed: " + tokenErr.Error(),
 				}
 				apiErr.WriteJSON(os.Stderr)
 				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitAuth}
 			}
-			// Switch to bearer for downstream Client
+
+			// Switch to bearer for downstream Client.
 			resolved.Auth.Type = "bearer"
 			resolved.Auth.Token = token.AccessToken
-			// Switch base URL to Atlassian API proxy
+
+			// Determine cloudID: from config, or discovered during 3LO flow.
+			effectiveCloudID := resolved.Auth.CloudID
+			if effectiveCloudID == "" && token.CloudID != "" {
+				effectiveCloudID = token.CloudID
+			}
+			if effectiveCloudID == "" {
+				apiErr := &cferrors.APIError{
+					ErrorType: "config_error",
+					Status:    0,
+					Message:   "cloud_id is required for OAuth2; set via config, CF_AUTH_CLOUD_ID, or --cloud-id flag",
+				}
+				apiErr.WriteJSON(os.Stderr)
+				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+			}
+
+			// Switch base URL to Atlassian API proxy.
 			resolved.BaseURL = fmt.Sprintf(
 				"https://api.atlassian.com/ex/confluence/%s/wiki/rest/api/v2",
-				resolved.Auth.CloudID,
+				effectiveCloudID,
 			)
 		}
 
