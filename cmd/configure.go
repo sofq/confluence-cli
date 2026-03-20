@@ -25,8 +25,12 @@ func init() {
 	f.String("base-url", "", "Confluence base URL (required unless --delete)")
 	f.String("token", "", "API token or bearer token (required unless --delete)")
 	f.StringP("profile", "p", "default", "profile name to save settings under")
-	f.String("auth-type", "basic", "auth type: basic or bearer")
+	f.String("auth-type", "basic", "auth type: basic, bearer, oauth2, oauth2-3lo")
 	f.String("username", "", "username for basic auth")
+	f.String("client-id", "", "OAuth2 client ID")
+	f.String("client-secret", "", "OAuth2 client secret")
+	f.String("cloud-id", "", "Atlassian Cloud site ID for OAuth2")
+	f.String("scopes", "", "OAuth2 scopes (space-separated)")
 	f.Bool("test", false, "test connection via GET /wiki/api/v2/spaces?limit=1 before saving")
 	f.Bool("delete", false, "delete the named profile")
 }
@@ -37,6 +41,10 @@ func runConfigure(cmd *cobra.Command, args []string) error {
 	profileName, _ := cmd.Flags().GetString("profile")
 	authType, _ := cmd.Flags().GetString("auth-type")
 	username, _ := cmd.Flags().GetString("username")
+	clientID, _ := cmd.Flags().GetString("client-id")
+	clientSecret, _ := cmd.Flags().GetString("client-secret")
+	cloudID, _ := cmd.Flags().GetString("cloud-id")
+	scopes, _ := cmd.Flags().GetString("scopes")
 	testConn, _ := cmd.Flags().GetBool("test")
 	deleteProfile, _ := cmd.Flags().GetBool("delete")
 
@@ -71,6 +79,19 @@ func runConfigure(cmd *cobra.Command, args []string) error {
 		return testExistingProfile(cmd, profileName, cmd.Flags().Changed("profile"))
 	}
 
+	// Validate auth-type before saving or testing.
+	if !config.ValidAuthType(authType) {
+		apiErr := &cferrors.APIError{
+			ErrorType: "validation_error",
+			Message:   fmt.Sprintf("invalid --auth-type %q; must be one of: basic, bearer, oauth2, oauth2-3lo", authType),
+		}
+		apiErr.WriteJSON(os.Stderr)
+		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+	}
+	authType = strings.ToLower(authType)
+
+	isOAuth2 := authType == "oauth2" || authType == "oauth2-3lo"
+
 	// Validate required fields are not empty/whitespace.
 	if strings.TrimSpace(baseURL) == "" {
 		apiErr := &cferrors.APIError{
@@ -80,7 +101,8 @@ func runConfigure(cmd *cobra.Command, args []string) error {
 		apiErr.WriteJSON(os.Stderr)
 		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 	}
-	if strings.TrimSpace(token) == "" {
+	// --token is required for basic/bearer, not for oauth2.
+	if !isOAuth2 && strings.TrimSpace(token) == "" {
 		apiErr := &cferrors.APIError{
 			ErrorType: "validation_error",
 			Message:   "--token must not be empty",
@@ -89,27 +111,32 @@ func runConfigure(cmd *cobra.Command, args []string) error {
 		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 	}
 
-	// Validate auth-type before saving or testing.
-	if !config.ValidAuthType(authType) {
-		apiErr := &cferrors.APIError{
-			ErrorType: "validation_error",
-			Message:   fmt.Sprintf("invalid --auth-type %q; must be one of: basic, bearer, oauth2", authType),
+	// OAuth2-specific validation.
+	if isOAuth2 {
+		if strings.TrimSpace(clientID) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--client-id is required for auth-type " + authType,
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 		}
-		apiErr.WriteJSON(os.Stderr)
-		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
-	}
-	authType = strings.ToLower(authType)
-
-	// Reject oauth2 in configure: required fields (client_id, client_secret,
-	// token_url) cannot be set via CLI flags, so saving an oauth2 profile here
-	// would always produce an incomplete config that fails at runtime.
-	if authType == "oauth2" {
-		apiErr := &cferrors.APIError{
-			ErrorType: "validation_error",
-			Message:   "--auth-type oauth2 is not supported by cf configure; oauth2 profiles require client_id, client_secret, and token_url which must be set manually in the config file (" + config.DefaultPath() + ")",
+		if strings.TrimSpace(clientSecret) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--client-secret is required for auth-type " + authType,
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 		}
-		apiErr.WriteJSON(os.Stderr)
-		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		if authType == "oauth2" && strings.TrimSpace(cloudID) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--cloud-id is required for auth-type oauth2",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
 	}
 
 	// Normalize base URL: strip trailing slashes to avoid double-slash issues.
@@ -142,9 +169,13 @@ func runConfigure(cmd *cobra.Command, args []string) error {
 	cfg.Profiles[profileName] = config.Profile{
 		BaseURL: baseURL,
 		Auth: config.AuthConfig{
-			Type:     authType,
-			Username: username,
-			Token:    token,
+			Type:         authType,
+			Username:     username,
+			Token:        token,
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			Scopes:       scopes,
+			CloudID:      cloudID,
 		},
 	}
 

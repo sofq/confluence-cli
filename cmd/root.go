@@ -13,6 +13,7 @@ import (
 	"github.com/sofq/confluence-cli/internal/client"
 	"github.com/sofq/confluence-cli/internal/config"
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
+	"github.com/sofq/confluence-cli/internal/oauth2"
 	"github.com/sofq/confluence-cli/internal/policy"
 	"github.com/spf13/cobra"
 )
@@ -51,6 +52,9 @@ var rootCmd = &cobra.Command{
 		authType, _ := cmd.Flags().GetString("auth-type")
 		authUser, _ := cmd.Flags().GetString("auth-user")
 		authToken, _ := cmd.Flags().GetString("auth-token")
+		clientID, _ := cmd.Flags().GetString("client-id")
+		clientSecret, _ := cmd.Flags().GetString("client-secret")
+		cloudID, _ := cmd.Flags().GetString("cloud-id")
 
 		profileName, _ := cmd.Flags().GetString("profile")
 		jqFilter, _ := cmd.Flags().GetString("jq")
@@ -64,10 +68,13 @@ var rootCmd = &cobra.Command{
 		auditFlag, _ := cmd.Flags().GetString("audit")
 
 		flags := &config.FlagOverrides{
-			BaseURL:  baseURL,
-			AuthType: authType,
-			Username: authUser,
-			Token:    authToken,
+			BaseURL:      baseURL,
+			AuthType:     authType,
+			Username:     authUser,
+			Token:        authToken,
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			CloudID:      cloudID,
 		}
 
 		resolved, err := config.Resolve(config.DefaultPath(), profileName, flags)
@@ -89,6 +96,34 @@ var rootCmd = &cobra.Command{
 			}
 			apiErr.WriteJSON(os.Stderr)
 			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
+		}
+
+		// OAuth2 token resolution: fetch/cache token, switch to bearer for downstream.
+		if resolved.Auth.Type == "oauth2" {
+			store := oauth2.NewFileStore(config.TokenDir(), resolved.ProfileName)
+			token, err := oauth2.ClientCredentials(
+				resolved.Auth.ClientID,
+				resolved.Auth.ClientSecret,
+				resolved.Auth.Scopes,
+				store,
+			)
+			if err != nil {
+				apiErr := &cferrors.APIError{
+					ErrorType: "auth_error",
+					Status:    0,
+					Message:   "OAuth2 token fetch failed: " + err.Error(),
+				}
+				apiErr.WriteJSON(os.Stderr)
+				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitAuth}
+			}
+			// Switch to bearer for downstream Client
+			resolved.Auth.Type = "bearer"
+			resolved.Auth.Token = token.AccessToken
+			// Switch base URL to Atlassian API proxy
+			resolved.BaseURL = fmt.Sprintf(
+				"https://api.atlassian.com/ex/confluence/%s/wiki/rest/api/v2",
+				resolved.Auth.CloudID,
+			)
 		}
 
 		// Load raw profile for governance fields (AllowedOperations, DeniedOperations, AuditLog).
@@ -163,9 +198,12 @@ func init() {
 	pf := rootCmd.PersistentFlags()
 	pf.StringP("profile", "p", "", "config profile to use")
 	pf.String("base-url", "", "Confluence base URL (overrides config)")
-	pf.String("auth-type", "", "auth type: basic or bearer (overrides config)")
+	pf.String("auth-type", "", "auth type: basic, bearer, oauth2, oauth2-3lo (overrides config)")
 	pf.String("auth-user", "", "username for basic auth (overrides config)")
 	pf.String("auth-token", "", "API token or bearer token (overrides config)")
+	pf.String("client-id", "", "OAuth2 client ID (overrides config)")
+	pf.String("client-secret", "", "OAuth2 client secret (overrides config)")
+	pf.String("cloud-id", "", "Atlassian Cloud site ID (overrides config)")
 	pf.String("jq", "", "jq filter expression to apply to the response")
 	pf.Bool("pretty", false, "pretty-print JSON output")
 	pf.Bool("no-paginate", false, "disable automatic pagination")
