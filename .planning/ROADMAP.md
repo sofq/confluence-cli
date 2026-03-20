@@ -30,7 +30,13 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. Any command output can be filtered in-process with `--jq '.results[].title'` and the result is valid JSON
   4. `cf raw GET /wiki/api/v2/pages --dry-run` prints the request that would be made without executing it
   5. `cf --version` outputs version info as JSON and `cf schema` outputs the command tree and parameter schemas as JSON
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Go module scaffold, internal packages (errors, config, jq, cache, generated stub)
+- [ ] 01-02-PLAN.md — HTTP client with cursor-based pagination
+- [ ] 01-03-PLAN.md — Cobra commands (root, configure, raw, version, schema)
+- [ ] 01-04-PLAN.md — Test suite for all Phase 1 packages and commands
 
 ### Phase 2: Code Generation Pipeline
 **Goal**: The `gen/` pipeline reads `spec/confluence-v2.json` and produces `cmd/generated/` with a complete, compilable Cobra command tree covering all OpenAPI operations; generated commands can be overridden by hand-written wrappers.
@@ -82,7 +88,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Core Scaffolding | 0/? | Not started | - |
+| 1. Core Scaffolding | 0/4 | Not started | - |
 | 2. Code Generation Pipeline | 0/? | Not started | - |
 | 3. Pages, Spaces, Search, Comments, and Labels | 0/? | Not started | - |
 | 4. Governance and Agent Optimization | 0/? | Not started | - |
