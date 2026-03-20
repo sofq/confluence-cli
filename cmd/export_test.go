@@ -47,6 +47,16 @@ func ExecuteBatchOps(c *client.Client, ops []BatchOp) []BatchResult {
 	return results
 }
 
+// FetchBlogpostVersion exposes the package-private fetchBlogpostVersion helper for tests.
+func FetchBlogpostVersion(ctx context.Context, c *client.Client, id string) (int, int) {
+	return fetchBlogpostVersion(ctx, c, id)
+}
+
+// DoBlogpostUpdate exposes the package-private doBlogpostUpdate helper for tests.
+func DoBlogpostUpdate(ctx context.Context, c *client.Client, id, title, storageValue string, versionNumber int) int {
+	return doBlogpostUpdate(ctx, c, id, title, storageValue, versionNumber)
+}
+
 // LabelsAddValidation validates the inputs for the labels add command without
 // making any HTTP requests. Returns 0 (ExitOK) if valid, non-zero if invalid.
 func LabelsAddValidation(pageID string, labelNames []string) int {
