@@ -14,23 +14,38 @@ Give AI agents and automation reliable, structured access to Confluence content 
 
 (None yet — ship to validate)
 
+### Validated
+
+- [x] Auto-generated commands from Confluence v2 OpenAPI spec — v1.0
+- [x] Pages CRUD (create, read, update, delete) — v1.0
+- [x] CQL search across spaces and content — v1.0
+- [x] Space listing and management — v1.0
+- [x] Comments on content (create, read, delete) — v1.0
+- [x] Label management on content — v1.0
+- [x] Multi-auth support (basic/bearer) with profiles — v1.0
+- [x] JQ filtering on all JSON output — v1.0
+- [x] Raw API command for unmapped endpoints — v1.0
+- [x] Pure JSON stdout for agent consumption — v1.0
+- [x] Structured error output with semantic exit codes — v1.0
+- [x] Configuration profiles (~/.config/cf/config.json) — v1.0
+- [x] Response caching for GET requests — v1.0
+- [x] Pagination handling for list endpoints — v1.0
+- [x] Raw Confluence storage format for page content (no conversion) — v1.0
+- [x] Operation policy enforcement — v1.0
+- [x] NDJSON audit logging — v1.0
+- [x] Batch execution — v1.0
+- [x] Avatar writing style analysis — v1.0
+
 ### Active
 
-- [ ] Auto-generated commands from Confluence v2 OpenAPI spec
-- [ ] Pages CRUD (create, read, update, delete)
-- [ ] CQL search across spaces and content
-- [ ] Space listing and management
-- [ ] Comments on content (create, read, delete)
-- [ ] Label management on content
-- [ ] Multi-auth support (basic/bearer/oauth2) with profiles
-- [ ] JQ filtering on all JSON output
-- [ ] Raw API command for unmapped endpoints
-- [ ] Pure JSON stdout for agent consumption
-- [ ] Structured error output with semantic exit codes
-- [ ] Configuration profiles (~/.config/cf/config.json)
-- [ ] Response caching for GET requests
-- [ ] Pagination handling for list endpoints
-- [ ] Raw Confluence storage format for page content (no conversion)
+- [ ] OAuth2 client credentials grant support
+- [ ] OAuth2 browser flow for interactive use
+- [ ] Blog post CRUD operations
+- [ ] Attachment upload and management
+- [ ] Custom content type operations
+- [ ] Watch command for polling content changes (NDJSON events)
+- [ ] Output presets (named JQ + fields combinations)
+- [ ] Template system for content creation
 
 ### Out of Scope
 
@@ -39,6 +54,19 @@ Give AI agents and automation reliable, structured access to Confluence content 
 - Real-time collaboration features — not applicable to CLI
 - Content rendering/preview — agents consume structured data, not rendered HTML
 - Confluence v1 API support — v2 only for cleaner, modern endpoints
+
+## Current Milestone: v1.1 Extended Capabilities
+
+**Goal:** Add OAuth2 authentication, content type coverage (blogs, attachments, custom types), and advanced agent features (watch, output presets, content templates).
+
+**Target features:**
+- OAuth2 client credentials grant and browser-based interactive flow
+- Blog post CRUD operations
+- Attachment upload and management
+- Custom content type operations
+- Watch command for polling content changes (NDJSON events)
+- Output presets (named JQ + fields combinations)
+- Template system for content creation
 
 ## Context
 
@@ -67,4 +95,4 @@ Give AI agents and automation reliable, structured access to Confluence content 
 | AI agent as primary user | Drives design toward structured JSON output, semantic exit codes | — Pending |
 
 ---
-*Last updated: 2026-03-20 after initialization*
+*Last updated: 2026-03-20 after milestone v1.1 start*
