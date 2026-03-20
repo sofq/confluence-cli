@@ -1,11 +1,208 @@
-// Package cmd contains the root Cobra command and command tree.
-// Plan 03 will populate this with all sub-commands.
 package cmd
 
-// Version is set at build time via ldflags.
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/sofq/confluence-cli/cmd/generated"
+	"github.com/sofq/confluence-cli/internal/client"
+	"github.com/sofq/confluence-cli/internal/config"
+	cferrors "github.com/sofq/confluence-cli/internal/errors"
+	"github.com/spf13/cobra"
+)
+
+// Version is set at build time via ldflags: -X github.com/sofq/confluence-cli/cmd.Version=<ver>
 var Version = "dev"
+
+// skipClientCommands are command names that do not require a configured client.
+var skipClientCommands = map[string]bool{
+	"configure":  true,
+	"version":    true,
+	"completion": true,
+	"help":       true,
+	"schema":     true,
+}
+
+var rootCmd = &cobra.Command{
+	Use:           "cf",
+	Short:         "Agent-friendly Confluence CLI",
+	SilenceUsage:  true,
+	SilenceErrors: true,
+	Version:       Version,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Skip client injection for built-in / setup commands.
+		name := cmd.Name()
+		if skipClientCommands[name] {
+			return nil
+		}
+		// Also skip for subcommands of skipped commands (e.g., completion bash)
+		if cmd.Parent() != nil && skipClientCommands[cmd.Parent().Name()] {
+			return nil
+		}
+
+		// Read flag overrides.
+		baseURL, _ := cmd.Flags().GetString("base-url")
+		authType, _ := cmd.Flags().GetString("auth-type")
+		authUser, _ := cmd.Flags().GetString("auth-user")
+		authToken, _ := cmd.Flags().GetString("auth-token")
+
+		profileName, _ := cmd.Flags().GetString("profile")
+		jqFilter, _ := cmd.Flags().GetString("jq")
+		pretty, _ := cmd.Flags().GetBool("pretty")
+		noPaginate, _ := cmd.Flags().GetBool("no-paginate")
+		verbose, _ := cmd.Flags().GetBool("verbose")
+		dryRun, _ := cmd.Flags().GetBool("dry-run")
+		fields, _ := cmd.Flags().GetString("fields")
+		cacheTTL, _ := cmd.Flags().GetDuration("cache")
+		timeout, _ := cmd.Flags().GetDuration("timeout")
+
+		flags := &config.FlagOverrides{
+			BaseURL:  baseURL,
+			AuthType: authType,
+			Username: authUser,
+			Token:    authToken,
+		}
+
+		resolved, err := config.Resolve(config.DefaultPath(), profileName, flags)
+		if err != nil {
+			apiErr := &cferrors.APIError{
+				ErrorType: "config_error",
+				Status:    0,
+				Message:   "failed to resolve config: " + err.Error(),
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
+		}
+
+		if resolved.BaseURL == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "config_error",
+				Status:    0,
+				Message:   "base_url is not set; run `cf configure --base-url <url> --token <token>` or set CF_BASE_URL",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
+		}
+
+		c := &client.Client{
+			BaseURL:    resolved.BaseURL,
+			Auth:       resolved.Auth,
+			HTTPClient: &http.Client{Timeout: timeout},
+			Stdout:     os.Stdout,
+			Stderr:     os.Stderr,
+			JQFilter:   jqFilter,
+			Paginate:   !noPaginate,
+			DryRun:     dryRun,
+			Verbose:    verbose,
+			Pretty:     pretty,
+			Fields:     fields,
+			CacheTTL:   cacheTTL,
+		}
+
+		cmd.SetContext(client.NewContext(cmd.Context(), c))
+		return nil
+	},
+}
+
+func init() {
+	pf := rootCmd.PersistentFlags()
+	pf.StringP("profile", "p", "", "config profile to use")
+	pf.String("base-url", "", "Confluence base URL (overrides config)")
+	pf.String("auth-type", "", "auth type: basic or bearer (overrides config)")
+	pf.String("auth-user", "", "username for basic auth (overrides config)")
+	pf.String("auth-token", "", "API token or bearer token (overrides config)")
+	pf.String("jq", "", "jq filter expression to apply to the response")
+	pf.Bool("pretty", false, "pretty-print JSON output")
+	pf.Bool("no-paginate", false, "disable automatic pagination")
+	pf.Bool("verbose", false, "log HTTP request/response details to stderr")
+	pf.Bool("dry-run", false, "print the request as JSON without executing it")
+	pf.String("fields", "", "comma-separated list of fields to return (GET only)")
+	pf.Duration("cache", 0, "cache GET responses for this duration (e.g. 5m, 1h)")
+	pf.Duration("timeout", 30*time.Second, "HTTP request timeout (e.g. 10s, 1m)")
+
+	// Override --version template to output JSON.
+	rootCmd.SetVersionTemplate(`{"version":"{{.Version}}"}` + "\n")
+
+	// Register generated commands first, then replace version parent
+	// with hand-written one while preserving generated subcommands.
+	generated.RegisterAll(rootCmd)
+
+	// Merge hand-written version with generated subcommands.
+	mergeCommand(rootCmd, versionCmd)
+
+	rootCmd.AddCommand(configureCmd)
+	rootCmd.AddCommand(rawCmd)
+
+	// Override cobra's default help output so that "cf" with no args and
+	// "cf help <resource>" emit JSON errors to stderr instead of plain text
+	// to stdout. This preserves the JSON-only stdout contract.
+	defaultHelp := rootCmd.HelpFunc()
+	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
+		if cmd == rootCmd {
+			// Output a helpful JSON hint and exit 0 for explicit --help / help.
+			var buf bytes.Buffer
+			enc := json.NewEncoder(&buf)
+			enc.SetEscapeHTML(false)
+			_ = enc.Encode(map[string]string{
+				"hint":    "use `cf schema` to discover commands, or `cf schema <resource>` for operations on a resource",
+				"version": Version,
+			})
+			fmt.Fprintf(os.Stdout, "%s", buf.String())
+			return
+		}
+		// Write help text to stderr so stdout stays JSON-only.
+		cmd.SetOut(os.Stderr)
+		defaultHelp(cmd, args)
+	})
+}
+
+// RootCommand returns the root cobra.Command for documentation generation.
+func RootCommand() *cobra.Command {
+	return rootCmd
+}
 
 // Execute runs the root command and returns an exit code.
 func Execute() int {
-	return 0
+	if err := rootCmd.Execute(); err != nil {
+		if aw, ok := err.(*cferrors.AlreadyWrittenError); ok {
+			return aw.Code
+		}
+		enc := json.NewEncoder(os.Stderr)
+		enc.SetEscapeHTML(false)
+		_ = enc.Encode(map[string]string{
+			"error_type": "command_error",
+			"message":    err.Error(),
+		})
+		return cferrors.ExitError
+	}
+	return cferrors.ExitOK
+}
+
+// mergeCommand replaces a generated parent command on root with a hand-written
+// one, while preserving any generated subcommands that are not already present
+// on the hand-written command.
+func mergeCommand(root *cobra.Command, handWritten *cobra.Command) {
+	name := handWritten.Name()
+	// Find existing generated command.
+	for _, c := range root.Commands() {
+		if c.Name() == name {
+			// Copy generated subcommands to hand-written command.
+			existingSubs := make(map[string]bool)
+			for _, sub := range handWritten.Commands() {
+				existingSubs[sub.Name()] = true
+			}
+			for _, sub := range c.Commands() {
+				if !existingSubs[sub.Name()] {
+					handWritten.AddCommand(sub)
+				}
+			}
+			root.RemoveCommand(c)
+			break
+		}
+	}
+	root.AddCommand(handWritten)
 }
