@@ -56,7 +56,7 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 - [x] **DOCS-01**: README.md with install methods, quick start, key features, agent integration guide
 - [ ] **DOCS-02**: LICENSE file (Apache 2.0)
 - [ ] **DOCS-03**: SECURITY.md with vulnerability reporting policy
-- [ ] **DOCS-04**: VitePress documentation site with guide pages and auto-generated command reference
+- [x] **DOCS-04**: VitePress documentation site with guide pages and auto-generated command reference
 - [x] **DOCS-05**: `gendocs` binary generates VitePress sidebar JSON and per-command docs from Cobra tree
 
 ### Project Config
@@ -140,7 +140,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONF-01 | Phase 17 | Pending |
 | CONF-02 | Phase 17 | Pending |
 | CONF-03 | Phase 17 | Pending |
-| DOCS-04 | Phase 18 | Pending |
+| DOCS-04 | Phase 18 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 39 total
