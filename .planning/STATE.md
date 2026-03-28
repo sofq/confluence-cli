@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: completed
-stopped_at: Phase 17 plans verified
-last_updated: "2026-03-28T17:34:30.934Z"
+stopped_at: Completed 17-01-PLAN.md
+last_updated: "2026-03-28T17:39:41.510Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 16
-  completed_plans: 12
-  percent: 100
+  completed_plans: 13
+  percent: 81
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 16 — schema-gendocs
+**Current focus:** Phase 17 — release-infrastructure
 
 ## Current Position
 
 Phase: 17
-Plan: Not started
-Status: Phase 16 complete
+Plan: 1 of 4
+Status: 17-01 complete
 Last activity: 2026-03-28
 
-Progress: [██████████] 100% (2/2 plans in phase 16)
+Progress: [████████░░] 81% (13/16 plans)
 
 ## Performance Metrics
 
@@ -70,6 +70,7 @@ Progress: [██████████] 100% (2/2 plans in phase 16)
 | Phase 15-workflow-commands P02 | 2min | 1 tasks | 1 files |
 | Phase 16-schema-gendocs P01 | 3min | 2 tasks | 8 files |
 | Phase 16-schema-gendocs P02 | 2min | 2 tasks | 2 files |
+| Phase 17-01 P01 | 2min | 2 tasks | 7 files |
 
 ## Accumulated Context
 
@@ -105,6 +106,8 @@ Recent decisions affecting current work:
 - [Phase 16-schema-gendocs]: Per-resource *_schema.go files following jr pattern for hand-written schema op separation
 - [Phase 16-schema-gendocs]: Flag types match init() declarations: Int as integer, Bool as boolean
 - [Phase 16-schema-gendocs]: Used --output flag instead of positional arg for gendocs CLI
+- [Phase 17-01]: Identical golangci-lint config to jr -- same errcheck exclusions apply
+- [Phase 17-01]: Apache-2.0 license for cf (differs from jr MIT) per plan specification
 
 ### Pending Todos
 
@@ -119,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T17:34:30.930Z
-Stopped at: Phase 17 plans verified
-Resume file: .planning/phases/17-release-infrastructure/17-01-PLAN.md
+Last session: 2026-03-28T17:39:41.508Z
+Stopped at: Completed 17-01-PLAN.md
+Resume file: None
