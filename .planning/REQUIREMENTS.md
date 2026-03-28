@@ -15,12 +15,12 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 
 ### Workflow Commands
 
-- [ ] **WKFL-01**: User can move a page to a different parent or space via `workflow move`
-- [ ] **WKFL-02**: User can copy a page with options (attachments, permissions, labels) via `workflow copy`
-- [ ] **WKFL-03**: User can publish a draft page via `workflow publish`
-- [ ] **WKFL-04**: User can add a plain-text comment to a page via `workflow comment`
-- [ ] **WKFL-05**: User can view, add, and remove page restrictions via `workflow restrict`
-- [ ] **WKFL-06**: User can archive pages via `workflow archive`
+- [x] **WKFL-01**: User can move a page to a different parent or space via `workflow move`
+- [x] **WKFL-02**: User can copy a page with options (attachments, permissions, labels) via `workflow copy`
+- [x] **WKFL-03**: User can publish a draft page via `workflow publish`
+- [x] **WKFL-04**: User can add a plain-text comment to a page via `workflow comment`
+- [x] **WKFL-05**: User can view, add, and remove page restrictions via `workflow restrict`
+- [x] **WKFL-06**: User can archive pages via `workflow archive`
 
 ### Content Utilities
 
@@ -115,12 +115,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DIFF-01 | Phase 14 | Complete |
 | DIFF-02 | Phase 14 | Complete |
 | DIFF-03 | Phase 14 | Complete |
-| WKFL-01 | Phase 15 | Pending |
-| WKFL-02 | Phase 15 | Pending |
-| WKFL-03 | Phase 15 | Pending |
-| WKFL-04 | Phase 15 | Pending |
-| WKFL-05 | Phase 15 | Pending |
-| WKFL-06 | Phase 15 | Pending |
+| WKFL-01 | Phase 15 | Complete |
+| WKFL-02 | Phase 15 | Complete |
+| WKFL-03 | Phase 15 | Complete |
+| WKFL-04 | Phase 15 | Complete |
+| WKFL-05 | Phase 15 | Complete |
+| WKFL-06 | Phase 15 | Complete |
 | SCHM-01 | Phase 16 | Pending |
 | SCHM-02 | Phase 16 | Pending |
 | DOCS-05 | Phase 16 | Pending |

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
-status: completed
-stopped_at: Phase 15 context gathered
-last_updated: "2026-03-28T15:57:00.471Z"
-last_activity: 2026-03-28
+status: executing
+stopped_at: Completed 15-01-PLAN.md
+last_updated: "2026-03-28T16:17:22.335Z"
+last_activity: 2026-03-28 -- Phase 15 execution started
 progress:
   total_phases: 7
   completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_plans: 10
+  completed_plans: 9
   percent: 100
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 14 — version-diff
+**Current focus:** Phase 15 — workflow-commands
 
 ## Current Position
 
-Phase: 15
-Plan: Not started
-Status: Phase 14 complete
-Last activity: 2026-03-28
+Phase: 15 (workflow-commands) — EXECUTING
+Plan: 2 of 2
+Status: Executing Phase 15
+Last activity: 2026-03-28 -- Completed 15-01-PLAN.md
 
-Progress: [██████████] 100% (2/2 plans in phase 14)
+Progress: [█████████░] 90% (1/2 plans in phase 15)
 
 ## Performance Metrics
 
@@ -66,6 +66,7 @@ Progress: [██████████] 100% (2/2 plans in phase 14)
 | Phase 13 P03 | 3min | 2 tasks | 3 files |
 | Phase 14-version-diff P01 | 3min | 1 tasks | 2 files |
 | Phase 14-version-diff P02 | 9min | 2 tasks | 3 files |
+| Phase 15-workflow-commands P01 | 2min | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -94,6 +95,9 @@ Recent decisions affecting current work:
 - [Phase 14-version-diff]: --since and --from/--to mutually exclusive (validation error)
 - [Phase 14-version-diff]: Pre-filter versions by --since cutoff before fetching bodies (avoids unnecessary API calls)
 - [Phase 14-version-diff]: Cobra flag reset in test helper for singleton command state isolation
+- [Phase 15-workflow-commands]: v1 move endpoint (PUT /content/{id}/move/append/{targetId}) over v2 PUT parentId -- reliable dedicated endpoint
+- [Phase 15-workflow-commands]: v1 archive endpoint (POST /content/archive) used -- no v2 equivalent exists
+- [Phase 15-workflow-commands]: pollLongTask returns raw body on unmarshal failure -- graceful degradation
 
 ### Pending Todos
 
@@ -108,6 +112,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T15:57:00.468Z
-Stopped at: Phase 15 context gathered
-Resume file: .planning/phases/15-workflow-commands/15-CONTEXT.md
+Last session: 2026-03-28T16:17:22.333Z
+Stopped at: Completed 15-01-PLAN.md
+Resume file: None
