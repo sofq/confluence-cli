@@ -40,7 +40,7 @@ func runAvatarAnalyze(cmd *cobra.Command, args []string) error {
 		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 	}
 
-	pages, err := avatar.FetchUserPages(c, userFlag)
+	pages, err := avatar.FetchUserPages(cmd.Context(), c, userFlag)
 	if err != nil {
 		// Classify error: 401/unauthorized/auth → ExitAuth, else ExitError.
 		errStr := strings.ToLower(err.Error())

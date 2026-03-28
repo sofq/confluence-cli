@@ -61,7 +61,7 @@ type contentPage struct {
 // FetchUserPages fetches Confluence pages created by accountID.
 // It uses the v1 content API with CQL search and returns up to 200 pages.
 // The Body field of each PageRecord contains plain text (HTML stripped).
-func FetchUserPages(c *client.Client, accountID string) ([]PageRecord, error) {
+func FetchUserPages(ctx context.Context, c *client.Client, accountID string) ([]PageRecord, error) {
 	cql := fmt.Sprintf(`creator = "%s" AND type = page ORDER BY lastModified DESC`,
 		escapeCQLString(accountID))
 
@@ -77,7 +77,7 @@ func FetchUserPages(c *client.Client, accountID string) ([]PageRecord, error) {
 	const maxPages = 200
 
 	for nextURL != "" && len(records) < maxPages {
-		body, err := fetchContentV1(context.TODO(), c, nextURL)
+		body, err := fetchContentV1(ctx, c, nextURL)
 		if err != nil {
 			return nil, err
 		}

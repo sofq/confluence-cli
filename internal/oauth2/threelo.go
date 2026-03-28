@@ -175,6 +175,11 @@ func waitForCallback(listener net.Listener, expectedState string, timeout time.D
 			return
 		}
 		code := r.URL.Query().Get("code")
+		if code == "" {
+			errCh <- fmt.Errorf("missing code parameter in callback")
+			http.Error(w, "Authorization failed: missing code parameter.", http.StatusBadRequest)
+			return
+		}
 		fmt.Fprint(w, "Authorization successful! You may close this window.")
 		codeCh <- code
 	})

@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
-status: completed
+status: executing
 stopped_at: Completed 18-02-PLAN.md
-last_updated: "2026-03-28T18:26:28.046Z"
+last_updated: "2026-03-28T18:40:40.131Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 7
-  completed_phases: 6
+  completed_phases: 7
   total_plans: 19
-  completed_plans: 17
+  completed_plans: 19
   percent: 100
 ---
 
@@ -21,13 +21,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 16 — schema-gendocs
+**Current focus:** Phase 18 — documentation-site
 
 ## Current Position
 
 Phase: 18
 Plan: Not started
-Status: Phase 16 complete
+Status: Executing Phase 18
 Last activity: 2026-03-28
 
 Progress: [██████████] 100% (2/2 plans in phase 16)

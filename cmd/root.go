@@ -155,7 +155,7 @@ var rootCmd = &cobra.Command{
 
 			// Switch base URL to Atlassian API proxy.
 			resolved.BaseURL = fmt.Sprintf(
-				"https://api.atlassian.com/ex/confluence/%s/wiki/rest/api/v2",
+				"https://api.atlassian.com/ex/confluence/%s/wiki/api/v2",
 				effectiveCloudID,
 			)
 		}

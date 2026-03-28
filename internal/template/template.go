@@ -183,7 +183,7 @@ func Save(name string, tmpl *Template) error {
 		return fmt.Errorf("marshal template: %w", err)
 	}
 
-	if err := os.WriteFile(path, data, 0o644); err != nil {
+	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return fmt.Errorf("write template: %w", err)
 	}
 	return nil

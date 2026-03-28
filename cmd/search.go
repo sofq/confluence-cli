@@ -43,7 +43,7 @@ func fetchV1(cmd *cobra.Command, c *client.Client, fullURL string) ([]byte, int)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 10<<20))
 	if err != nil {
 		apiErr := &cferrors.APIError{ErrorType: "connection_error", Message: "reading response body: " + err.Error()}
 		apiErr.WriteJSON(c.Stderr)
