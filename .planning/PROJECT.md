@@ -54,11 +54,11 @@ Give AI agents and automation reliable, structured access to Confluence content 
 - ~~Built-in templates + template management subcommands~~ — Validated in Phase 13: Content Utilities
 - ~~`export` command — export page content~~ — Validated in Phase 13: Content Utilities
 - ~~`jsonutil` and `duration` utility packages~~ — Validated in Phase 12: Internal Utilities
-- GitHub Actions CI/CD — build, test, lint, security, release, docs, spec drift
-- GoReleaser cross-platform builds + Docker + Homebrew + Scoop
-- npm/Python package scaffolds
+- ~~GitHub Actions CI/CD — build, test, lint, security, release, docs, spec drift~~ — Validated in Phase 17: Release Infrastructure
+- ~~GoReleaser cross-platform builds + Docker + Homebrew + Scoop~~ — Validated in Phase 17: Release Infrastructure
+- ~~npm/Python package scaffolds~~ — Validated in Phase 17: Release Infrastructure
 - VitePress documentation site
-- README.md, LICENSE, SECURITY.md, project config files
+- ~~README.md, LICENSE, SECURITY.md, project config files~~ — Validated in Phase 17: Release Infrastructure
 
 ### Out of Scope
 
@@ -121,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after Phase 16 completion*
+*Last updated: 2026-03-29 after Phase 17 completion*
