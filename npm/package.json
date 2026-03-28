@@ -1,0 +1,28 @@
+{
+  "name": "confluence-cf",
+  "version": "0.1.0",
+  "description": "Agent-friendly Confluence CLI with structured JSON output and jq filtering",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/sofq/confluence-cli"
+  },
+  "homepage": "https://sofq.github.io/confluence-cli/",
+  "keywords": [
+    "confluence",
+    "cli",
+    "ai",
+    "agent",
+    "json"
+  ],
+  "bin": {
+    "cf": "bin/cf"
+  },
+  "scripts": {
+    "postinstall": "node install.js"
+  },
+  "files": [
+    "bin/",
+    "install.js"
+  ]
+}
