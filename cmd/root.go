@@ -299,6 +299,7 @@ func init() {
 	rootCmd.AddCommand(presetCmd)                 // Phase 13: preset list command
 	rootCmd.AddCommand(exportCmd)                 // Phase 13: page content export
 	rootCmd.AddCommand(diffCmd)                  // Phase 14: version diff
+	rootCmd.AddCommand(workflowCmd)             // Phase 15: workflow lifecycle commands
 
 	// Override cobra's default help output so that "cf" with no args and
 	// "cf help <resource>" emit JSON errors to stderr instead of plain text
