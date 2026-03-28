@@ -149,7 +149,7 @@ Plans:
 
 - [x] **Phase 12: Internal Utilities** - jsonutil, duration, and preset packages providing foundation for all subsequent commands (completed 2026-03-28)
 - [x] **Phase 13: Content Utilities** - Built-in presets/templates, preset list, template management, and export commands (completed 2026-03-28)
-- [ ] **Phase 14: Version Diff** - Page version comparison with time-range and explicit version filtering
+- [x] **Phase 14: Version Diff** - Page version comparison with time-range and explicit version filtering (completed 2026-03-28)
 - [ ] **Phase 15: Workflow Commands** - Move, copy, publish, comment, restrict, and archive operations
 - [ ] **Phase 16: Schema + Gendocs** - Schema registration for all new commands and VitePress docs generator binary
 - [ ] **Phase 17: Release Infrastructure** - GoReleaser, GitHub Actions CI/CD, npm/Python packages, and project config files
@@ -266,7 +266,7 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 11. Watch | v1.1 | 1/1 | Complete | 2026-03-20 |
 | 12. Internal Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
 | 13. Content Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
-| 14. Version Diff | 1/2 | In Progress|  | - |
+| 14. Version Diff | 2/2 | Complete   | 2026-03-28 | - |
 | 15. Workflow Commands | v1.2 | 0/0 | Not started | - |
 | 16. Schema + Gendocs | v1.2 | 0/0 | Not started | - |
 | 17. Release Infrastructure | v1.2 | 0/0 | Not started | - |
