@@ -53,7 +53,7 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 
 ### Documentation
 
-- [ ] **DOCS-01**: README.md with install methods, quick start, key features, agent integration guide
+- [x] **DOCS-01**: README.md with install methods, quick start, key features, agent integration guide
 - [ ] **DOCS-02**: LICENSE file (Apache 2.0)
 - [ ] **DOCS-03**: SECURITY.md with vulnerability reporting policy
 - [ ] **DOCS-04**: VitePress documentation site with guide pages and auto-generated command reference
@@ -134,7 +134,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CICD-08 | Phase 17 | Pending |
 | CICD-09 | Phase 17 | Complete |
 | CICD-10 | Phase 17 | Complete |
-| DOCS-01 | Phase 17 | Pending |
+| DOCS-01 | Phase 17 | Complete |
 | DOCS-02 | Phase 17 | Pending |
 | DOCS-03 | Phase 17 | Pending |
 | CONF-01 | Phase 17 | Pending |
