@@ -1,0 +1,90 @@
+version: 2
+
+before:
+  hooks:
+    - go mod tidy
+    - go generate ./...
+
+builds:
+  - binary: cf
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+      - windows
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/sofq/confluence-cli/cmd.Version={{.Version}}
+
+archives:
+  - formats: [tar.gz]
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+    name_template: >-
+      {{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}
+
+checksum:
+  name_template: checksums.txt
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^ci:"
+      - "^chore:"
+
+brews:
+  - name: cf
+    repository:
+      owner: sofq
+      name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/sofq/confluence-cli
+    description: Agent-friendly Confluence CLI with structured JSON output and jq filtering
+    license: Apache-2.0
+    install: |
+      bin.install "cf"
+    test: |
+      system "#{bin}/cf", "version"
+
+scoops:
+  - name: cf
+    repository:
+      owner: sofq
+      name: scoop-bucket
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
+    homepage: https://github.com/sofq/confluence-cli
+    description: Agent-friendly Confluence CLI with structured JSON output and jq filtering
+    license: Apache-2.0
+
+dockers:
+  - image_templates:
+      - "ghcr.io/sofq/cf:{{ .Version }}-amd64"
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/amd64"
+    dockerfile: Dockerfile.goreleaser
+    goarch: amd64
+  - image_templates:
+      - "ghcr.io/sofq/cf:{{ .Version }}-arm64"
+    use: buildx
+    build_flag_templates:
+      - "--platform=linux/arm64"
+    dockerfile: Dockerfile.goreleaser
+    goarch: arm64
+
+docker_manifests:
+  - name_template: "ghcr.io/sofq/cf:{{ .Version }}"
+    image_templates:
+      - "ghcr.io/sofq/cf:{{ .Version }}-amd64"
+      - "ghcr.io/sofq/cf:{{ .Version }}-arm64"
+  - name_template: "ghcr.io/sofq/cf:latest"
+    image_templates:
+      - "ghcr.io/sofq/cf:{{ .Version }}-amd64"
+      - "ghcr.io/sofq/cf:{{ .Version }}-arm64"
