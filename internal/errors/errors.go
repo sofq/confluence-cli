@@ -1,13 +1,14 @@
 package errors
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/sofq/confluence-cli/internal/jsonutil"
 )
 
 // ExitCode is an alias for int representing semantic process exit statuses.
@@ -64,9 +65,7 @@ func (e *APIError) ExitCode() int {
 
 // WriteJSON encodes the error as a JSON object and writes it to w.
 func (e *APIError) WriteJSON(w io.Writer) {
-	enc := json.NewEncoder(w)
-	enc.SetEscapeHTML(false)
-	_ = enc.Encode(e)
+	_ = jsonutil.NewEncoder(w).Encode(e)
 }
 
 // WriteStderr writes the JSON-encoded error to os.Stderr.

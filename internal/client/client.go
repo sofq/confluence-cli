@@ -18,6 +18,7 @@ import (
 	"github.com/sofq/confluence-cli/internal/config"
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
 	"github.com/sofq/confluence-cli/internal/jq"
+	"github.com/sofq/confluence-cli/internal/jsonutil"
 	"github.com/sofq/confluence-cli/internal/policy"
 	"github.com/spf13/cobra"
 )
@@ -146,11 +147,8 @@ func (c *Client) Do(ctx context.Context, method, path string, query url.Values, 
 				}
 			}
 		}
-		var buf bytes.Buffer
-		enc := json.NewEncoder(&buf)
-		enc.SetEscapeHTML(false)
-		_ = enc.Encode(dryOut)
-		exitCode := c.WriteOutput(bytes.TrimRight(buf.Bytes(), "\n"))
+		data, _ := jsonutil.MarshalNoEscape(dryOut)
+		exitCode := c.WriteOutput(data)
 		c.AuditLogger.Log(audit.Entry{
 			Profile:   c.Profile,
 			Operation: operationName,
@@ -367,29 +365,19 @@ func (c *Client) doCursorPagination(ctx context.Context, method, path string, fi
 	var envelope map[string]json.RawMessage
 	_ = json.Unmarshal(firstBody, &envelope)
 
-	var resBuf bytes.Buffer
-	resEnc := json.NewEncoder(&resBuf)
-	resEnc.SetEscapeHTML(false)
-	_ = resEnc.Encode(allResults)
-	envelope["results"] = json.RawMessage(bytes.TrimRight(resBuf.Bytes(), "\n"))
+	resData, _ := jsonutil.MarshalNoEscape(allResults)
+	envelope["results"] = json.RawMessage(resData)
 
 	// Remove _links.next from merged result — pagination is complete.
 	var links map[string]json.RawMessage
 	if linksRaw, ok := envelope["_links"]; ok {
 		_ = json.Unmarshal(linksRaw, &links)
 		delete(links, "next")
-		var linksBuf bytes.Buffer
-		linksEnc := json.NewEncoder(&linksBuf)
-		linksEnc.SetEscapeHTML(false)
-		_ = linksEnc.Encode(links)
-		envelope["_links"] = json.RawMessage(bytes.TrimRight(linksBuf.Bytes(), "\n"))
+		linksData, _ := jsonutil.MarshalNoEscape(links)
+		envelope["_links"] = json.RawMessage(linksData)
 	}
 
-	var resultBuf bytes.Buffer
-	enc := json.NewEncoder(&resultBuf)
-	enc.SetEscapeHTML(false)
-	_ = enc.Encode(envelope)
-	result := bytes.TrimRight(resultBuf.Bytes(), "\n")
+	result, _ := jsonutil.MarshalNoEscape(envelope)
 
 	if cacheKey != "" {
 		if err := cache.Set(cacheKey, result); err != nil {
@@ -500,11 +488,8 @@ func (c *Client) Fetch(ctx context.Context, method, path string, body io.Reader)
 				}
 			}
 		}
-		var buf bytes.Buffer
-		enc := json.NewEncoder(&buf)
-		enc.SetEscapeHTML(false)
-		_ = enc.Encode(dryOut)
-		return bytes.TrimRight(buf.Bytes(), "\n"), cferrors.ExitOK
+		data, _ := jsonutil.MarshalNoEscape(dryOut)
+		return data, cferrors.ExitOK
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, fullURL, body)
