@@ -168,9 +168,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 12-01-PLAN.md — Create jsonutil and duration internal packages with tests
-- [ ] 12-02-PLAN.md — Create preset package with three-tier resolution and wire into cmd/root.go
-- [ ] 12-03-PLAN.md — Refactor all existing SetEscapeHTML call sites to use jsonutil
+- [x] 12-01-PLAN.md — Create jsonutil and duration internal packages with tests
+- [x] 12-02-PLAN.md — Create preset package with three-tier resolution and wire into cmd/root.go
+- [x] 12-03-PLAN.md — Refactor all existing SetEscapeHTML call sites to use jsonutil
 
 ### Phase 13: Content Utilities
 **Goal**: Users have access to built-in presets and templates out of the box, can manage templates, and can extract page content via export.
@@ -182,7 +182,12 @@ Plans:
   3. A fresh install of cf includes 6 built-in templates (blank, meeting-notes, decision, runbook, retrospective, adr) accessible via `--template <name>` on create commands
   4. `cf templates show <name>` prints the full template definition (body, variables, description) as JSON, and `cf templates create --from-page <id>` reverse-engineers a template from an existing page
   5. `cf export --id <pageId>` outputs the page body in the requested format (storage/view/atlas_doc_format), and `cf export --id <pageId> --tree` recursively exports a page tree as NDJSON (one line per page)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 13-01-PLAN.md — Built-in templates, template package refactoring, and preset list command
+- [ ] 13-02-PLAN.md — Templates show, create --from-page commands, and list output refactoring
+- [ ] 13-03-PLAN.md — Export command with single-page and recursive tree NDJSON modes
 
 ### Phase 14: Version Diff
 **Goal**: Users can compare page versions and understand what changed, when, and by whom.
@@ -255,8 +260,8 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 9. Custom Content | v1.1 | 1/1 | Complete | 2026-03-20 |
 | 10. Output Presets and Templates | v1.1 | 2/2 | Complete | 2026-03-20 |
 | 11. Watch | v1.1 | 1/1 | Complete | 2026-03-20 |
-| 12. Internal Utilities | 3/3 | Complete   | Complete    | 2026-03-28 |
-| 13. Content Utilities | v1.2 | 0/0 | Not started | - |
+| 12. Internal Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
+| 13. Content Utilities | v1.2 | 0/3 | Planned | - |
 | 14. Version Diff | v1.2 | 0/0 | Not started | - |
 | 15. Workflow Commands | v1.2 | 0/0 | Not started | - |
 | 16. Schema + Gendocs | v1.2 | 0/0 | Not started | - |
