@@ -215,8 +215,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 15-01-PLAN.md — Implement workflow parent command with all six subcommands and root registration
-- [ ] 15-02-PLAN.md — Tests for all workflow subcommands covering validation, API calls, and output
+- [x] 15-01-PLAN.md — Implement workflow parent command with all six subcommands and root registration
+- [x] 15-02-PLAN.md — Tests for all workflow subcommands covering validation, API calls, and output
 
 ### Phase 16: Schema + Gendocs
 **Goal**: All new commands are discoverable via `cf schema` and a docs generator binary can produce the complete VitePress command reference.
@@ -226,7 +226,11 @@ Plans:
   1. `cf schema` output includes operations for all new commands (diff, workflow move/copy/publish/comment/restrict/archive, export, preset list, templates show/create), with correct verb, resource, description, and flags
   2. All schema operations are aggregated in `schema_cmd.go` from individual `*_schema.go` files, maintaining the existing registration pattern
   3. `go run cmd/gendocs/main.go --output website/` generates per-command Markdown files and a sidebar JSON file from the Cobra command tree, suitable for VitePress consumption
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 16-01-PLAN.md — Schema registration for all hand-written commands and aggregation in schema_cmd.go + batch.go
+- [ ] 16-02-PLAN.md — Standalone gendocs binary with VitePress Markdown, sidebar JSON, and error codes generation
 
 ### Phase 17: Release Infrastructure
 **Goal**: The project has complete CI/CD, cross-platform binary distribution, and standard open-source project files ready for public release.
@@ -271,7 +275,7 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 12. Internal Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
 | 13. Content Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
 | 14. Version Diff | v1.2 | 2/2 | Complete | 2026-03-28 |
-| 15. Workflow Commands | 2/2 | Complete   | Complete    | 2026-03-28 |
-| 16. Schema + Gendocs | v1.2 | 0/0 | Not started | - |
+| 15. Workflow Commands | v1.2 | 2/2 | Complete | 2026-03-28 |
+| 16. Schema + Gendocs | v1.2 | 0/2 | Planning | - |
 | 17. Release Infrastructure | v1.2 | 0/0 | Not started | - |
 | 18. Documentation Site | v1.2 | 0/0 | Not started | - |
