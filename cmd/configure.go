@@ -11,6 +11,7 @@ import (
 
 	"github.com/sofq/confluence-cli/internal/config"
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
+	"github.com/sofq/confluence-cli/internal/jsonutil"
 	"github.com/spf13/cobra"
 )
 
@@ -193,7 +194,7 @@ func runConfigure(cmd *cobra.Command, args []string) error {
 		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
 	}
 
-	out, _ := marshalNoEscape(map[string]string{
+	out, _ := jsonutil.MarshalNoEscape(map[string]string{
 		"status":  "saved",
 		"profile": profileName,
 		"path":    configPath,
@@ -259,7 +260,7 @@ func testExistingProfile(cmd *cobra.Command, profileName string, profileExplicit
 		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
 	}
 
-	out, _ := marshalNoEscape(map[string]string{
+	out, _ := jsonutil.MarshalNoEscape(map[string]string{
 		"status":  "ok",
 		"profile": name,
 	})
@@ -307,7 +308,7 @@ func deleteProfileByName(cmd *cobra.Command, name string) error {
 		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
 	}
 
-	out, _ := marshalNoEscape(map[string]string{
+	out, _ := jsonutil.MarshalNoEscape(map[string]string{
 		"status":  "deleted",
 		"profile": name,
 		"path":    configPath,

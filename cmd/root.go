@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
@@ -13,6 +11,7 @@ import (
 	"github.com/sofq/confluence-cli/internal/client"
 	"github.com/sofq/confluence-cli/internal/config"
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
+	"github.com/sofq/confluence-cli/internal/jsonutil"
 	"github.com/sofq/confluence-cli/internal/oauth2"
 	"github.com/sofq/confluence-cli/internal/policy"
 	preset_pkg "github.com/sofq/confluence-cli/internal/preset"
@@ -304,14 +303,11 @@ func init() {
 	rootCmd.SetHelpFunc(func(cmd *cobra.Command, args []string) {
 		if cmd == rootCmd {
 			// Output a helpful JSON hint and exit 0 for explicit --help / help.
-			var buf bytes.Buffer
-			enc := json.NewEncoder(&buf)
-			enc.SetEscapeHTML(false)
-			_ = enc.Encode(map[string]string{
+			data, _ := jsonutil.MarshalNoEscape(map[string]string{
 				"hint":    "use `cf schema` to discover commands, or `cf schema <resource>` for operations on a resource",
 				"version": Version,
 			})
-			fmt.Fprintf(os.Stdout, "%s", buf.String())
+			fmt.Fprintf(os.Stdout, "%s\n", data)
 			return
 		}
 		// Write help text to stderr so stdout stays JSON-only.
@@ -331,9 +327,7 @@ func Execute() int {
 		if aw, ok := err.(*cferrors.AlreadyWrittenError); ok {
 			return aw.Code
 		}
-		enc := json.NewEncoder(os.Stderr)
-		enc.SetEscapeHTML(false)
-		_ = enc.Encode(map[string]string{
+		_ = jsonutil.NewEncoder(os.Stderr).Encode(map[string]string{
 			"error_type": "command_error",
 			"message":    err.Error(),
 		})

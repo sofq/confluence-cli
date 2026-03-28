@@ -12,6 +12,7 @@ import (
 
 	"github.com/sofq/confluence-cli/internal/client"
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
+	"github.com/sofq/confluence-cli/internal/jsonutil"
 	"github.com/spf13/cobra"
 )
 
@@ -80,8 +81,7 @@ func runWatch(cmd *cobra.Command, args []string) error {
 	ctx, stop := signal.NotifyContext(cmd.Context(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
-	enc := json.NewEncoder(c.Stdout)
-	enc.SetEscapeHTML(false)
+	enc := jsonutil.NewEncoder(c.Stdout)
 
 	seen := make(map[string]time.Time) // contentID -> modifiedAt (parsed)
 

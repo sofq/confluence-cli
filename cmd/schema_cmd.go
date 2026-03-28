@@ -10,6 +10,7 @@ import (
 	"github.com/sofq/confluence-cli/cmd/generated"
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
 	"github.com/sofq/confluence-cli/internal/jq"
+	"github.com/sofq/confluence-cli/internal/jsonutil"
 	"github.com/spf13/cobra"
 )
 
@@ -29,7 +30,7 @@ var schemaCmd = &cobra.Command{
 		allOps := generated.AllSchemaOps()
 
 		if compactFlag || (len(args) == 0 && !listFlag) {
-			data, _ := marshalNoEscape(compactSchema(allOps))
+			data, _ := jsonutil.MarshalNoEscape(compactSchema(allOps))
 			return schemaOutput(cmd, data)
 		}
 
@@ -45,7 +46,7 @@ var schemaCmd = &cobra.Command{
 					seen[op.Resource] = true
 				}
 			}
-			data, _ := marshalNoEscape(resources)
+			data, _ := jsonutil.MarshalNoEscape(resources)
 			return schemaOutput(cmd, data)
 		}
 
@@ -66,14 +67,14 @@ var schemaCmd = &cobra.Command{
 				apiErr.WriteJSON(os.Stderr)
 				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitNotFound}
 			}
-			data, _ := marshalNoEscape(matching)
+			data, _ := jsonutil.MarshalNoEscape(matching)
 			return schemaOutput(cmd, data)
 		}
 
 		verb := args[1]
 		for _, op := range allOps {
 			if op.Resource == resource && op.Verb == verb {
-				data, _ := marshalNoEscape(op)
+				data, _ := jsonutil.MarshalNoEscape(op)
 				return schemaOutput(cmd, data)
 			}
 		}
@@ -93,17 +94,6 @@ func compactSchema(ops []generated.SchemaOp) map[string][]string {
 		compact[op.Resource] = append(compact[op.Resource], op.Verb)
 	}
 	return compact
-}
-
-// marshalNoEscape serializes v to JSON without HTML escaping.
-func marshalNoEscape(v any) ([]byte, error) {
-	var buf bytes.Buffer
-	enc := json.NewEncoder(&buf)
-	enc.SetEscapeHTML(false)
-	if err := enc.Encode(v); err != nil {
-		return nil, err
-	}
-	return bytes.TrimRight(buf.Bytes(), "\n"), nil
 }
 
 // schemaOutput applies --jq and --pretty flags to schema JSON output.

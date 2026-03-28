@@ -14,6 +14,7 @@ import (
 	"github.com/sofq/confluence-cli/internal/client"
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
 	"github.com/sofq/confluence-cli/internal/jq"
+	"github.com/sofq/confluence-cli/internal/jsonutil"
 	"github.com/spf13/cobra"
 )
 
@@ -163,14 +164,9 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	}
 
 	// Write all results as a JSON array to stdout.
-	var resultBuf bytes.Buffer
-	enc := json.NewEncoder(&resultBuf)
-	enc.SetEscapeHTML(false)
 	// BatchResult contains only int, string, and json.RawMessage fields —
-	// json.Encode cannot fail.
-	_ = enc.Encode(results)
-
-	output := bytes.TrimRight(resultBuf.Bytes(), "\n")
+	// MarshalNoEscape cannot fail.
+	output, _ := jsonutil.MarshalNoEscape(results)
 
 	// Apply global --jq filter to the batch output array.
 	if baseClient.JQFilter != "" {
