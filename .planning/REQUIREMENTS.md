@@ -40,13 +40,13 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 
 ### CI/CD & Release
 
-- [ ] **CICD-01**: GitHub Actions CI pipeline runs build, test, lint on push/PR to main
-- [ ] **CICD-02**: GitHub Actions release pipeline builds cross-platform binaries via GoReleaser on tag push
-- [ ] **CICD-03**: GitHub Actions security pipeline runs gosec + govulncheck weekly and on push
-- [ ] **CICD-04**: GitHub Actions docs pipeline builds and deploys VitePress site to GitHub Pages
-- [ ] **CICD-05**: Spec drift detection runs daily, auto-regenerates commands, creates PR
-- [ ] **CICD-06**: Auto-release workflow tags and releases when spec-update PR merges
-- [ ] **CICD-07**: Dependabot configured for Go modules and GitHub Actions weekly updates
+- [x] **CICD-01**: GitHub Actions CI pipeline runs build, test, lint on push/PR to main
+- [x] **CICD-02**: GitHub Actions release pipeline builds cross-platform binaries via GoReleaser on tag push
+- [x] **CICD-03**: GitHub Actions security pipeline runs gosec + govulncheck weekly and on push
+- [x] **CICD-04**: GitHub Actions docs pipeline builds and deploys VitePress site to GitHub Pages
+- [x] **CICD-05**: Spec drift detection runs daily, auto-regenerates commands, creates PR
+- [x] **CICD-06**: Auto-release workflow tags and releases when spec-update PR merges
+- [x] **CICD-07**: Dependabot configured for Go modules and GitHub Actions weekly updates
 - [ ] **CICD-08**: GoReleaser produces binaries for linux/darwin/windows (amd64/arm64) + Docker images
 - [x] **CICD-09**: npm package scaffold with postinstall binary download
 - [x] **CICD-10**: Python package scaffold with binary wrapper
@@ -124,13 +124,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | SCHM-01 | Phase 16 | Complete |
 | SCHM-02 | Phase 16 | Complete |
 | DOCS-05 | Phase 16 | Complete |
-| CICD-01 | Phase 17 | Pending |
-| CICD-02 | Phase 17 | Pending |
-| CICD-03 | Phase 17 | Pending |
-| CICD-04 | Phase 17 | Pending |
-| CICD-05 | Phase 17 | Pending |
-| CICD-06 | Phase 17 | Pending |
-| CICD-07 | Phase 17 | Pending |
+| CICD-01 | Phase 17 | Complete |
+| CICD-02 | Phase 17 | Complete |
+| CICD-03 | Phase 17 | Complete |
+| CICD-04 | Phase 17 | Complete |
+| CICD-05 | Phase 17 | Complete |
+| CICD-06 | Phase 17 | Complete |
+| CICD-07 | Phase 17 | Complete |
 | CICD-08 | Phase 17 | Pending |
 | CICD-09 | Phase 17 | Complete |
 | CICD-10 | Phase 17 | Complete |
