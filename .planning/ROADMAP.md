@@ -152,7 +152,7 @@ Plans:
 - [x] **Phase 14: Version Diff** - Page version comparison with time-range and explicit version filtering (completed 2026-03-28)
 - [x] **Phase 15: Workflow Commands** - Move, copy, publish, comment, restrict, and archive operations (completed 2026-03-28)
 - [x] **Phase 16: Schema + Gendocs** - Schema registration for all new commands and VitePress docs generator binary (completed 2026-03-28)
-- [ ] **Phase 17: Release Infrastructure** - GoReleaser, GitHub Actions CI/CD, npm/Python packages, and project config files
+- [x] **Phase 17: Release Infrastructure** - GoReleaser, GitHub Actions CI/CD, npm/Python packages, and project config files (completed 2026-03-28)
 - [ ] **Phase 18: Documentation Site** - VitePress site with guide pages and auto-generated command reference
 
 ## Phase Details
@@ -283,5 +283,5 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 14. Version Diff | v1.2 | 2/2 | Complete | 2026-03-28 |
 | 15. Workflow Commands | v1.2 | 2/2 | Complete | 2026-03-28 |
 | 16. Schema + Gendocs | v1.2 | 2/2 | Complete | 2026-03-28 |
-| 17. Release Infrastructure | 3/4 | In Progress|  | - |
+| 17. Release Infrastructure | 3/4 | In Progress| Complete    | 2026-03-28 |
 | 18. Documentation Site | v1.2 | 0/0 | Not started | - |
