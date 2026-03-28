@@ -256,7 +256,12 @@ Plans:
 **Success Criteria** (what must be TRUE):
   1. `npm run docs:dev` inside `website/` serves a local VitePress site with navigation, guide pages (getting-started, filtering, discovery, templates, global-flags, agent-integration), and auto-generated command reference
   2. The docs GitHub Actions workflow builds the VitePress site and deploys it to GitHub Pages at the correct base path (`/confluence-cli/`), with `.nojekyll` present and no broken internal links
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 18-01-PLAN.md — VitePress infrastructure, custom theme, and landing page
+- [ ] 18-02-PLAN.md — Guide pages: getting-started, filtering, discovery, templates
+- [ ] 18-03-PLAN.md — Guide pages: global-flags, agent-integration, skill-setup + build verification
 
 ## Progress
 
@@ -283,5 +288,5 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 14. Version Diff | v1.2 | 2/2 | Complete | 2026-03-28 |
 | 15. Workflow Commands | v1.2 | 2/2 | Complete | 2026-03-28 |
 | 16. Schema + Gendocs | v1.2 | 2/2 | Complete | 2026-03-28 |
-| 17. Release Infrastructure | 3/4 | In Progress| Complete    | 2026-03-28 |
-| 18. Documentation Site | v1.2 | 0/0 | Not started | - |
+| 17. Release Infrastructure | v1.2 | 4/4 | Complete | 2026-03-28 |
+| 18. Documentation Site | v1.2 | 0/3 | In Progress | - |
