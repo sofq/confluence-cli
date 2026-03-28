@@ -1,215 +1,306 @@
 # Project Research Summary
 
-**Project:** Confluence Cloud CLI (`cf`) — v1.1 Extended Capabilities
-**Domain:** Go CLI tool for Confluence Cloud REST API v2 (agent-optimized) — additive extension to shipped v1.0
-**Researched:** 2026-03-20
+**Project:** Confluence CLI v1.2 — Workflow, Parity & Release Infrastructure
+**Domain:** Go CLI tool expansion with API workflow commands, content utilities, and release pipeline
+**Researched:** 2026-03-28
 **Confidence:** HIGH
 
 ## Executive Summary
 
-`cf` v1.1 is an incremental extension to an already-shipped Go/Cobra CLI (v1.0). The v1.0 foundation is solid: code-generated from the Confluence v2 OpenAPI spec, strict JSON-stdout contract, semantic exit codes, JQ filtering, batch operations, and API token authentication. v1.1 closes three gaps that block real-world adoption: missing content types (blog posts, attachments, custom content), missing enterprise authentication (OAuth2 2LO and 3LO), and missing agent ergonomics (output presets, content templates, watch/polling). All features are implementable with zero new Go dependencies — entirely Go stdlib — which preserves the project's clean dependency profile and mirrors the reference `jr` implementation pattern.
+The v1.2 milestone extends an already-functioning Confluence Cloud CLI (cf) built on Go + Cobra. The project has a verified reference implementation — the Jira CLI (jr) — that has already solved every feature in scope: workflow commands, version diff, export, built-in presets, built-in templates, GoReleaser, VitePress docs, npm/PyPI binary distribution, and full GitHub Actions CI/CD. Every major architectural and tooling decision can be direct-ported from jr with Confluence-specific adaptations. The zero-new-Go-dependencies constraint is confirmed viable: all new internal packages use only stdlib, with one exception (`spf13/pflag` direct dep needed for `cmd/gendocs` flag introspection).
 
-The recommended approach is to build in three tracks: OAuth2 authentication infrastructure first (it changes the base URL and auth model for all subsequent commands), then content types (blog posts, attachment CRUD, custom content), then agent features (presets, templates, watch). The OAuth2 track requires the most architectural care: tokens must be stored separately from config, refresh must be single-flight to avoid rotating-token race conditions, and the base URL must switch from the direct instance URL to `api.atlassian.com/ex/confluence/{cloudId}` when OAuth2 is active. These are known failure modes with clear, well-documented solutions.
+The recommended approach is methodical: build pure-logic internal packages first (`internal/jsonutil`, `internal/duration`, `internal/preset`), extend the template system, add a v1 HTTP POST/PUT helper to unlock the workflow commands that have no v2 API equivalents (move, copy, restrict, archive), then build CLI commands in dependency order, followed by release infrastructure. The architecture mirrors jr exactly — new commands register in `cmd/`, schema ops are appended in `schema_cmd.go`, and the preset/template systems follow three-tier lookup (profile override > user file > builtin).
 
-The highest-risk area is attachment upload: Confluence v2 has no upload endpoint (tracked in CONFCLOUD-77196), so upload must fall back to the v1 API, which uses a different URL prefix than the v2 base URL stored in config. The fix is a `SiteRoot()` method that strips `/wiki/api/v2` from the stored base URL — but it must be implemented before any v1 endpoint integration or it causes subtly broken double-prefixed URLs. This is not theoretical: this exact bug already occurred in this codebase and was fixed in commit `a6e99ef`.
+The key risks concentrate in three areas: (1) Confluence Cloud API specifics — several operations use v1-only async APIs with long-running tasks that must be polled, and the restrictions API has a non-obvious replace-not-merge model that can silently delete access; (2) release infrastructure — npm classic tokens are deprecated (OIDC required), Homebrew/Scoop need a PAT with cross-repo write access, and the GoReleaser ldflags path must exactly match the Go module path; (3) VitePress docs — base path configuration breaks nested links on GitHub Pages unless `base`, leading-slash links, and `.nojekyll` are all set correctly. All risks have documented prevention strategies from the jr reference.
+
+---
 
 ## Key Findings
 
 ### Recommended Stack
 
-All v1.1 features require zero new Go dependencies. The existing stack (Go 1.25.8, Cobra v1.10.2, pflag v1.0.9, libopenapi v0.34.3, gojq v0.12.18) remains unchanged. New capabilities are implemented entirely with Go stdlib packages.
+The existing stack (Go 1.25.8, Cobra, gojq, libopenapi) is unchanged and validated. For v1.2, all new Go code uses only stdlib — no new module dependencies except adding `spf13/pflag` as a direct dep for `cmd/gendocs` flag introspection. Release infrastructure adds GoReleaser v2.14.x (OSS), VitePress 1.x stable (not v2 alpha), golangci-lint v2, gosec, govulncheck, and SHA-pinned GitHub Actions.
 
-**New stdlib usage (no new deps):**
-- `net/http`, `crypto/rand`, `crypto/sha256`, `encoding/base64` — OAuth2 client_credentials and 3LO browser flow; no `golang.org/x/oauth2` needed
-- `mime/multipart`, `io`, `os` — attachment upload form-data encoding; no `go-resty` needed
-- `text/template`, `embed` — content template rendering; `html/template` must NOT be used (it would escape Confluence storage format XHTML macro tags)
-- `time.Ticker`, `context` — watch/polling loop with clean SIGINT shutdown
-- `encoding/json` + file I/O — token persistence (`~/.config/cf/tokens/{profile}.json`) and output preset storage
+**Core technologies:**
 
-**Critical config struct changes needed:**
-- `AuthConfig`: add `ClientID`, `ClientSecret`, `TokenURL`, `Scopes`, `CloudID` fields for OAuth2
-- `Profile`: add `Presets map[string]Preset` for named output presets
-- Token file (separate from config.json): `~/.config/cf/tokens/{profile}.json` with 0600 permissions and atomic writes
+| Technology | Purpose | Why |
+|------------|---------|-----|
+| Go stdlib (`bytes`, `encoding/json`) | `internal/jsonutil.MarshalNoEscape()` | Confluence XHTML body corrupts with default HTML-escaping of `&`, `<`, `>` |
+| Go stdlib (`regexp`, `strconv`) | `internal/duration.Parse()` | Human-readable durations for `diff --since`; 1d=24h (calendar, not Jira workday) |
+| Go stdlib (`encoding/json`, `os`) | `internal/preset` package | Built-in presets with user override; JQ-only (no API-level field filter in Confluence v2) |
+| Go `embed.FS` | Built-in templates in `internal/template/builtin/*.json` | Keep JSON format (no yaml.v3 dep); embed 4 templates |
+| GoReleaser v2.14.x | Cross-platform builds, GitHub releases, Homebrew, Scoop, Docker | Industry standard; jr reference validated; OSS covers all needs |
+| VitePress ^1.6.4 | Static docs site with auto-generated command reference | v2.0 is alpha-only; 1.x stable with Node 24 + esbuild ^0.25.0 override |
+| golangci-lint v2 | Lint aggregator | v2 config format (`version: "2"`, `linters.default: standard`) |
+| gosec + govulncheck | SAST + dependency vulnerability scanning | Standard Go security toolchain; exclude `cmd/generated` from gosec |
+| npm + PyPI packages | Binary distribution for Node/AI and Python ecosystems | Postinstall binary download pattern (same as esbuild, turbo) |
+| `spf13/pflag` | Direct dep for `cmd/gendocs` flag introspection | Needed for Cobra flag walking in docs generator |
 
-**Do not use:** `golang.org/x/oauth2` (over-engineered for CLI, adds transitive deps, designed for long-running servers), `go-keyring` (CGO dependency on Linux, breaks cross-compilation), `gorilla/websocket` (Confluence has no WebSocket API), `html/template` (escapes Confluence XHTML).
+**Version constraints that matter:**
+- VitePress: `^1.6.4` only — v2.0.0-alpha.17 is NOT suitable; `overrides: {"esbuild": "^0.25.0"}` required
+- GoReleaser: use `goreleaser-action@v7` with `~> v2` constraint
+- All GitHub Actions: SHA-pinned with tag comment for readability
 
 ### Expected Features
 
-Research identifies a clear P1/P2/P3 split. P1 features justify the v1.1 version bump and close the content coverage and auth gaps. P2 features differentiate the tool for agent and automation users. P3 is deferred.
+**Must have (table stakes):**
+- `diff` command — page version comparison using v2 version history API; `--since` duration filter; structured JSON output with change stats
+- `workflow move` — move page to different parent/space; v1-only API (`PUT /wiki/rest/api/content/{id}/move/{position}/{targetId}`)
+- `workflow copy` — copy page with options; v1-only async API; must poll `/longtask/{taskId}`
+- `workflow publish` — publish draft page; wraps existing v2 page update with `status: "current"`
+- `workflow comment` — convenience wrapper around existing footer-comments create; plain text to storage format
+- Built-in presets + `preset list` — 7 built-in presets: `brief`, `titles`, `agent`, `tree`, `meta`, `search`, `diff`
+- Built-in templates + `templates show`/`templates create` — 4 built-ins: blank, meeting-notes, decision-record, project-update
+- `export` command — page body extraction (storage/view/atlas_doc_format); NOT PDF (no API exists)
+- Full CI/CD: 7 GitHub Actions workflows (ci, release, docs, security, spec-drift, spec-auto-release, dependabot-auto-merge)
+- GoReleaser config, Homebrew tap, Scoop bucket, Docker multi-arch images
+- VitePress docs site with auto-generated command reference + guide pages
+- npm + PyPI binary distribution packages
 
-**Must have for v1.1 — P1 (table stakes):**
-- Blog post CRUD — v2 API endpoints mirror pages exactly; 90% code reuse from `pages.go`; lowest effort among new features
-- OAuth2 3LO browser flow — unblocks enterprise orgs that disable API tokens; most-requested auth gap
-- Attachment list/get/delete — v2 API with cursor pagination; completes content discovery
-- Attachment upload — v1 API fallback (`POST /wiki/rest/api/content/{id}/child/attachment`), multipart/form-data; no v2 equivalent exists
-- Output presets — named JQ+fields combinations in config; `--preset` global flag in root.go; zero API work, enhances every command
+**Should have (differentiators):**
+- `diff --since` with symbolic user resolution (`--user me`, `--user email@example.com`) in workflow restrict
+- `templates create --from-page` to reverse-engineer a template from an existing page
+- Schema registration for all new commands (agents discover via `cf schema`)
+- `export --tree` for recursive page tree export as NDJSON stream
 
-**Should have — P2 (agent/CI differentiators):**
-- OAuth2 2LO client credentials — service accounts for CI/CD pipelines and autonomous agents; zero user interaction; unique among Confluence CLI tools
-- Watch command (polling + NDJSON) — reactive agent workflows without cron jobs; no other Confluence CLI has this
-- Content templates (local) — Go `text/template` XHTML skeletons in `~/.config/cf/templates/`; `--template` flag on pages/blogposts create
-
-**Defer to v1.2+ — P3:**
-- Custom content CRUD — v2 API exists but niche demand (depends on which Connect apps target users have installed)
-- Space-level watch via CQL — scaling concern under new Atlassian points-based rate limit (enforced March 2, 2026)
-
-**Explicitly out of scope (anti-features to reject):**
-- Markdown-to-storage-format conversion (already excluded in PROJECT.md; lossy, heavy dependency)
-- Confluence template API integration (v2 has no template endpoints; v1 template API has known broken image handling)
-- OAuth2 device code flow (Atlassian does not support it; 2LO covers all headless scenarios)
-- Real-time WebSocket watch (Confluence has no WebSocket API; polling is the only option)
-- Attachment inline preview/rendering (breaks JSON-stdout contract; agents use metadata + download separately)
-
-**Feature dependency notes:**
-- OAuth2 2LO and 3LO share infrastructure (token endpoint, dynamic base URL) — build shared foundation, then add grant types
-- Blog posts and custom content reuse pages patterns (version auto-increment, body format) — factor shared helpers to avoid duplication
-- Attachment upload requires v1 API path support and multipart client method before any attachment write command can be implemented
-- Output presets should be built early — they enhance all existing and new commands globally with minimal effort
+**Defer to future milestone:**
+- `workflow restrict` — v1-only API, non-obvious replace-not-merge semantics, self-lockout risk; defer unless specifically requested
+- `workflow archive` — async, free-tier limit of 1 page, one-job-per-tenant constraint
+- PDF/Word export — no Confluence Cloud REST API exists (CONFCLOUD-61557 open)
+- Version restore — destructive operation, needs explicit UX design
 
 ### Architecture Approach
 
-v1.1 integrates three new internal packages alongside targeted modifications to existing `internal/config` and `internal/client`. The dominant architectural decision is that OAuth2 token management is resolved entirely in `PersistentPreRunE` before the Client is constructed, so the Client remains stateless with respect to token refresh — it just receives a bearer token. The existing `mergeCommand()` pattern extends the generated command tree with hand-written blogposts, attachments, and custom-content commands.
+v1.2 follows the established cf + jr pattern exactly. New internal packages (`jsonutil`, `duration`, `preset`) are pure utilities with no HTTP and no new module deps. New command files follow the existing `mergeCommand()` + `client.FromContext()` + `client.Fetch()` pattern. Schema discovery is extended by appending `*SchemaOps()` functions from each new `*_schema.go` file into `schema_cmd.go`. The preset system is upgraded from config-only map lookup to three-tier resolution: profile presets > `internal/preset` user file > builtins. The template system gains `embed.FS` builtins in JSON format, avoiding yaml.v3. The `fetchV1()` helper must be extended to support POST and PUT methods — it is currently GET-only.
 
-**Major components (new or modified):**
-1. `internal/oauth2/` — Token acquisition (client_credentials + 3LO), single-flight refresh, file-based token store per profile; does NOT import `internal/client`; tokens flow upward to `cmd/root.go`
-2. `internal/client/multipart.go` — New `DoMultipart` method on existing Client; derives site root from BaseURL via `strings.TrimSuffix(BaseURL, "/wiki/api/v2")` for v1 API path construction
-3. `internal/preset/` — Load/resolve named output presets from config; pure filesystem I/O, no HTTP
-4. `internal/template/` — Load Go `text/template` content templates from `~/.config/cf/templates/`; fully independent
-5. `cmd/watch.go` — Long-running polling loop with `signal.NotifyContext` for clean shutdown; single goroutine, NDJSON output to stdout
+**Major components:**
 
-**Key integration points in existing code:**
-- `internal/config/config.go`: add `oauth2`, `oauth2-3lo` to `validAuthTypes`; add OAuth2 fields to `AuthConfig`
-- `internal/client/client.go`: add `oauth2` case in `ApplyAuth` (maps to bearer); minimal change
-- `cmd/root.go`: add `--preset` flag; add OAuth2 token resolution in `PersistentPreRunE`; add `--client-id`, `--client-secret` flag overrides
-- `cmd/configure.go`: accept `--client-id`, `--client-secret`; handle `oauth2` and `oauth2-3lo` auth types
+| Component | Action | Responsibility |
+|-----------|--------|----------------|
+| `internal/jsonutil` | NEW | `MarshalNoEscape()` — fixes XHTML corruption in JSON output |
+| `internal/duration` | NEW | `Parse()` — human-readable durations for `diff --since`; calendar time (1d=24h) |
+| `internal/preset` | NEW | Built-in presets, `Lookup()`, `List()` with source attribution |
+| `internal/template` | MODIFY | Add `embed.FS` builtins + `loadBuiltinTemplates()` + `show`/`create` subcommands |
+| `cmd/diff.go` + `diff_schema.go` | NEW | Page version comparison command |
+| `cmd/workflow.go` + `workflow_schema.go` | NEW | Workflow subcommands: move, copy, publish, comment |
+| `cmd/preset.go` | NEW | `preset list` subcommand |
+| `cmd/export.go` + `export_schema.go` | NEW | Body extraction wrapper |
+| `cmd/gendocs/main.go` | NEW | Walks Cobra tree, generates VitePress docs + sidebar JSON |
+| `cmd/schema_cmd.go` | MODIFY | Aggregate all `*SchemaOps()` functions from new schema files |
+| `cmd/root.go` | MODIFY | Register new commands + three-tier preset resolution |
+| `.github/workflows/` (7 files) | NEW | Full CI/CD pipeline |
+| `.goreleaser.yml` + Dockerfiles | NEW | Multi-arch release config |
+| `website/` | NEW | VitePress docs site |
+| `npm/` + `python/` | NEW | Binary distribution packages |
 
-**Anti-patterns to avoid:**
-- OAuth2 logic inside `Client.ApplyAuth` or `Client.Do` — puts refresh in the wrong layer; Client must stay stateless
-- Separate HTTP Client instance for v1 API — duplicates auth, logging, error handling; use `DoMultipart` on the same Client
-- Watch command spawning goroutines per resource — concurrent stdout writes corrupt NDJSON; use single goroutine sequential loop
-- Full templating engine (Sprig, Handlebars) for content — `text/template` stdlib is sufficient for variable substitution
-- Storing OAuth2 tokens in `config.json` — tokens are ephemeral, config is persistent; separate files prevent churn and race conditions
+**Build order (dependency graph):**
+1. `internal/jsonutil`, `internal/duration` — no deps, pure logic
+2. `internal/preset` — no deps, pure logic
+3. `internal/template` extension — embed.FS, builtin JSON files
+4. Extend `fetchV1()` for POST/PUT
+5. `cmd/diff.go` (needs duration + jsonutil)
+6. `cmd/workflow.go` (needs extended fetchV1 + jsonutil)
+7. `cmd/preset.go` (needs internal/preset)
+8. `cmd/export.go`
+9. All `*_schema.go` files + `schema_cmd.go` aggregation
+10. `cmd/gendocs/main.go` (needs all schema ops complete)
+11. GoReleaser config, npm scaffold, Python scaffold
+12. `website/` (needs gendocs to generate sidebar)
+13. GitHub Actions workflows (needs all above)
 
 ### Critical Pitfalls
 
-The following are the highest-priority pitfalls specific to v1.1 features:
+1. **Version number lag causes silent 409 conflicts** — After any write, use the response version number, not a re-fetch. Implement retry-with-re-fetch on 409. Most critical for workflow commands that chain operations.
 
-1. **Mixed v1/v2 URL prefix doubling (CRITICAL)** — `BaseURL` already contains `/wiki/api/v2`. Naively appending a v1 attachment path creates `.../wiki/api/v2/wiki/rest/api/...`. Fix: add `SiteRoot()` method: `strings.TrimSuffix(c.BaseURL, "/wiki/api/v2")`. This exact bug already occurred in this codebase (commit `a6e99ef`). Must be resolved before any v1 endpoint work starts.
+2. **Restrictions API replaces, does not merge** — A `PUT` to the restriction endpoint replaces ALL restrictions for that operation. Always GET first, merge the new restriction, then PUT the full set. Default to `--add` mode. Auto-include current authenticated user to prevent self-lockout.
 
-2. **OAuth2 rotating refresh token race condition** — Atlassian rotates refresh tokens on use. Two sequential requests in a batch that both detect 401 and both attempt refresh: the second fails with "invalid refresh token". Fix: implement token refresh as single-flight (mutex or `golang.org/x/sync/singleflight`); proactively refresh when `AccessTokenExpiry` is within 60 seconds to avoid reactive 401s entirely.
+3. **Move/copy are async v1 operations** — Both return a long-task ID. Must poll `/longtask/{taskId}` for completion. Default to synchronous wait; provide `--async` flag for fire-and-forget. Handle `OptimisticLockException` (409) with retry.
 
-3. **OAuth2 token storage in config.json** — Refresh tokens are long-lived secrets equivalent to passwords. Mixing them with static credentials in `config.json` risks accidental git commits and backup exposure. Fix: separate token file per profile (`~/.config/cf/tokens/{profile}.json`) with atomic writes (temp file + rename) for concurrent safety.
+4. **GoReleaser ldflags path must be exact** — Must be `-X github.com/sofq/confluence-cli/cmd.Version={{.Version}}`. Wrong path silently produces binaries reporting `{"version":"dev"}` in every release.
 
-4. **Watch command goroutine/connection leaks** — The existing CLI is request-response; watch is a long-running loop. Without `signal.NotifyContext` and `ctx.Done()` checks between iterations, Ctrl+C leaves HTTP connections open and can produce partial NDJSON output. Fix: wire OS signals to context cancellation; write only complete JSON lines; emit `{"type":"shutdown","reason":"signal"}` on clean exit.
+5. **npm classic tokens deprecated — OIDC required** — As of December 2025, Classic Tokens are dead. Must configure OIDC trusted publishing on npmjs.com. First publish must be done manually; OIDC trust cannot be configured until the package exists on npmjs.com.
 
-5. **Attachment upload breaks JSON stdout contract** — Upload response is JSON (correct); but attachment download (which users expect next) returns binary. Binary content cannot be piped through `WriteOutput` + JQ. Fix: upload uses `DoMultipart` (new method, not a hack on `Do`); download must write to a file (`--output` flag), never stdout; stdout emits JSON metadata about what was downloaded.
+6. **Diff needs v1 API fallback for historical body content** — v2 version endpoints exist but historical body retrieval is more reliable via v1 `GET /content/{id}/version/{N}?expand=content.body.storage`. Try v2 `body-format=storage` first, fall back to v1.
 
-6. **Atlassian points-based rate limit (enforced March 2, 2026)** — Applies to OAuth2 apps; NOT to API token auth. OAuth2-authenticated watch and batch operations may exhaust the hourly quota. Fix: 429 handler must parse `Retry-After`; auto-pagination must respect delays; document bulk operation risks; recommend watch interval of 60s minimum for OAuth2-authenticated usage until per-endpoint point costs are determined empirically.
+7. **VitePress base path + .nojekyll** — Must set `base: '/confluence-cli/'`, all sidebar links must start with `/`, and `.nojekyll` must be in the output dir. Missing any one causes production 404s.
 
-**v1.0 pitfalls that remain relevant to v1.1 work:**
-- Page GET requires `?body-format=storage` — still applies to blogposts GET (same v2 behavior)
-- Delete is soft-trash — same behavior for blogposts DELETE
-- CQL cursor 413 on pagination page 2+ — watch command using CQL search must handle 413 gracefully
+---
 
 ## Implications for Roadmap
 
-Based on the dependency graph, a three-phase structure is recommended. OAuth2 must come first because it changes the base URL for all subsequent commands. Content types and agent features can follow in parallel tracks.
+Based on combined research, the natural phase structure follows the dependency graph with a logical grouping: pure logic before HTTP, utilities before commands, CLI features before release infrastructure, and release infrastructure before the docs site (which needs all schema ops complete for gendocs).
 
-### Phase 1: OAuth2 Authentication Infrastructure
+### Phase 1: Internal Utilities
 
-**Rationale:** OAuth2 changes the auth model and base URL for all API commands. Building it first ensures Phase 2 content commands can be tested with both API-token and OAuth2 auth from day one. Client credentials (2LO) is simpler than 3LO and provides immediate CI/CD value — build it first within this phase, then add 3LO.
+**Rationale:** Pure Go packages with no HTTP and no deps. Highest confidence, lowest risk, fastest to build. These unblock everything else and can be fully unit-tested in isolation.
 
-**Delivers:** `cf configure --auth-type oauth2` (both 2LO and 3LO); transparent token refresh with expiry tracking; per-profile token store (`~/.config/cf/tokens/`); `PersistentPreRunE` OAuth2 resolution and dynamic base URL switching; updated `cmd/configure.go`.
+**Delivers:** `internal/jsonutil`, `internal/duration`, `internal/preset` packages with unit tests
 
-**Addresses features:** OAuth2 2LO client credentials (P2, promoted to P1 as foundation), OAuth2 3LO browser flow (P1)
+**Addresses:** Foundation for diff `--since` flag, preset system upgrade, HTML-escape fix in JSON output
 
-**Avoids pitfalls:** Token storage in config.json (Pitfall 9), rotating refresh token race condition (Pitfall 12), March 2026 rate limit misconfiguration for OAuth2 traffic (Pitfall 8)
+**Avoids:** Building commands before their utilities exist; avoids coupling unrelated logic into cmd files
 
-**Research flag:** Standard patterns — Atlassian OAuth2 docs are authoritative and complete; reference `jr` `fetchOAuth2Token` implementation available; PKCE (S256 method) is required for 3LO and must not be skipped.
+**Research flag:** Skip — well-documented patterns ported directly from jr reference with Confluence-specific constant adaptations (1d=24h vs jr's 1d=8h)
 
-### Phase 2: Content Type Completion
+---
 
-**Rationale:** Blog posts reuse 90% of the pages pattern and provide rapid wins. Attachment listing (v2) is a standard fetch command. Attachment upload (v1) requires the `SiteRoot()` fix and `DoMultipart` — tackle it last within this phase to build confidence before the v1 integration.
+### Phase 2: Content Utilities (Preset + Template + Export)
 
-**Delivers:** `cf blogposts` CRUD; `cf attachments` list/get/delete (v2 API); `cf attachments upload` (v1 multipart); `internal/client/multipart.go` with `DoMultipart`; `SiteRoot()` method on Client.
+**Rationale:** Low-to-medium complexity. No new API patterns needed — all use existing `client.Fetch()` and v2 endpoints. Extends existing systems (template, preset). Can be built and tested end-to-end quickly.
 
-**Addresses features:** Blog post CRUD (P1), Attachment list/get/delete (P1), Attachment upload (P1)
+**Delivers:** `preset list` command, built-in presets in three-tier resolution, embedded built-in templates (4), `templates show`/`templates create` subcommands, `export` command
 
-**Avoids pitfalls:** v1/v2 URL prefix doubling (Pitfall 11 — implement `SiteRoot()` first, before upload subcommand), JSON stdout contract break for binary download (Pitfall 10), OpenAPI spec gaps for attachment write (Pitfall 4 — plan v1 fallback explicitly)
+**Addresses:** jr parity for presets and templates; clean body extraction for agents
 
-**Research flag:** No additional research needed — v1 attachment API is stable and well-documented; v2 blog post endpoints mirror pages exactly; `DoMultipart` is standard stdlib. Validate `X-Atlassian-Token: nocheck` behavior with OAuth2 bearer tokens during development (minor uncertainty).
+**Avoids:** Adding yaml.v3 dep (keep JSON for templates); PDF export (no API); YAML complexity from jr not needed for cf's simpler content model; export format conversion API (deprecated August 2026, prefer direct `body-format` param)
 
-### Phase 3: Agent Features
+**Research flag:** Skip — straightforward; Go embed pattern is standard; preset pattern direct from jr
 
-**Rationale:** Presets, templates, and watch are independent of each other and of Phase 2. They add differentiation for the AI-agent audience. Output presets are lowest effort and highest leverage (enhances all existing commands globally) — build first within this phase. Watch requires careful signal handling and is highest complexity — build last.
+---
 
-**Delivers:** `--preset` global flag; `cf presets` list/show commands; `cf templates` list/apply commands; `cf watch pages/blogposts` with NDJSON event streaming; built-in preset defaults (e.g., `brief`, `ids-only`, `full`).
+### Phase 3: Version Diff
 
-**Addresses features:** Output presets (P1), Content templates (P2), Watch command (P2)
+**Rationale:** Medium complexity, uses v2 API and the new `internal/duration` package. Isolated enough to build and test without the v1 workflow infrastructure. High agent value as a standalone feature.
 
-**Avoids pitfalls:** Watch goroutine/connection leaks (Pitfall 13 — `signal.NotifyContext` required; single goroutine loop; complete-line-only stdout writes), rate limit exhaustion during watch polling (Pitfall 8 — conservative 60s default interval for OAuth2), `html/template` escaping Confluence XHTML (use `text/template`)
+**Delivers:** `diff` command with `--id`, `--from`, `--to`, `--since`, `--count` flags; structured JSON output; `diff_schema.go` schema registration
 
-**Research flag:** No research needed for presets or templates (pure config/file features with established stdlib patterns). Watch: validate safe polling interval under Atlassian points-based quota empirically (one spike test against real Confluence instance).
+**Addresses:** Agent need for "what changed on this page?" without knowing version numbers
+
+**Avoids:** Pitfall 9 (v2 may need v1 fallback for historical body — test v2 first); Pitfall 21 (CDATA spurious diffs — use line-based not XML-aware diff); Pitfall 1 (version lag — fetch both versions in single flow)
+
+**Research flag:** Needs validation — the v2 `body-format=storage` parameter on historical version endpoints should be tested against a live Confluence instance before finalizing the fetch approach. v1 fallback should be implemented from the start.
+
+---
+
+### Phase 4: Workflow Commands
+
+**Rationale:** v1 async APIs require the most care. Depends on extending `fetchV1()` for POST/PUT. Move and copy require long-task polling — a new pattern for cf. Build together since they share the v1 POST/PUT helper and common async polling logic.
+
+**Delivers:** `workflow move`, `workflow copy`, `workflow publish`, `workflow comment`; `workflow_schema.go` schema registration. Restrict and archive explicitly deferred.
+
+**Addresses:** Core content lifecycle management; draft-to-published workflow; agent-friendly comment creation
+
+**Avoids:** Pitfall 3 (async move/copy — implement `/longtask/{taskId}` polling with `--async` escape hatch); Pitfall 1 (409 on version lag — use response version number); position `before`/`after` orphaning top-level pages (default to `append`)
+
+**Research flag:** Needs validation — move endpoint async behavior is unclear (some reports say synchronous for simple moves). Test against live Confluence to determine if long-task polling is always required for move.
+
+---
+
+### Phase 5: Schema + Gendocs
+
+**Rationale:** Schema aggregation in `schema_cmd.go` must be done after all `*_schema.go` files are complete. Gendocs depends on all schema ops being registered. Natural integration gate between CLI features and release infrastructure.
+
+**Delivers:** Unified schema discovery for all new commands; `cmd/gendocs/main.go` generating VitePress sidebar JSON + per-resource docs + error codes page; `watch_schema.go` for the existing watch command
+
+**Addresses:** Agent discoverability of workflow, diff, export, template commands via `cf schema`; complete foundation for VitePress docs
+
+**Avoids:** Pitfall 17 (sidebar JSON must be generated before VitePress build — chain `docs-generate` -> `docs-build` in Makefile)
+
+**Research flag:** Skip — direct port of jr's gendocs binary with cf-specific command tree
+
+---
+
+### Phase 6: Release Infrastructure
+
+**Rationale:** GoReleaser, npm, PyPI, and GitHub Actions can only be validated end-to-end after the CLI is stable. This phase is primarily configuration with high-risk edge cases around token management and OIDC publishing.
+
+**Delivers:** `.goreleaser.yml`, `Dockerfile.goreleaser`, npm scaffold, Python scaffold, `.golangci.yml`, 7 GitHub Actions workflows, Makefile additions (`lint`, `docs-*`, `spec-update`), project root files (README, LICENSE, SECURITY.md)
+
+**Addresses:** Full cross-platform binary distribution; CI quality gates; automated spec drift detection
+
+**Avoids:** Pitfall 4 (ldflags exact path: `github.com/sofq/confluence-cli/cmd.Version`); Pitfall 5 (HOMEBREW_TAP_TOKEN as PAT, not GITHUB_TOKEN); Pitfall 6 (npm OIDC — first publish is manual); Pitfall 15 (PyPI trusted publisher must exist before v1.2.0 tag); Pitfall 16 (Buildx + `packages: write` for Docker); Pitfall 18 (Scoop reuses same PAT as Homebrew); Pitfall 19 (gosec exclude `cmd/generated`); Pitfall 22 (spec-drift uses Confluence spec URL)
+
+**Research flag:** Pre-execution setup required — npm and PyPI first-publish must be done manually before OIDC can be configured. Must complete before tagging v1.2.0.
+
+---
+
+### Phase 7: Documentation Site
+
+**Rationale:** VitePress site is the final deliverable, depends on gendocs being complete and all commands being stable. Guide pages require knowing the final command surface.
+
+**Delivers:** `website/` with VitePress config, guide pages (getting-started, filtering, discovery, templates, global-flags, agent-integration), auto-generated command reference, deployed to GitHub Pages via `docs.yml` workflow
+
+**Addresses:** User and agent discoverability; project public face
+
+**Avoids:** Pitfall 10 (base path `/confluence-cli/`, leading-slash links, `.nojekyll`); Pitfall 12 (permission trio: `contents: read`, `pages: write`, `id-token: write`); set `ignoreDeadLinks: true` for generated pages
+
+**Research flag:** Skip — direct port of jr's website structure; VitePress patterns well-documented
+
+---
 
 ### Phase Ordering Rationale
 
-- **OAuth2 before content types:** The base URL changes with OAuth2 (switches from direct instance URL to `api.atlassian.com/ex/confluence/{cloudId}`). Content commands built without OAuth2 support would need retroactive base URL handling. Building auth first lets all feature commands be tested with both auth modes from day one.
-- **Blog posts before attachment upload within Phase 2:** Blog posts are pure v2, low-risk, fast to implement. Attachment upload requires the v1 URL fix and a new multipart client method. Build confidence with blog posts first, then tackle the v1 integration point.
-- **Presets early in Phase 3:** Presets are global flag additions that enhance all commands (including Phase 2 commands). Building them first means watch can use presets for event formatting immediately.
-- **Watch last in Phase 3:** Watch is the most architecturally different command (long-running, signal handling, NDJSON). Building it last means all supporting commands (pages GET, blogposts GET) are stable and tested.
-- **Custom content deferred to v1.2:** Well-defined v2 API exists but real-world demand is uncertain. Deferring avoids scope creep; v1.1 users can validate demand before v1.2 planning.
+- Phases 1-2 establish internal packages before any HTTP command needs them; no integration risk
+- Phase 3 (diff) is isolated and high-value and can ship as a partial release if needed
+- Phase 4 (workflow) groups all commands sharing the v1 POST/PUT helper and async polling pattern
+- Phase 5 (schema/gendocs) is a mandatory integration gate before docs
+- Phases 6-7 are release-time concerns that do not affect the CLI's operational value and can proceed in parallel with late Phase 5 work
 
-### Research Flags
+### Research Flags Summary
 
-Phases with well-documented patterns (skip `/gsd:research-phase`):
-- **Phase 1 (OAuth2):** Atlassian OAuth2 docs are authoritative; reference `jr` 2LO implementation is available; token store pattern is standard CLI practice (cf. `gh`, `gcloud`)
-- **Phase 2 (Content types):** Blog post endpoints mirror pages exactly; v1 attachment API is stable and well-documented; `DoMultipart` is standard stdlib multipart pattern
-- **Phase 3 (Agent features):** Presets and templates are pure config/file features; watch is standard `time.Ticker` + `signal.NotifyContext` pattern
+| Phase | Flag | Reason |
+|-------|------|--------|
+| Phase 1: Internal Utilities | Skip | Direct port from jr; pure stdlib logic |
+| Phase 2: Content Utilities | Skip | Existing patterns extended; no new API behavior |
+| Phase 3: Version Diff | Needs validation | v2 historical body retrieval needs live API testing |
+| Phase 4: Workflow Commands | Needs validation | Move async behavior (sync vs async) needs live testing |
+| Phase 5: Schema + Gendocs | Skip | Direct port of jr's gendocs; well-documented pattern |
+| Phase 6: Release Infrastructure | Pre-execution setup | npm + PyPI first-publish manual steps must precede tagging |
+| Phase 7: Documentation | Skip | VitePress port of jr; all patterns documented |
 
-Targeted validation needed (spike, not full research):
-- **Phase 2 attachment upload:** Confirm `X-Atlassian-Token: nocheck` header behavior with OAuth2 bearer tokens vs. basic/token auth — one test upload against a real Confluence instance
-- **Phase 3 watch:** Measure points-based rate limit consumption of polling under OAuth2 to determine safe default interval — one empirical test
+---
 
 ## Confidence Assessment
 
 | Area | Confidence | Notes |
 |------|------------|-------|
-| Stack | HIGH | All v1.1 features verified as implementable with Go stdlib. Zero new deps confirmed against reference `jr` implementation. Atlassian OAuth2 endpoints verified against official docs. |
-| Features | HIGH | v2 API endpoints for blog posts verified against official Atlassian REST API docs. v1 attachment upload confirmed as the only upload path (CONFCLOUD-77196 is an open tracked bug). OAuth2 2LO for Confluence confirmed via official service account docs. |
-| Architecture | HIGH | Architecture is additive to a well-understood existing codebase with direct code inspection. New packages follow established patterns (config, client, errors). Key risks (URL prefix, token storage, refresh race) have specific, proven solutions. |
-| Pitfalls | HIGH | Critical pitfalls sourced from official Atlassian docs (rate limits, token rotation, v1/v2 gap), community reports (CQL cursor 413 bug), and direct codebase inspection (URL prefix doubling in commit `a6e99ef`). |
+| Stack | HIGH | All tools verified against jr reference (local codebase) + official release pages; GoReleaser v2.14.3, VitePress 1.6.4, golangci-lint v2.11.4 versions confirmed |
+| Features | HIGH | API endpoints verified in generated code (`cmd/generated/pages.go`) + official Atlassian docs; PDF limitation confirmed via Atlassian KB + open JIRA issue |
+| Architecture | HIGH | Based on direct codebase inspection of both cf and jr; no inference required for patterns |
+| Pitfalls | HIGH / MEDIUM (2) | 20 of 22 pitfalls are HIGH confidence from official docs + community; Pitfall 9 (v2 body retrieval) and Pitfall 21 (CDATA diff) are MEDIUM pending live testing |
 
 **Overall confidence:** HIGH
 
 ### Gaps to Address
 
-- **Atlassian rate limit point costs per endpoint:** Not published by Atlassian. Watch polling interval defaults cannot be precisely calibrated without empirical measurement. Recommend conservative 60s default; validate in Phase 3 spike test.
-- **OAuth2 PKCE requirement verification:** PKCE with S256 method is documented as required for Atlassian 3LO. Must be included in authorization request (`code_challenge`, `code_challenge_method=S256`) and token exchange (`code_verifier`). Not optional — Atlassian rejects 3LO without it.
-- **`X-Atlassian-Token: nocheck` with OAuth2:** Behavior of this header with OAuth2 bearer tokens (vs. basic/token auth) is not explicitly documented. Validate during Phase 2 attachment upload development.
-- **Custom content type string discovery:** If custom content CRUD is added in v1.2, users must know their app's custom content type string (e.g., `ac:my-app:my-type`). There is no v2 endpoint to list registered types. Must be clearly documented as a prerequisite.
+- **v2 historical version body retrieval** (Pitfall 9): The v2 endpoint has `body-format` parameter but community reports suggest incomplete body return for historical versions. Validate against live Confluence in Phase 3 planning; implement v1 fallback from the start rather than as an afterthought.
+
+- **Move endpoint async behavior** (Pitfall 3): The Atlassian announcement says move returns a long-running task, but some reports suggest synchronous behavior for simple moves. Test against a live instance in Phase 4 planning; polling should be implemented defensively regardless.
+
+- **Rate limiting impact** (Pitfall 13): Points-based quotas rolling out March 2026 for OAuth2 3LO apps. Basic auth (API token) users are currently exempt. Add 429 + `Retry-After` handling proactively in the HTTP client layer.
+
+- **npm OIDC first-publish**: Manual first-publish step for `confluence-cf` on npmjs.com must be completed before Phase 6 workflows can run end-to-end. This is a people/process dependency, not a code dependency — plan it before tagging v1.2.0.
+
+---
 
 ## Sources
 
 ### Primary (HIGH confidence)
-- [Atlassian OAuth 2.0 3LO for Confluence Cloud](https://developer.atlassian.com/cloud/confluence/oauth-2-3lo-apps/) — authorization URL, token URL, PKCE requirement, scopes
-- [Atlassian Service Account OAuth2 Credentials](https://support.atlassian.com/user-management/docs/create-oauth-2-0-credential-for-service-accounts/) — client_credentials grant confirmed for Confluence Cloud
-- [Confluence Scopes for OAuth 2.0](https://developer.atlassian.com/cloud/confluence/scopes-for-oauth-2-3LO-and-forge-apps/) — required scopes for all v1.1 operations
-- [Confluence REST API v2 — Blog Post endpoints](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-blog-post/) — CRUD endpoints and body structure
-- [Confluence REST API v2 — Attachment endpoints](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-attachment/) — read-only v2 attachment operations confirmed
-- [Confluence REST API v1 — Attachments](https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content---attachments/) — upload endpoint, multipart format, required headers
-- Reference implementation: `jira-cli-v2/internal/client/client.go` — proven `fetchOAuth2Token` pattern for client_credentials (HIGH confidence, direct code inspection)
-- Existing codebase: `internal/client/client.go`, `internal/config/config.go`, `cmd/root.go` — direct code inspection, including commit `a6e99ef` (URL prefix doubling bug fix)
+
+- jr reference implementation (`/Users/quan.hoang/quanhh/quanhoang/jira-cli-v2/`) — all patterns, versions, SHA pins; primary source for every component
+- Generated code `cmd/generated/pages.go` — v2 version endpoints verified at lines 854-921; `version` param at line 146
+- [Confluence Cloud REST API v2](https://developer.atlassian.com/cloud/confluence/rest/v2/intro/) — endpoint verification
+- [Confluence REST API v1 restrictions](https://developer.atlassian.com/cloud/confluence/rest/v1/api-group-content-restrictions/) — v1-only restriction endpoints
+- [Added Move and Copy Page APIs (Atlassian)](https://community.developer.atlassian.com/t/added-move-and-copy-page-apis/37749) — v1 move/copy confirmation
+- [GoReleaser v2.14 release notes](https://goreleaser.com/blog/goreleaser-v2.14/) + [releases](https://github.com/goreleaser/goreleaser/releases) — v2.14.3 current
+- [golangci-lint v2 announcement](https://ldez.github.io/blog/2025/03/23/golangci-lint-v2/) + [releases](https://github.com/golangci/golangci-lint/releases) — v2.11.4 current
+- [VitePress npm](https://www.npmjs.com/package/vitepress) — v1.6.4 stable; v2.0.0-alpha.17 not suitable
+- [npm trusted publishing docs](https://docs.npmjs.com/trusted-publishers/) — OIDC requirement
+- [PyPI trusted publishing docs](https://docs.pypi.org/trusted-publishers/) — OIDC setup
+- [GoReleaser ldflags cookbook](https://goreleaser.com/cookbooks/using-main.version/) — exact path requirement
+- [REST API for PDF export (Atlassian KB)](https://support.atlassian.com/confluence/kb/rest-api-to-export-and-download-a-page-in-pdf-format/) — confirms no PDF API
+- [GitHub Actions deploy-pages](https://github.com/actions/deploy-pages) — permission trio documentation
+- [Atlassian rate limiting](https://developer.atlassian.com/cloud/confluence/rate-limiting/) — points-based quota announcement
 
 ### Secondary (MEDIUM confidence)
-- [CONFCLOUD-77196](https://jira.atlassian.com/browse/CONFCLOUD-77196) — v2 attachment upload endpoint missing (community-tracked open bug)
-- [Atlassian Community: CQL cursor 413 issue](https://community.developer.atlassian.com/) — 11,000-character cursor values causing 413 errors on paginated search (reported Sep 2025)
-- [Evolving API rate limits — Atlassian blog](https://www.atlassian.com/blog/platform/evolving-api-rate-limits) — points-based quota enforced March 2, 2026; applies to OAuth2 apps
-- [pchuri/confluence-cli](https://github.com/pchuri/confluence-cli), [atlassian-python-api](https://github.com/atlassian-api/atlassian-python-api), [confluence-go-api](https://github.com/virtomize/confluence-go-api) — competitor feature comparison
 
-### Tertiary (LOW confidence)
-- `X-Atlassian-Token: nocheck` behavior with OAuth2 bearer tokens — not explicitly documented; requires empirical validation
-- Per-endpoint rate limit point costs — not published by Atlassian; requires empirical measurement
+- [Confluence version lag community report](https://community.developer.atlassian.com/t/lag-in-updating-page-version-number-v2-confluence-rest-api/68821) — 409 version lag behavior
+- [Archive content via REST API (community)](https://community.developer.atlassian.com/t/how-to-archive-and-restore-archived-confluence-content-via-rest-api/82062) — archive endpoint constraints
+- [Page restrictions via v2 API (community)](https://community.developer.atlassian.com/t/page-restrictions-via-the-v2-api/93094) — v2 restrictions unavailability confirmed
+- [Historical page version content (community)](https://community.atlassian.com/forums/Confluence-questions/Confluence-API-get-page-content-from-historical-versions/qaq-p/1398857) — v1 fallback for body retrieval
+- govulncheck v1.1.4 — installed via `go install`; may have newer patch version
 
 ---
-*Research completed: 2026-03-20*
+
+*Research completed: 2026-03-28*
 *Ready for roadmap: yes*
