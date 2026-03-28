@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: executing
-stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-03-28T16:24:23.766Z"
+stopped_at: Phase 16 context gathered
+last_updated: "2026-03-28T16:28:56.059Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 7
@@ -114,6 +114,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T16:21:15.944Z
-Stopped at: Completed 15-02-PLAN.md
-Resume file: None
+Last session: 2026-03-28T16:28:56.056Z
+Stopped at: Phase 16 context gathered
+Resume file: .planning/phases/16-schema-gendocs/16-CONTEXT.md
