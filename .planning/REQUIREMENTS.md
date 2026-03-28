@@ -36,7 +36,7 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 
 - [x] **UTIL-01**: JSON output uses `MarshalNoEscape()` to prevent HTML entity corruption in XHTML content
 - [x] **UTIL-02**: Duration parsing supports human-friendly format (2h, 1d, 1w) with calendar time conventions
-- [ ] **UTIL-03**: Preset resolution follows three-tier lookup: profile > user file > built-in
+- [x] **UTIL-03**: Preset resolution follows three-tier lookup: profile > user file > built-in
 
 ### CI/CD & Release
 
@@ -104,7 +104,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | UTIL-01 | Phase 12 | Complete |
 | UTIL-02 | Phase 12 | Complete |
-| UTIL-03 | Phase 12 | Pending |
+| UTIL-03 | Phase 12 | Complete |
 | CONT-01 | Phase 13 | Pending |
 | CONT-02 | Phase 13 | Pending |
 | CONT-03 | Phase 13 | Pending |
