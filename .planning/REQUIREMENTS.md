@@ -47,23 +47,23 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 - [ ] **CICD-05**: Spec drift detection runs daily, auto-regenerates commands, creates PR
 - [ ] **CICD-06**: Auto-release workflow tags and releases when spec-update PR merges
 - [ ] **CICD-07**: Dependabot configured for Go modules and GitHub Actions weekly updates
-- [x] **CICD-08**: GoReleaser produces binaries for linux/darwin/windows (amd64/arm64) + Docker images
-- [ ] **CICD-09**: npm package scaffold with postinstall binary download
-- [ ] **CICD-10**: Python package scaffold with binary wrapper
+- [ ] **CICD-08**: GoReleaser produces binaries for linux/darwin/windows (amd64/arm64) + Docker images
+- [x] **CICD-09**: npm package scaffold with postinstall binary download
+- [x] **CICD-10**: Python package scaffold with binary wrapper
 
 ### Documentation
 
 - [ ] **DOCS-01**: README.md with install methods, quick start, key features, agent integration guide
-- [x] **DOCS-02**: LICENSE file (Apache 2.0)
-- [x] **DOCS-03**: SECURITY.md with vulnerability reporting policy
+- [ ] **DOCS-02**: LICENSE file (Apache 2.0)
+- [ ] **DOCS-03**: SECURITY.md with vulnerability reporting policy
 - [ ] **DOCS-04**: VitePress documentation site with guide pages and auto-generated command reference
 - [x] **DOCS-05**: `gendocs` binary generates VitePress sidebar JSON and per-command docs from Cobra tree
 
 ### Project Config
 
-- [x] **CONF-01**: `.golangci.yml` with standard linters and errcheck exclusions
-- [x] **CONF-02**: Comprehensive `.gitignore` covering binaries, IDE files, docs output, env files
-- [x] **CONF-03**: Makefile extended with `lint`, `docs-generate`, `docs-dev`, `docs-build`, `spec-update` targets
+- [ ] **CONF-01**: `.golangci.yml` with standard linters and errcheck exclusions
+- [ ] **CONF-02**: Comprehensive `.gitignore` covering binaries, IDE files, docs output, env files
+- [ ] **CONF-03**: Makefile extended with `lint`, `docs-generate`, `docs-dev`, `docs-build`, `spec-update` targets
 
 ### Schema Integration
 
@@ -131,15 +131,15 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CICD-05 | Phase 17 | Pending |
 | CICD-06 | Phase 17 | Pending |
 | CICD-07 | Phase 17 | Pending |
-| CICD-08 | Phase 17 | Complete |
-| CICD-09 | Phase 17 | Pending |
-| CICD-10 | Phase 17 | Pending |
+| CICD-08 | Phase 17 | Pending |
+| CICD-09 | Phase 17 | Complete |
+| CICD-10 | Phase 17 | Complete |
 | DOCS-01 | Phase 17 | Pending |
-| DOCS-02 | Phase 17 | Complete |
-| DOCS-03 | Phase 17 | Complete |
-| CONF-01 | Phase 17 | Complete |
-| CONF-02 | Phase 17 | Complete |
-| CONF-03 | Phase 17 | Complete |
+| DOCS-02 | Phase 17 | Pending |
+| DOCS-03 | Phase 17 | Pending |
+| CONF-01 | Phase 17 | Pending |
+| CONF-02 | Phase 17 | Pending |
+| CONF-03 | Phase 17 | Pending |
 | DOCS-04 | Phase 18 | Pending |
 
 **Coverage:**

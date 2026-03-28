@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: completed
-stopped_at: Completed 17-01-PLAN.md
-last_updated: "2026-03-28T17:39:41.510Z"
+stopped_at: Completed 17-02-PLAN.md
+last_updated: "2026-03-28T17:38:40.742Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 16
   completed_plans: 13
-  percent: 81
+  percent: 100
 ---
 
 # Project State
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 17 — release-infrastructure
+**Current focus:** Phase 16 — schema-gendocs
 
 ## Current Position
 
 Phase: 17
-Plan: 1 of 4
-Status: 17-01 complete
+Plan: Not started
+Status: Phase 16 complete
 Last activity: 2026-03-28
 
-Progress: [████████░░] 81% (13/16 plans)
+Progress: [██████████] 100% (2/2 plans in phase 16)
 
 ## Performance Metrics
 
@@ -70,7 +70,7 @@ Progress: [████████░░] 81% (13/16 plans)
 | Phase 15-workflow-commands P02 | 2min | 1 tasks | 1 files |
 | Phase 16-schema-gendocs P01 | 3min | 2 tasks | 8 files |
 | Phase 16-schema-gendocs P02 | 2min | 2 tasks | 2 files |
-| Phase 17-01 P01 | 2min | 2 tasks | 7 files |
+| Phase 17-02 P02 | 2min | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -106,8 +106,8 @@ Recent decisions affecting current work:
 - [Phase 16-schema-gendocs]: Per-resource *_schema.go files following jr pattern for hand-written schema op separation
 - [Phase 16-schema-gendocs]: Flag types match init() declarations: Int as integer, Bool as boolean
 - [Phase 16-schema-gendocs]: Used --output flag instead of positional arg for gendocs CLI
-- [Phase 17-01]: Identical golangci-lint config to jr -- same errcheck exclusions apply
-- [Phase 17-01]: Apache-2.0 license for cf (differs from jr MIT) per plan specification
+- [Phase 17-02]: Adapted jr reference patterns exactly -- same download/extract logic, platform maps, archive naming
+- [Phase 17-02]: npm version 0.1.0 per D-07, Python version 0.0.0 (release workflow sets via sed)
 
 ### Pending Todos
 
@@ -122,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T17:39:41.508Z
-Stopped at: Completed 17-01-PLAN.md
+Last session: 2026-03-28T17:38:40.738Z
+Stopped at: Completed 17-02-PLAN.md
 Resume file: None
