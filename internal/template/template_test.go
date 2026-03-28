@@ -1,6 +1,7 @@
 package template
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"sort"
@@ -41,20 +42,52 @@ func TestList_SortedNames(t *testing.T) {
 		"meeting-notes": `{"title":"M","body":"m"}`,
 	})
 
-	names, err := List()
+	entries, err := List()
 	if err != nil {
 		t.Fatalf("List() error: %v", err)
+	}
+
+	// Verify sorted by name.
+	names := make([]string, len(entries))
+	for i, e := range entries {
+		names[i] = e.Name
 	}
 	if !sort.StringsAreSorted(names) {
 		t.Errorf("List() not sorted: %v", names)
 	}
-	want := []string{"alpha", "meeting-notes", "zebra"}
-	if len(names) != len(want) {
-		t.Fatalf("List() got %v, want %v", names, want)
+
+	// 3 user templates + 5 built-in not overlapping (adr, blank, decision, retrospective, runbook) = 8 total.
+	// "meeting-notes" is both user and built-in; user wins.
+	wantCount := 8
+	if len(entries) != wantCount {
+		t.Fatalf("List() got %d entries, want %d; entries=%v", len(entries), wantCount, entries)
 	}
-	for i, n := range names {
-		if n != want[i] {
-			t.Errorf("List()[%d] = %q, want %q", i, n, want[i])
+
+	// Verify meeting-notes shows source "user" (user overrides built-in).
+	for _, e := range entries {
+		if e.Name == "meeting-notes" {
+			if e.Source != "user" {
+				t.Errorf("meeting-notes source = %q, want %q", e.Source, "user")
+			}
+			break
+		}
+	}
+
+	// Verify user-only templates have source "user".
+	for _, e := range entries {
+		if e.Name == "alpha" || e.Name == "zebra" {
+			if e.Source != "user" {
+				t.Errorf("%s source = %q, want %q", e.Name, e.Source, "user")
+			}
+		}
+	}
+
+	// Verify built-in templates have source "builtin".
+	for _, e := range entries {
+		if e.Name == "blank" || e.Name == "decision" || e.Name == "runbook" || e.Name == "retrospective" || e.Name == "adr" {
+			if e.Source != "builtin" {
+				t.Errorf("%s source = %q, want %q", e.Name, e.Source, "builtin")
+			}
 		}
 	}
 }
@@ -64,15 +97,21 @@ func TestList_EmptySliceForNonexistentDir(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("CF_CONFIG_PATH", filepath.Join(dir, "config.json"))
 
-	names, err := List()
+	entries, err := List()
 	if err != nil {
 		t.Fatalf("List() error: %v", err)
 	}
-	if names == nil {
-		t.Fatal("List() returned nil, want empty slice")
+	if entries == nil {
+		t.Fatal("List() returned nil, want non-nil slice")
 	}
-	if len(names) != 0 {
-		t.Errorf("List() got %v, want empty slice", names)
+	// Even with no user dir, built-in templates (6) should be listed.
+	if len(entries) != 6 {
+		t.Errorf("List() got %d entries, want 6 built-in; entries=%v", len(entries), entries)
+	}
+	for _, e := range entries {
+		if e.Source != "builtin" {
+			t.Errorf("%s source = %q, want %q", e.Name, e.Source, "builtin")
+		}
 	}
 }
 
@@ -96,6 +135,23 @@ func TestLoad_ReturnsTemplate(t *testing.T) {
 	}
 }
 
+func TestLoad_FallsBackToBuiltin(t *testing.T) {
+	// Point to a config path with no templates subdir.
+	dir := t.TempDir()
+	t.Setenv("CF_CONFIG_PATH", filepath.Join(dir, "config.json"))
+
+	tmpl, err := Load("blank")
+	if err != nil {
+		t.Fatalf("Load(blank) error: %v", err)
+	}
+	if tmpl.Title != "{{.title}}" {
+		t.Errorf("Title = %q, want %q", tmpl.Title, "{{.title}}")
+	}
+	if tmpl.Body != "" {
+		t.Errorf("Body = %q, want empty", tmpl.Body)
+	}
+}
+
 func TestLoad_ErrorForNonexistent(t *testing.T) {
 	dir := t.TempDir()
 	t.Setenv("CF_CONFIG_PATH", filepath.Join(dir, "config.json"))
@@ -103,6 +159,138 @@ func TestLoad_ErrorForNonexistent(t *testing.T) {
 	_, err := Load("does-not-exist")
 	if err == nil {
 		t.Fatal("Load() expected error for nonexistent template")
+	}
+}
+
+func TestExtractVariables_MeetingNotes(t *testing.T) {
+	tmpl := builtinTemplates["meeting-notes"]
+	vars := ExtractVariables(tmpl)
+	want := []string{"title", "attendees", "agenda"}
+	if len(vars) != len(want) {
+		t.Fatalf("ExtractVariables() got %v, want %v", vars, want)
+	}
+	for i, v := range vars {
+		if v != want[i] {
+			t.Errorf("ExtractVariables()[%d] = %q, want %q", i, v, want[i])
+		}
+	}
+}
+
+func TestExtractVariables_BlankTemplate(t *testing.T) {
+	tmpl := builtinTemplates["blank"]
+	vars := ExtractVariables(tmpl)
+	if len(vars) != 1 || vars[0] != "title" {
+		t.Errorf("ExtractVariables(blank) = %v, want [title]", vars)
+	}
+}
+
+func TestShow_BuiltinTemplate(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("CF_CONFIG_PATH", filepath.Join(dir, "config.json"))
+
+	out, err := Show("blank")
+	if err != nil {
+		t.Fatalf("Show(blank) error: %v", err)
+	}
+	if out.Name != "blank" {
+		t.Errorf("Name = %q, want %q", out.Name, "blank")
+	}
+	if out.Source != "builtin" {
+		t.Errorf("Source = %q, want %q", out.Source, "builtin")
+	}
+	if len(out.Variables) != 1 || out.Variables[0] != "title" {
+		t.Errorf("Variables = %v, want [title]", out.Variables)
+	}
+}
+
+func TestShow_UserTemplateOverridesBuiltin(t *testing.T) {
+	setupTempTemplates(t, map[string]string{
+		"blank": `{"title":"Custom {{.title}}","body":"<p>Custom blank</p>"}`,
+	})
+
+	out, err := Show("blank")
+	if err != nil {
+		t.Fatalf("Show(blank) error: %v", err)
+	}
+	if out.Source != "user" {
+		t.Errorf("Source = %q, want %q", out.Source, "user")
+	}
+	if out.Title != "Custom {{.title}}" {
+		t.Errorf("Title = %q", out.Title)
+	}
+}
+
+func TestShow_NotFound(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("CF_CONFIG_PATH", filepath.Join(dir, "config.json"))
+
+	_, err := Show("nonexistent")
+	if err == nil {
+		t.Fatal("Show() expected error for nonexistent template")
+	}
+}
+
+func TestSave_CreatesFile(t *testing.T) {
+	tmplDir := setupTempTemplates(t, nil)
+
+	tmpl := &Template{
+		Title: "{{.title}}",
+		Body:  "<p>Test body</p>",
+	}
+	if err := Save("my-template", tmpl); err != nil {
+		t.Fatalf("Save() error: %v", err)
+	}
+
+	// Verify file exists.
+	path := filepath.Join(tmplDir, "my-template.json")
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("ReadFile() error: %v", err)
+	}
+
+	// Reload and compare.
+	var loaded Template
+	if err := json.Unmarshal(data, &loaded); err != nil {
+		t.Fatalf("Unmarshal() error: %v", err)
+	}
+	if loaded.Title != tmpl.Title {
+		t.Errorf("Title = %q, want %q", loaded.Title, tmpl.Title)
+	}
+	if loaded.Body != tmpl.Body {
+		t.Errorf("Body = %q, want %q", loaded.Body, tmpl.Body)
+	}
+}
+
+func TestSave_ErrorIfExists(t *testing.T) {
+	setupTempTemplates(t, map[string]string{
+		"existing": `{"title":"E","body":"e"}`,
+	})
+
+	tmpl := &Template{Title: "New", Body: "new"}
+	err := Save("existing", tmpl)
+	if err == nil {
+		t.Fatal("Save() expected error for existing template")
+	}
+}
+
+func TestSave_CreatesDirectory(t *testing.T) {
+	// Point to a config path with no templates subdir.
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(cfgPath, []byte(`{}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CF_CONFIG_PATH", cfgPath)
+
+	tmpl := &Template{Title: "{{.title}}", Body: "<p>new</p>"}
+	if err := Save("new-template", tmpl); err != nil {
+		t.Fatalf("Save() error: %v", err)
+	}
+
+	// Verify the directory was created and file exists.
+	path := filepath.Join(dir, "templates", "new-template.json")
+	if _, err := os.Stat(path); err != nil {
+		t.Fatalf("File not found: %v", err)
 	}
 }
 
