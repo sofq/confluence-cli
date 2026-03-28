@@ -57,14 +57,14 @@ func DoBlogpostUpdate(ctx context.Context, c *client.Client, id, title, storageV
 	return doBlogpostUpdate(ctx, c, id, title, storageValue, versionNumber)
 }
 
-// FetchCustomContentVersion exposes the package-private fetchCustomContentVersion helper for tests.
-func FetchCustomContentVersion(ctx context.Context, c *client.Client, id string) (int, int) {
-	return fetchCustomContentVersion(ctx, c, id)
+// FetchCustomContentMeta exposes the package-private fetchCustomContentMeta helper for tests.
+func FetchCustomContentMeta(ctx context.Context, c *client.Client, id string) (customContentMeta, int) {
+	return fetchCustomContentMeta(ctx, c, id)
 }
 
 // DoCustomContentUpdate exposes the package-private doCustomContentUpdate helper for tests.
-func DoCustomContentUpdate(ctx context.Context, c *client.Client, id, title, storageValue string, versionNumber int) int {
-	return doCustomContentUpdate(ctx, c, id, title, storageValue, versionNumber)
+func DoCustomContentUpdate(ctx context.Context, c *client.Client, id, ccType, title, storageValue string, versionNumber int) int {
+	return doCustomContentUpdate(ctx, c, id, ccType, title, storageValue, versionNumber)
 }
 
 // LabelsAddValidation validates the inputs for the labels add command without

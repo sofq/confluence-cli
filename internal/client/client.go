@@ -342,10 +342,13 @@ func (c *Client) doCursorPagination(ctx context.Context, method, path string, fi
 		// nextLink is a path relative to the domain (e.g. /wiki/api/v2/pages?cursor=xxx&limit=25).
 		// Strip any domain prefix if present, then append to BaseURL.
 		nextPath := nextLink
-		if idx := strings.Index(nextLink, "/wiki/"); idx > 0 {
+		if idx := strings.Index(nextLink, "/wiki/"); idx >= 0 {
 			nextPath = nextLink[idx:]
 		}
-		nextURL := c.BaseURL + nextPath
+		// Strip the BaseURL suffix (e.g. /wiki/api/v2) to get the domain,
+		// then prepend it so we don't double the /wiki/api/v2 prefix.
+		domain := SearchV1Domain(c.BaseURL)
+		nextURL := domain + nextPath
 
 		body, code := c.fetchPage(ctx, method, nextURL, path)
 		if code != cferrors.ExitOK {

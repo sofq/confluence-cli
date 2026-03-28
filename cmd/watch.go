@@ -210,7 +210,9 @@ func pollAndEmit(ctx context.Context, cmd *cobra.Command, c *client.Client, cqlQ
 }
 
 // parseTimestamp parses a Confluence timestamp (RFC3339 or with milliseconds).
-// Returns the current time as fallback if parsing fails entirely.
+// Returns the zero time as fallback if parsing fails entirely, so that the
+// dedup check in pollAndEmit treats the item as "never seen" rather than
+// re-emitting it on every poll (which time.Now() would cause).
 func parseTimestamp(s string) time.Time {
 	formats := []string{
 		time.RFC3339,
@@ -223,7 +225,7 @@ func parseTimestamp(s string) time.Time {
 			return t
 		}
 	}
-	return time.Now()
+	return time.Time{}
 }
 
 // buildWatchCQL combines the user's CQL query with a lastModified date filter

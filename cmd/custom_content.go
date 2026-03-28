@@ -27,18 +27,25 @@ var custom_contentCmd = &cobra.Command{
 	},
 }
 
-// fetchCustomContentVersion fetches the current version number of a custom content item.
+// customContentMeta holds version and type fetched from a custom content item.
+type customContentMeta struct {
+	Version int
+	Type    string
+}
+
+// fetchCustomContentMeta fetches the current version number and type of a custom content item.
 // Uses GET /custom-content/{id} (v2 path; BaseURL already includes /wiki/api/v2).
-func fetchCustomContentVersion(ctx context.Context, c *client.Client, id string) (int, int) {
+func fetchCustomContentMeta(ctx context.Context, c *client.Client, id string) (customContentMeta, int) {
 	body, code := c.Fetch(ctx, "GET", fmt.Sprintf("/custom-content/%s", url.PathEscape(id)), nil)
 	if code != cferrors.ExitOK {
-		return 0, code
+		return customContentMeta{}, code
 	}
 	var item struct {
 		Version struct {
 			Number int `json:"number"`
 		} `json:"version"`
 		Title string `json:"title"`
+		Type  string `json:"type"`
 	}
 	if err := json.Unmarshal(body, &item); err != nil {
 		apiErr := &cferrors.APIError{
@@ -46,9 +53,9 @@ func fetchCustomContentVersion(ctx context.Context, c *client.Client, id string)
 			Message:   "failed to parse custom content version: " + err.Error(),
 		}
 		apiErr.WriteJSON(c.Stderr)
-		return 0, cferrors.ExitError
+		return customContentMeta{}, cferrors.ExitError
 	}
-	return item.Version.Number, cferrors.ExitOK
+	return customContentMeta{Version: item.Version.Number, Type: item.Type}, cferrors.ExitOK
 }
 
 // customContentUpdateBody is the request body for PUT /custom-content/{id}.
@@ -68,9 +75,10 @@ type customContentUpdateBody struct {
 
 // doCustomContentUpdate sends a PUT /custom-content/{id} request with the given parameters.
 // Returns the exit code. On success, writes the response body to c.Stdout.
-func doCustomContentUpdate(ctx context.Context, c *client.Client, id, title, storageValue string, versionNumber int) int {
+func doCustomContentUpdate(ctx context.Context, c *client.Client, id, ccType, title, storageValue string, versionNumber int) int {
 	var reqBody customContentUpdateBody
 	reqBody.ID = id
+	reqBody.Type = ccType
 	reqBody.Status = "current"
 	reqBody.Title = title
 	reqBody.Body.Representation = "storage"
@@ -214,6 +222,7 @@ var custom_content_workflow_update = &cobra.Command{
 		id, _ := cmd.Flags().GetString("id")
 		title, _ := cmd.Flags().GetString("title")
 		bodyVal, _ := cmd.Flags().GetString("body")
+		typeFlag, _ := cmd.Flags().GetString("type")
 
 		// Validate required flags.
 		for _, pair := range []struct{ name, val string }{
@@ -228,21 +237,30 @@ var custom_content_workflow_update = &cobra.Command{
 			}
 		}
 
-		// Fetch current version.
-		currentVersion, code := fetchCustomContentVersion(cmd.Context(), c, id)
+		// Fetch current version and type.
+		meta, code := fetchCustomContentMeta(cmd.Context(), c, id)
 		if code != cferrors.ExitOK {
 			return &cferrors.AlreadyWrittenError{Code: code}
 		}
 
+		// Use --type flag if provided, otherwise use the type from the existing item.
+		ccType := typeFlag
+		if ccType == "" {
+			ccType = meta.Type
+		}
+
 		// First attempt.
-		code = doCustomContentUpdate(cmd.Context(), c, id, title, bodyVal, currentVersion+1)
+		code = doCustomContentUpdate(cmd.Context(), c, id, ccType, title, bodyVal, meta.Version+1)
 		if code == cferrors.ExitConflict {
 			// Single retry: re-fetch version and try once more.
-			currentVersion, code = fetchCustomContentVersion(cmd.Context(), c, id)
+			meta, code = fetchCustomContentMeta(cmd.Context(), c, id)
 			if code != cferrors.ExitOK {
 				return &cferrors.AlreadyWrittenError{Code: code}
 			}
-			code = doCustomContentUpdate(cmd.Context(), c, id, title, bodyVal, currentVersion+1)
+			if typeFlag == "" {
+				ccType = meta.Type
+			}
+			code = doCustomContentUpdate(cmd.Context(), c, id, ccType, title, bodyVal, meta.Version+1)
 		}
 		if code != cferrors.ExitOK {
 			return &cferrors.AlreadyWrittenError{Code: code}
@@ -292,6 +310,7 @@ func init() {
 
 	// update-custom-content flags
 	custom_content_workflow_update.Flags().String("id", "", "Custom content ID to update (required)")
+	custom_content_workflow_update.Flags().String("type", "", "Custom content type (optional; auto-detected from existing item if omitted)")
 	custom_content_workflow_update.Flags().String("title", "", "Custom content title (required)")
 	custom_content_workflow_update.Flags().String("body", "", "Custom content body in storage format XML (required)")
 

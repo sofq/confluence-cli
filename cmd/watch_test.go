@@ -9,9 +9,17 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/sofq/confluence-cli/cmd"
 )
+
+// recentTimestamp returns a timestamp string in the format expected by
+// Confluence, set to the given number of minutes ago. This ensures test
+// timestamps fall within the 48-hour prune window used by pollAndEmit.
+func recentTimestamp(minutesAgo int) string {
+	return time.Now().UTC().Add(-time.Duration(minutesAgo) * time.Minute).Format("2006-01-02T15:04:05.000Z")
+}
 
 // makeWatchSearchResponse builds a v1 search response JSON with the given results.
 func makeWatchSearchResponse(results []map[string]any) []byte {
@@ -86,14 +94,16 @@ func runWatchCommand(t *testing.T, srvURL string, extraArgs ...string) (stdout s
 // TestWatch_PollAndEmit_TwoResults verifies that pollAndEmit with 2 search results
 // emits 2 NDJSON change events to stdout.
 func TestWatch_PollAndEmit_TwoResults(t *testing.T) {
+	ts1 := recentTimestamp(30) // 30 min ago
+	ts2 := recentTimestamp(20) // 20 min ago
 	pollCount := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pollCount++
 		w.Header().Set("Content-Type", "application/json")
 		if pollCount == 1 {
 			results := []map[string]any{
-				makeWatchResult("101", "page", "Page One", "ENG", 10, "2026-03-20T10:00:00.000Z", "Alice"),
-				makeWatchResult("102", "blogpost", "Blog Two", "ENG", 10, "2026-03-20T11:00:00.000Z", "Bob"),
+				makeWatchResult("101", "page", "Page One", "ENG", 10, ts1, "Alice"),
+				makeWatchResult("102", "blogpost", "Blog Two", "ENG", 10, ts2, "Bob"),
 			}
 			w.Write(makeWatchSearchResponse(results))
 		} else {
@@ -143,7 +153,8 @@ func TestWatch_PollAndEmit_TwoResults(t *testing.T) {
 // TestWatch_Dedup_SameResults verifies that when the same results appear on a
 // second poll, nothing new is emitted (dedup via seen map).
 func TestWatch_Dedup_SameResults(t *testing.T) {
-	result := makeWatchResult("201", "page", "Stable Page", "ENG", 10, "2026-03-20T10:00:00.000Z", "Alice")
+	ts := recentTimestamp(15) // 15 min ago — within 48h prune window
+	result := makeWatchResult("201", "page", "Stable Page", "ENG", 10, ts, "Alice")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write(makeWatchSearchResponse([]map[string]any{result}))
@@ -168,16 +179,18 @@ func TestWatch_Dedup_SameResults(t *testing.T) {
 // TestWatch_Dedup_UpdatedVersion verifies that when a result has a newer version.when
 // on the second poll, exactly 1 new change event is emitted.
 func TestWatch_Dedup_UpdatedVersion(t *testing.T) {
+	tsOld := recentTimestamp(30) // 30 min ago
+	tsNew := recentTimestamp(10) // 10 min ago
 	pollCount := 0
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		pollCount++
 		w.Header().Set("Content-Type", "application/json")
 		if pollCount == 1 {
-			result := makeWatchResult("301", "page", "Evolving Page", "ENG", 10, "2026-03-20T10:00:00.000Z", "Alice")
+			result := makeWatchResult("301", "page", "Evolving Page", "ENG", 10, tsOld, "Alice")
 			w.Write(makeWatchSearchResponse([]map[string]any{result}))
 		} else {
 			// Same content, newer version.when
-			result := makeWatchResult("301", "page", "Evolving Page", "ENG", 10, "2026-03-20T12:00:00.000Z", "Bob")
+			result := makeWatchResult("301", "page", "Evolving Page", "ENG", 10, tsNew, "Bob")
 			w.Write(makeWatchSearchResponse([]map[string]any{result}))
 		}
 	}))
@@ -217,7 +230,7 @@ func TestWatch_HTTPError_ContinuesPolling(t *testing.T) {
 		} else {
 			// Second poll: success
 			w.Header().Set("Content-Type", "application/json")
-			result := makeWatchResult("401", "page", "After Error", "ENG", 10, "2026-03-20T10:00:00.000Z", "Alice")
+			result := makeWatchResult("401", "page", "After Error", "ENG", 10, recentTimestamp(5), "Alice")
 			w.Write(makeWatchSearchResponse([]map[string]any{result}))
 		}
 	}))

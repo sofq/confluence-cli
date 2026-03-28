@@ -33,9 +33,9 @@ func makeTestCustomContentClient(srv *httptest.Server) *client.Client {
 	}
 }
 
-// TestFetchCustomContentVersion_Success verifies that FetchCustomContentVersion
-// returns the correct version number from a successful API response.
-func TestFetchCustomContentVersion_Success(t *testing.T) {
+// TestFetchCustomContentMeta_Success verifies that FetchCustomContentMeta
+// returns the correct version number and type from a successful API response.
+func TestFetchCustomContentMeta_Success(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "GET" || !strings.HasSuffix(r.URL.Path, "/custom-content/42") {
 			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
@@ -46,6 +46,7 @@ func TestFetchCustomContentVersion_Success(t *testing.T) {
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id":    "42",
 			"title": "Test",
+			"type":  "ac:app:custom-type",
 			"version": map[string]any{
 				"number": 5,
 			},
@@ -54,17 +55,20 @@ func TestFetchCustomContentVersion_Success(t *testing.T) {
 	defer srv.Close()
 
 	c := makeTestCustomContentClient(srv)
-	ver, code := cmd.FetchCustomContentVersion(context.Background(), c, "42")
+	meta, code := cmd.FetchCustomContentMeta(context.Background(), c, "42")
 	if code != cferrors.ExitOK {
 		t.Fatalf("expected ExitOK, got %d", code)
 	}
-	if ver != 5 {
-		t.Fatalf("expected version 5, got %d", ver)
+	if meta.Version != 5 {
+		t.Fatalf("expected version 5, got %d", meta.Version)
+	}
+	if meta.Type != "ac:app:custom-type" {
+		t.Fatalf("expected type ac:app:custom-type, got %q", meta.Type)
 	}
 }
 
-// TestFetchCustomContentVersion_NotFound verifies that a 404 response returns (0, non-zero code).
-func TestFetchCustomContentVersion_NotFound(t *testing.T) {
+// TestFetchCustomContentMeta_NotFound verifies that a 404 response returns (zero meta, non-zero code).
+func TestFetchCustomContentMeta_NotFound(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
@@ -76,12 +80,12 @@ func TestFetchCustomContentVersion_NotFound(t *testing.T) {
 	defer srv.Close()
 
 	c := makeTestCustomContentClient(srv)
-	ver, code := cmd.FetchCustomContentVersion(context.Background(), c, "nonexistent")
+	meta, code := cmd.FetchCustomContentMeta(context.Background(), c, "nonexistent")
 	if code == cferrors.ExitOK {
 		t.Fatal("expected non-zero exit code for 404, got ExitOK")
 	}
-	if ver != 0 {
-		t.Fatalf("expected version 0 on error, got %d", ver)
+	if meta.Version != 0 {
+		t.Fatalf("expected version 0 on error, got %d", meta.Version)
 	}
 }
 
@@ -202,7 +206,7 @@ func TestCustomContentUpdate_409Retry(t *testing.T) {
 		case r.Method == "GET" && strings.Contains(r.URL.Path, "/custom-content/"):
 			n := atomic.AddInt64(&getCount, 1)
 			_ = json.NewEncoder(w).Encode(map[string]any{
-				"id": "77", "title": "Custom Content",
+				"id": "77", "title": "Custom Content", "type": "ac:app:test-type",
 				"version": map[string]any{"number": int(n) * 3},
 			})
 		case r.Method == "PUT":
@@ -224,26 +228,26 @@ func TestCustomContentUpdate_409Retry(t *testing.T) {
 	c := makeTestCustomContentClient(srv)
 	ctx := context.Background()
 
-	// Step 1: Fetch current version
-	ver1, code := cmd.FetchCustomContentVersion(ctx, c, "77")
+	// Step 1: Fetch current version and type
+	meta1, code := cmd.FetchCustomContentMeta(ctx, c, "77")
 	if code != cferrors.ExitOK {
 		t.Fatalf("initial GET failed: %d", code)
 	}
 
 	// Step 2: First update attempt (should fail with 409)
-	code = cmd.DoCustomContentUpdate(ctx, c, "77", "Test Title", "<p>body content</p>", ver1+1)
+	code = cmd.DoCustomContentUpdate(ctx, c, "77", meta1.Type, "Test Title", "<p>body content</p>", meta1.Version+1)
 	if code != cferrors.ExitConflict {
 		t.Fatalf("expected ExitConflict on first PUT, got %d", code)
 	}
 
 	// Step 3: Retry -- fetch version again
-	ver2, code := cmd.FetchCustomContentVersion(ctx, c, "77")
+	meta2, code := cmd.FetchCustomContentMeta(ctx, c, "77")
 	if code != cferrors.ExitOK {
 		t.Fatalf("retry GET failed: %d", code)
 	}
 
 	// Step 4: Second update attempt (should succeed)
-	code = cmd.DoCustomContentUpdate(ctx, c, "77", "Test Title", "<p>body content</p>", ver2+1)
+	code = cmd.DoCustomContentUpdate(ctx, c, "77", meta2.Type, "Test Title", "<p>body content</p>", meta2.Version+1)
 	if code != cferrors.ExitOK {
 		t.Fatalf("expected ExitOK on retry PUT, got %d", code)
 	}
