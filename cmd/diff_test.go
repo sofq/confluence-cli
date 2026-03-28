@@ -223,6 +223,17 @@ func TestDiff_SinceMode(t *testing.T) {
 
 func TestDiff_FromToMode(t *testing.T) {
 	mux := http.NewServeMux()
+	mux.HandleFunc("/wiki/api/v2/pages/123/versions", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"results": []map[string]any{
+				{"number": 5, "authorId": "user-5", "createdAt": "2026-01-05T00:00:00Z", "message": "v5"},
+				{"number": 4, "authorId": "user-4", "createdAt": "2026-01-04T00:00:00Z", "message": "v4"},
+				{"number": 3, "authorId": "user-3", "createdAt": "2026-01-03T00:00:00Z", "message": "v3"},
+			},
+			"_links": map[string]string{},
+		})
+	})
 	mux.HandleFunc("/wiki/api/v2/pages/123", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		version := r.URL.Query().Get("version")

@@ -113,6 +113,16 @@ func runRaw(cmd *cobra.Command, args []string) error {
 		// This prevents hanging when no body is piped.
 	}
 
+	// Strip /wiki/api/v2 prefix from path if present, since client.Do already
+	// prepends BaseURL (which includes /wiki/api/v2). This prevents double-prefixing
+	// when users provide the full API path (e.g. /wiki/api/v2/spaces).
+	for _, prefix := range []string{"/wiki/api/v2", "wiki/api/v2"} {
+		if strings.HasPrefix(path, prefix) {
+			path = path[len(prefix):]
+			break
+		}
+	}
+
 	// Warn if --body is used with GET/HEAD/DELETE/OPTIONS.
 	if bodyFlag != "" && !methodsWithBody[method] {
 		warnMsg := map[string]any{

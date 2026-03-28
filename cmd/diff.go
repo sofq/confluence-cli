@@ -195,17 +195,31 @@ func fetchFromToVersions(ctx context.Context, c *client.Client, pageID string, f
 		from = 1
 	}
 
+	// Fetch full version list to get metadata (authorId, createdAt, message)
+	// for the requested version numbers.
+	allEntries, err := fetchVersionList(ctx, c, pageID, 50)
+	if err != nil {
+		return nil, err
+	}
+	entryByNum := make(map[int]apiVersionEntry, len(allEntries))
+	for _, e := range allEntries {
+		entryByNum[e.Number] = e
+	}
+
 	var versions []diff.VersionInput
 	for _, num := range []int{from, to} {
 		body, available, err := fetchVersionBody(ctx, c, pageID, num)
 		if err != nil {
 			return nil, err
 		}
+		meta := diff.VersionMeta{Number: num}
+		if entry, ok := entryByNum[num]; ok {
+			meta.AuthorID = entry.AuthorID
+			meta.CreatedAt = entry.CreatedAt
+			meta.Message = entry.Message
+		}
 		versions = append(versions, diff.VersionInput{
-			Meta: diff.VersionMeta{
-				Number:    num,
-				CreatedAt: "", // Not known in from/to mode without version list
-			},
+			Meta:          meta,
 			Body:          body,
 			BodyAvailable: available,
 		})

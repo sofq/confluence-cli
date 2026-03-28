@@ -124,11 +124,11 @@ func okServer(t *testing.T) *httptest.Server {
 }
 
 // policyTestBaseURL sets CF_BASE_URL to just the server URL (no path suffix).
-// The raw command path includes the full API path (e.g. /wiki/api/v2/spaces).
-// Operation name fallback: "GET /wiki/api/v2/spaces" — note: path.Match "*" does
-// NOT match strings with slashes, so patterns must use exact or per-segment globs.
+// The raw command strips the /wiki/api/v2 prefix from user-provided paths
+// (to prevent double-prefixing), so the effective path becomes /spaces.
+// Operation name fallback: "GET /spaces".
 const rawSpacesPath = "/wiki/api/v2/spaces"
-const rawSpacesOp = "GET " + rawSpacesPath // operation name produced by raw command fallback
+const rawSpacesOp = "GET /spaces" // operation name after prefix stripping
 
 // TestPolicyAllowListDeniesUnmatchedOperation verifies that an allow-only profile
 // blocks an operation not in allowed_operations before making any HTTP request.

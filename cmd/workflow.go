@@ -567,7 +567,7 @@ func init() {
 	workflow_copy.Flags().Bool("copy-labels", false, "include labels in copy")
 	workflow_copy.Flags().Bool("copy-permissions", false, "include permissions in copy")
 	workflow_copy.Flags().Bool("no-wait", false, "return immediately without polling")
-	workflow_copy.Flags().String("timeout", "60s", "timeout for async operation (e.g. 30s, 2m)")
+	workflow_copy.Flags().String("timeout", "1m", "timeout for async operation (e.g. 2m, 1h)")
 
 	// publish flags
 	workflow_publish.Flags().String("id", "", "page ID to publish (required)")
@@ -587,7 +587,7 @@ func init() {
 	// archive flags
 	workflow_archive.Flags().String("id", "", "page ID to archive (required)")
 	workflow_archive.Flags().Bool("no-wait", false, "return immediately without polling")
-	workflow_archive.Flags().String("timeout", "60s", "timeout for async operation (e.g. 30s, 2m)")
+	workflow_archive.Flags().String("timeout", "1m", "timeout for async operation (e.g. 2m, 1h)")
 
 	workflowCmd.AddCommand(workflow_move)
 	workflowCmd.AddCommand(workflow_copy)

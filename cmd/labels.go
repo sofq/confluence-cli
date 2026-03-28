@@ -94,7 +94,12 @@ func fetchV1WithBody(cmd *cobra.Command, c *client.Client, method, fullURL strin
 	}
 
 	if resp.StatusCode >= 400 {
-		apiErr := cferrors.NewFromHTTP(resp.StatusCode, strings.TrimSpace(string(respBody)), method, fullURL, resp)
+		// Extract path from full URL for cleaner error reporting.
+		errPath := fullURL
+		if u, parseErr := url.Parse(fullURL); parseErr == nil {
+			errPath = u.Path
+		}
+		apiErr := cferrors.NewFromHTTP(resp.StatusCode, strings.TrimSpace(string(respBody)), method, errPath, resp)
 		apiErr.WriteJSON(c.Stderr)
 		return nil, apiErr.ExitCode()
 	}
