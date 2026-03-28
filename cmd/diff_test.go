@@ -27,6 +27,20 @@ func runDiffCommand(t *testing.T, srvURL string, args ...string) (stdout string,
 	os.Stderr = wErr
 
 	root := cmd.RootCommand()
+	// Reset diff subcommand flags to avoid contamination between tests.
+	// Cobra retains parsed flag values on the global command singleton.
+	for _, sub := range root.Commands() {
+		if sub.Name() == "diff" {
+			sub.ResetFlags()
+			sub.Flags().String("id", "", "page ID to compare versions (required)")
+			sub.Flags().String("since", "", "filter changes since duration (e.g. 2h, 1d) or ISO date (e.g. 2026-01-01)")
+			sub.Flags().Int("from", 0, "start version number for explicit comparison")
+			sub.Flags().Int("to", 0, "end version number for explicit comparison")
+			break
+		}
+	}
+	// Also reset --dry-run persistent flag from rootCmd to avoid contamination.
+	_ = root.PersistentFlags().Set("dry-run", "false")
 	root.SetArgs(append([]string{"diff"}, args...))
 	_ = root.Execute()
 
@@ -40,6 +54,62 @@ func runDiffCommand(t *testing.T, srvURL string, args ...string) (stdout string,
 	_, _ = errBuf.ReadFrom(rErr)
 
 	return outBuf.String(), errBuf.String()
+}
+
+// dummyServer returns a no-op httptest server for tests that need a config URL
+// but should not receive actual API calls.
+func dummyServer(t *testing.T) *httptest.Server {
+	t.Helper()
+	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(500)
+	}))
+}
+
+func TestDiff_MissingID(t *testing.T) {
+	srv := dummyServer(t)
+	defer srv.Close()
+
+	_, stderr := runDiffCommand(t, srv.URL, "--id", "")
+
+	if !strings.Contains(stderr, "validation_error") {
+		t.Errorf("expected validation_error in stderr, got: %s", stderr)
+	}
+	if !strings.Contains(stderr, "--id must not be empty") {
+		t.Errorf("expected '--id must not be empty' in stderr, got: %s", stderr)
+	}
+}
+
+func TestDiff_SinceWithFromTo(t *testing.T) {
+	srv := dummyServer(t)
+	defer srv.Close()
+
+	_, stderr := runDiffCommand(t, srv.URL, "--id", "123", "--since", "2h", "--from", "3")
+
+	if !strings.Contains(stderr, "validation_error") {
+		t.Errorf("expected validation_error in stderr, got: %s", stderr)
+	}
+	if !strings.Contains(stderr, "cannot use --since with --from/--to") {
+		t.Errorf("expected mutual exclusivity error, got: %s", stderr)
+	}
+}
+
+func TestDiff_DryRun(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Fatal("should not reach server in dry-run mode")
+	}))
+	defer srv.Close()
+
+	stdout, _ := runDiffCommand(t, srv.URL, "--id", "123", "--dry-run")
+
+	if !strings.Contains(stdout, `"method"`) {
+		t.Errorf("expected method in dry-run output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, `"url"`) {
+		t.Errorf("expected url in dry-run output, got: %s", stdout)
+	}
+	if !strings.Contains(stdout, "would fetch") {
+		t.Errorf("expected 'would fetch' note in output, got: %s", stdout)
+	}
 }
 
 func TestDiff_DefaultMode(t *testing.T) {
@@ -181,7 +251,7 @@ func TestDiff_FromToMode(t *testing.T) {
 		t.Errorf("expected pageId in output, got: %s", stdout)
 	}
 
-	// Verify the output has a single diff entry
+	// Verify the output has a single diff entry.
 	var result struct {
 		Diffs []struct {
 			From struct{ Number int } `json:"from"`
@@ -189,7 +259,7 @@ func TestDiff_FromToMode(t *testing.T) {
 		} `json:"diffs"`
 	}
 	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
-		t.Fatalf("failed to parse output: %v", err)
+		t.Fatalf("failed to parse output: %v\nstdout: %s", err, stdout)
 	}
 	if len(result.Diffs) != 1 {
 		t.Fatalf("expected 1 diff entry, got %d", len(result.Diffs))
@@ -202,52 +272,11 @@ func TestDiff_FromToMode(t *testing.T) {
 	}
 }
 
-func TestDiff_MissingID(t *testing.T) {
-	_, stderr := runDiffCommand(t, "", "--id", "")
-
-	if !strings.Contains(stderr, "validation_error") {
-		t.Errorf("expected validation_error in stderr, got: %s", stderr)
-	}
-	if !strings.Contains(stderr, "--id must not be empty") {
-		t.Errorf("expected '--id must not be empty' in stderr, got: %s", stderr)
-	}
-}
-
-func TestDiff_SinceWithFromTo(t *testing.T) {
-	_, stderr := runDiffCommand(t, "", "--id", "123", "--since", "2h", "--from", "3")
-
-	if !strings.Contains(stderr, "validation_error") {
-		t.Errorf("expected validation_error in stderr, got: %s", stderr)
-	}
-	if !strings.Contains(stderr, "cannot use --since with --from/--to") {
-		t.Errorf("expected mutual exclusivity error, got: %s", stderr)
-	}
-}
-
-func TestDiff_DryRun(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Fatal("should not reach server in dry-run mode")
-	}))
-	defer srv.Close()
-
-	stdout, _ := runDiffCommand(t, srv.URL, "--id", "123", "--dry-run")
-
-	if !strings.Contains(stdout, `"method"`) {
-		t.Errorf("expected method in dry-run output, got: %s", stdout)
-	}
-	if !strings.Contains(stdout, `"url"`) {
-		t.Errorf("expected url in dry-run output, got: %s", stdout)
-	}
-	if !strings.Contains(stdout, "would fetch") {
-		t.Errorf("expected 'would fetch' note in output, got: %s", stdout)
-	}
-}
-
 func TestDiff_EmptySinceRange(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/wiki/api/v2/pages/123/versions", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		// All versions are old -- outside any reasonable --since range
+		// All versions are old -- outside any reasonable --since range.
 		json.NewEncoder(w).Encode(map[string]any{
 			"results": []map[string]any{
 				{"number": 1, "authorId": "user-1", "createdAt": "2020-01-01T00:00:00Z", "message": "old"},
@@ -280,7 +309,7 @@ func TestDiff_BodyUnavailable(t *testing.T) {
 	})
 	mux.HandleFunc("/wiki/api/v2/pages/123", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		// Return page with empty body.storage.value (body unavailable)
+		// Return page with empty body.storage.value (body unavailable).
 		json.NewEncoder(w).Encode(map[string]any{
 			"id": "123", "title": "Test",
 			"body": map[string]any{
@@ -297,7 +326,7 @@ func TestDiff_BodyUnavailable(t *testing.T) {
 	if !strings.Contains(stdout, `"note"`) {
 		t.Errorf("expected note field when body unavailable, got: %s", stdout)
 	}
-	// Stats should be omitted (omitempty) or null when body unavailable
+	// Stats should be omitted (omitempty) or null when body unavailable.
 	var result struct {
 		Diffs []struct {
 			Stats *struct{} `json:"stats"`
@@ -305,7 +334,7 @@ func TestDiff_BodyUnavailable(t *testing.T) {
 		} `json:"diffs"`
 	}
 	if err := json.Unmarshal([]byte(stdout), &result); err != nil {
-		t.Fatalf("failed to parse output: %v", err)
+		t.Fatalf("failed to parse output: %v\nstdout: %s", err, stdout)
 	}
 	if len(result.Diffs) == 0 {
 		t.Fatal("expected at least one diff entry")
