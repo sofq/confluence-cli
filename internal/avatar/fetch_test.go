@@ -1,6 +1,7 @@
 package avatar_test
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -144,7 +145,7 @@ func TestFetchUserPages_HappyPath(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(srv.URL + "/wiki/api/v2")
-	records, err := avatar.FetchUserPages(c, accountID)
+	records, err := avatar.FetchUserPages(context.Background(), c, accountID)
 	if err != nil {
 		t.Fatalf("FetchUserPages returned error: %v", err)
 	}
@@ -191,7 +192,7 @@ func TestFetchUserPages_EmptyResults(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(srv.URL + "/wiki/api/v2")
-	records, err := avatar.FetchUserPages(c, "user123")
+	records, err := avatar.FetchUserPages(context.Background(), c, "user123")
 	if err != nil {
 		t.Fatalf("FetchUserPages returned error: %v", err)
 	}
@@ -210,7 +211,7 @@ func TestFetchUserPages_HTTP401(t *testing.T) {
 	defer srv.Close()
 
 	c := newTestClient(srv.URL + "/wiki/api/v2")
-	records, err := avatar.FetchUserPages(c, "user123")
+	records, err := avatar.FetchUserPages(context.Background(), c, "user123")
 	if err == nil {
 		t.Fatalf("expected error on 401, got nil (records: %v)", records)
 	}
