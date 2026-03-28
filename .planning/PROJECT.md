@@ -49,7 +49,7 @@ Give AI agents and automation reliable, structured access to Confluence content 
 
 **Target features:**
 - ~~`diff` command — page version history viewer~~ — Validated in Phase 14: Version Diff
-- `workflow` commands — move, copy, publish, restrict, archive, comment
+- ~~`workflow` commands — move, copy, publish, restrict, archive, comment~~ — Validated in Phase 15: Workflow Commands
 - ~~`preset list` subcommand + built-in presets~~ — Validated in Phase 13: Content Utilities
 - ~~Built-in templates + template management subcommands~~ — Validated in Phase 13: Content Utilities
 - ~~`export` command — export page content~~ — Validated in Phase 13: Content Utilities
@@ -121,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after Phase 14 completion*
+*Last updated: 2026-03-28 after Phase 15 completion*
