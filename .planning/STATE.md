@@ -3,8 +3,8 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: completed
-stopped_at: Completed 18-01-PLAN.md
-last_updated: "2026-03-28T18:21:15.378Z"
+stopped_at: Completed 18-02-PLAN.md
+last_updated: "2026-03-28T18:26:28.046Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 7
@@ -72,7 +72,7 @@ Progress: [██████████] 100% (2/2 plans in phase 16)
 | Phase 16-schema-gendocs P02 | 2min | 2 tasks | 2 files |
 | Phase 17-02 P02 | 2min | 2 tasks | 5 files |
 | Phase 17-04 P04 | 2min | 1 tasks | 1 files |
-| Phase 18-documentation-site P01 | 4min | 2 tasks | 9 files |
+| Phase 18-02 P02 | 3min | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -111,7 +111,7 @@ Recent decisions affecting current work:
 - [Phase 17-02]: Adapted jr reference patterns exactly -- same download/extract logic, platform maps, archive naming
 - [Phase 17-02]: npm version 0.1.0 per D-07, Python version 0.0.0 (release workflow sets via sed)
 - [Phase 17-04]: Mirrored jr README structure exactly per D-09/D-10 with 12 cf feature showcase sections
-- [Phase 18-documentation-site]: Copied jr VitePress infrastructure exactly, changing only branding/content for cf
+- [Phase 18-02]: Adapted jr guide structure exactly for cf, replacing all Jira content with Confluence equivalents
 
 ### Pending Todos
 
@@ -126,6 +126,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T18:21:15.375Z
-Stopped at: Completed 18-01-PLAN.md
+Last session: 2026-03-28T18:26:28.044Z
+Stopped at: Completed 18-02-PLAN.md
 Resume file: None
