@@ -283,5 +283,5 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 14. Version Diff | v1.2 | 2/2 | Complete | 2026-03-28 |
 | 15. Workflow Commands | v1.2 | 2/2 | Complete | 2026-03-28 |
 | 16. Schema + Gendocs | v1.2 | 2/2 | Complete | 2026-03-28 |
-| 17. Release Infrastructure | v1.2 | 0/4 | Planning | - |
+| 17. Release Infrastructure | 1/4 | In Progress|  | - |
 | 18. Documentation Site | v1.2 | 0/0 | Not started | - |
