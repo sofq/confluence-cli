@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: executing
-stopped_at: Phase 16 context gathered
-last_updated: "2026-03-28T16:28:56.059Z"
-last_activity: 2026-03-28
+stopped_at: Completed 16-01-PLAN.md
+last_updated: "2026-03-28T16:46:59.324Z"
+last_activity: 2026-03-28 -- Phase 16 execution started
 progress:
   total_phases: 7
   completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_plans: 12
+  completed_plans: 11
   percent: 90
 ---
 
@@ -21,16 +21,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 15 — workflow-commands
+**Current focus:** Phase 16 — schema-gendocs
 
 ## Current Position
 
-Phase: 16
-Plan: Not started
-Status: Executing Phase 15
-Last activity: 2026-03-28
+Phase: 16 (schema-gendocs) — EXECUTING
+Plan: 2 of 2
+Status: Executing Phase 16
+Last activity: 2026-03-28 -- Completed 16-01-PLAN.md
 
-Progress: [█████████░] 90% (1/2 plans in phase 15)
+Progress: [█████████░] 92% (1/2 plans in phase 16)
 
 ## Performance Metrics
 
@@ -68,6 +68,7 @@ Progress: [█████████░] 90% (1/2 plans in phase 15)
 | Phase 14-version-diff P02 | 9min | 2 tasks | 3 files |
 | Phase 15-workflow-commands P01 | 2min | 2 tasks | 2 files |
 | Phase 15-workflow-commands P02 | 2min | 1 tasks | 1 files |
+| Phase 16-schema-gendocs P01 | 3min | 2 tasks | 8 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,8 @@ Recent decisions affecting current work:
 - [Phase 15-workflow-commands]: v1 archive endpoint (POST /content/archive) used -- no v2 equivalent exists
 - [Phase 15-workflow-commands]: pollLongTask returns raw body on unmarshal failure -- graceful degradation
 - [Phase 15-workflow-commands]: Reused setupTemplateEnv and dummyServer from existing test files; created resetWorkflowFlags for Cobra singleton isolation
+- [Phase 16-schema-gendocs]: Per-resource *_schema.go files following jr pattern for hand-written schema op separation
+- [Phase 16-schema-gendocs]: Flag types match init() declarations: Int as integer, Bool as boolean
 
 ### Pending Todos
 
@@ -114,6 +117,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T16:28:56.056Z
-Stopped at: Phase 16 context gathered
-Resume file: .planning/phases/16-schema-gendocs/16-CONTEXT.md
+Last session: 2026-03-28T16:46:59.322Z
+Stopped at: Completed 16-01-PLAN.md
+Resume file: None

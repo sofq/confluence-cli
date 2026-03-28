@@ -67,8 +67,8 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 
 ### Schema Integration
 
-- [ ] **SCHM-01**: All new commands (diff, workflow, export, preset) registered in `cf schema` output
-- [ ] **SCHM-02**: Schema ops aggregated in `schema_cmd.go` for agent discoverability
+- [x] **SCHM-01**: All new commands (diff, workflow, export, preset) registered in `cf schema` output
+- [x] **SCHM-02**: Schema ops aggregated in `schema_cmd.go` for agent discoverability
 
 ## Future Requirements
 
@@ -121,8 +121,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WKFL-04 | Phase 15 | Complete |
 | WKFL-05 | Phase 15 | Complete |
 | WKFL-06 | Phase 15 | Complete |
-| SCHM-01 | Phase 16 | Pending |
-| SCHM-02 | Phase 16 | Pending |
+| SCHM-01 | Phase 16 | Complete |
+| SCHM-02 | Phase 16 | Complete |
 | DOCS-05 | Phase 16 | Pending |
 | CICD-01 | Phase 17 | Pending |
 | CICD-02 | Phase 17 | Pending |
