@@ -24,9 +24,9 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 
 ### Content Utilities
 
-- [ ] **CONT-01**: User can list all available presets (built-in + user) via `preset list`
-- [ ] **CONT-02**: CLI ships 7 built-in presets (brief, titles, agent, tree, meta, search, diff)
-- [ ] **CONT-03**: CLI ships 6 built-in templates (blank, meeting-notes, decision, runbook, retrospective, adr)
+- [x] **CONT-01**: User can list all available presets (built-in + user) via `preset list`
+- [x] **CONT-02**: CLI ships 7 built-in presets (brief, titles, agent, tree, meta, search, diff)
+- [x] **CONT-03**: CLI ships 6 built-in templates (blank, meeting-notes, decision, runbook, retrospective, adr)
 - [ ] **CONT-04**: User can inspect a template definition via `templates show <name>`
 - [ ] **CONT-05**: User can create a template from an existing page via `templates create --from-page`
 - [ ] **CONT-06**: User can export page body in requested format via `export` command
@@ -105,9 +105,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | UTIL-01 | Phase 12 | Complete |
 | UTIL-02 | Phase 12 | Complete |
 | UTIL-03 | Phase 12 | Complete |
-| CONT-01 | Phase 13 | Pending |
-| CONT-02 | Phase 13 | Pending |
-| CONT-03 | Phase 13 | Pending |
+| CONT-01 | Phase 13 | Complete |
+| CONT-02 | Phase 13 | Complete |
+| CONT-03 | Phase 13 | Complete |
 | CONT-04 | Phase 13 | Pending |
 | CONT-05 | Phase 13 | Pending |
 | CONT-06 | Phase 13 | Pending |
