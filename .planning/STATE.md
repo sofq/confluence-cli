@@ -4,8 +4,8 @@ milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: executing
 stopped_at: Completed 15-02-PLAN.md
-last_updated: "2026-03-28T16:21:15.947Z"
-last_activity: 2026-03-28 -- Completed 15-01-PLAN.md
+last_updated: "2026-03-28T16:24:23.766Z"
+last_activity: 2026-03-28
 progress:
   total_phases: 7
   completed_phases: 4
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 ## Current Position
 
-Phase: 15 (workflow-commands) — EXECUTING
-Plan: 2 of 2
+Phase: 16
+Plan: Not started
 Status: Executing Phase 15
-Last activity: 2026-03-28 -- Completed 15-01-PLAN.md
+Last activity: 2026-03-28
 
 Progress: [█████████░] 90% (1/2 plans in phase 15)
 

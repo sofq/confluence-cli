@@ -271,7 +271,7 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 12. Internal Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
 | 13. Content Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
 | 14. Version Diff | v1.2 | 2/2 | Complete | 2026-03-28 |
-| 15. Workflow Commands | 2/2 | Complete   | 2026-03-28 | - |
+| 15. Workflow Commands | 2/2 | Complete   | Complete    | 2026-03-28 |
 | 16. Schema + Gendocs | v1.2 | 0/0 | Not started | - |
 | 17. Release Infrastructure | v1.2 | 0/0 | Not started | - |
 | 18. Documentation Site | v1.2 | 0/0 | Not started | - |
