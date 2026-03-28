@@ -200,8 +200,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 14-01-PLAN.md — Create internal/diff package with types, parseSince, lineStats, and Compare
-- [ ] 14-02-PLAN.md — Create diff command with API wiring, all flag modes, tests, and root registration
+- [x] 14-01-PLAN.md — Create internal/diff package with types, parseSince, lineStats, and Compare
+- [x] 14-02-PLAN.md — Create diff command with API wiring, all flag modes, tests, and root registration
 
 ### Phase 15: Workflow Commands
 **Goal**: Users can perform content lifecycle operations (move, copy, publish, comment, restrict, archive) through dedicated workflow subcommands.
@@ -212,7 +212,11 @@ Plans:
   2. `cf workflow copy --id <pageId> --target-id <parentId>` copies a page with configurable options (--copy-attachments, --copy-labels, --copy-permissions), polls the long-running task, and returns the new page JSON
   3. `cf workflow publish --id <pageId>` transitions a draft page to published status, and `cf workflow comment --id <pageId> --body "text"` adds a plain-text comment (converted to storage format) to the specified page
   4. `cf workflow restrict --id <pageId> --operation read --user <accountId>` views, adds, or removes page restrictions using the v1 restrictions API, and `cf workflow archive --id <pageId>` archives a page
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 15-01-PLAN.md — Implement workflow parent command with all six subcommands and root registration
+- [ ] 15-02-PLAN.md — Tests for all workflow subcommands covering validation, API calls, and output
 
 ### Phase 16: Schema + Gendocs
 **Goal**: All new commands are discoverable via `cf schema` and a docs generator binary can produce the complete VitePress command reference.
@@ -266,8 +270,8 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 11. Watch | v1.1 | 1/1 | Complete | 2026-03-20 |
 | 12. Internal Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
 | 13. Content Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
-| 14. Version Diff | 2/2 | Complete   | Complete    | 2026-03-28 |
-| 15. Workflow Commands | v1.2 | 0/0 | Not started | - |
+| 14. Version Diff | v1.2 | 2/2 | Complete | 2026-03-28 |
+| 15. Workflow Commands | v1.2 | 0/2 | Planning | - |
 | 16. Schema + Gendocs | v1.2 | 0/0 | Not started | - |
 | 17. Release Infrastructure | v1.2 | 0/0 | Not started | - |
 | 18. Documentation Site | v1.2 | 0/0 | Not started | - |
