@@ -482,6 +482,31 @@ func (c *Client) VerboseLog(fields map[string]any) {
 // This is used by workflow commands and batch operations that need the raw response.
 func (c *Client) Fetch(ctx context.Context, method, path string, body io.Reader) ([]byte, int) {
 	fullURL := c.BaseURL + path
+
+	// DryRun: emit the request as JSON and return immediately.
+	if c.DryRun {
+		dryOut := map[string]any{
+			"method": method,
+			"url":    fullURL,
+		}
+		if body != nil {
+			bodyBytes, err := io.ReadAll(body)
+			if err == nil && len(bodyBytes) > 0 {
+				var parsed any
+				if json.Unmarshal(bodyBytes, &parsed) == nil {
+					dryOut["body"] = parsed
+				} else {
+					dryOut["body"] = string(bodyBytes)
+				}
+			}
+		}
+		var buf bytes.Buffer
+		enc := json.NewEncoder(&buf)
+		enc.SetEscapeHTML(false)
+		_ = enc.Encode(dryOut)
+		return bytes.TrimRight(buf.Bytes(), "\n"), cferrors.ExitOK
+	}
+
 	req, err := http.NewRequestWithContext(ctx, method, fullURL, body)
 	if err != nil {
 		apiErr := &cferrors.APIError{
