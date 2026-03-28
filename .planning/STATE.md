@@ -3,15 +3,15 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: executing
-stopped_at: Completed 15-01-PLAN.md
-last_updated: "2026-03-28T16:17:22.335Z"
-last_activity: 2026-03-28 -- Phase 15 execution started
+stopped_at: Completed 15-02-PLAN.md
+last_updated: "2026-03-28T16:21:15.947Z"
+last_activity: 2026-03-28 -- Completed 15-01-PLAN.md
 progress:
   total_phases: 7
-  completed_phases: 3
+  completed_phases: 4
   total_plans: 10
-  completed_plans: 9
-  percent: 100
+  completed_plans: 10
+  percent: 90
 ---
 
 # Project State
@@ -67,6 +67,7 @@ Progress: [█████████░] 90% (1/2 plans in phase 15)
 | Phase 14-version-diff P01 | 3min | 1 tasks | 2 files |
 | Phase 14-version-diff P02 | 9min | 2 tasks | 3 files |
 | Phase 15-workflow-commands P01 | 2min | 2 tasks | 2 files |
+| Phase 15-workflow-commands P02 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -98,6 +99,7 @@ Recent decisions affecting current work:
 - [Phase 15-workflow-commands]: v1 move endpoint (PUT /content/{id}/move/append/{targetId}) over v2 PUT parentId -- reliable dedicated endpoint
 - [Phase 15-workflow-commands]: v1 archive endpoint (POST /content/archive) used -- no v2 equivalent exists
 - [Phase 15-workflow-commands]: pollLongTask returns raw body on unmarshal failure -- graceful degradation
+- [Phase 15-workflow-commands]: Reused setupTemplateEnv and dummyServer from existing test files; created resetWorkflowFlags for Cobra singleton isolation
 
 ### Pending Todos
 
@@ -112,6 +114,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T16:17:22.333Z
-Stopped at: Completed 15-01-PLAN.md
+Last session: 2026-03-28T16:21:15.944Z
+Stopped at: Completed 15-02-PLAN.md
 Resume file: None
