@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/sofq/confluence-cli/cmd/generated"
@@ -17,6 +15,7 @@ import (
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
 	"github.com/sofq/confluence-cli/internal/oauth2"
 	"github.com/sofq/confluence-cli/internal/policy"
+	preset_pkg "github.com/sofq/confluence-cli/internal/preset"
 	"github.com/spf13/cobra"
 )
 
@@ -168,7 +167,7 @@ var rootCmd = &cobra.Command{
 			rawProfile = cfg.Profiles[resolved.ProfileName]
 		}
 
-		// Resolve --preset to JQ expression.
+		// Resolve --preset to JQ expression via three-tier chain.
 		if preset != "" {
 			if jqFilter != "" {
 				apiErr := &cferrors.APIError{
@@ -178,11 +177,11 @@ var rootCmd = &cobra.Command{
 				apiErr.WriteJSON(os.Stderr)
 				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 			}
-			expr, ok := rawProfile.Presets[preset]
-			if !ok {
+			expr, _, err := preset_pkg.Lookup(preset, rawProfile.Presets)
+			if err != nil {
 				apiErr := &cferrors.APIError{
 					ErrorType: "config_error",
-					Message:   fmt.Sprintf("preset %q not found in profile %q; available presets: %s", preset, resolved.ProfileName, availablePresets(rawProfile)),
+					Message:   err.Error(),
 				}
 				apiErr.WriteJSON(os.Stderr)
 				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
@@ -324,19 +323,6 @@ func init() {
 // RootCommand returns the root cobra.Command for documentation generation.
 func RootCommand() *cobra.Command {
 	return rootCmd
-}
-
-// availablePresets returns a comma-separated list of preset names from a profile.
-func availablePresets(p config.Profile) string {
-	if len(p.Presets) == 0 {
-		return "(none)"
-	}
-	names := make([]string, 0, len(p.Presets))
-	for k := range p.Presets {
-		names = append(names, k)
-	}
-	sort.Strings(names)
-	return strings.Join(names, ", ")
 }
 
 // Execute runs the root command and returns an exit code.
