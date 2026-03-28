@@ -1,30 +1,32 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
-milestone_name: Extended Capabilities
-status: unknown
-stopped_at: Completed 11-01-PLAN.md
-last_updated: "2026-03-20T15:01:01.718Z"
+milestone: v1.2
+milestone_name: Workflow, Parity & Release Infrastructure
+status: defining-requirements
+stopped_at: null
+last_updated: "2026-03-28T00:00:00.000Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 8
-  completed_plans: 8
+  total_phases: 0
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
 ---
 
 # Project State
 
 ## Project Reference
 
-See: .planning/PROJECT.md (updated 2026-03-20)
+See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 11 — watch
+**Current focus:** Defining requirements for v1.2
 
 ## Current Position
 
-Phase: 11 (watch) — COMPLETE
-Plan: 1 of 1 (DONE)
+Phase: Not started (defining requirements)
+Plan: —
+Status: Defining requirements
+Last activity: 2026-03-28 — Milestone v1.2 started
 
 ## Performance Metrics
 

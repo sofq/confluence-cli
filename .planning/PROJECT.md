@@ -43,7 +43,22 @@ Give AI agents and automation reliable, structured access to Confluence content 
 
 ### Active
 
-(None — planning next milestone)
+**Current Milestone: v1.2 Workflow, Parity & Release Infrastructure**
+
+**Goal:** Close the feature gap with jr by adding workflow commands, version diff, built-in presets/templates, and replicate the full CI/CD, documentation, and release infrastructure.
+
+**Target features:**
+- `diff` command — page version history viewer
+- `workflow` commands — move, copy, publish, restrict, archive, comment
+- `preset list` subcommand + built-in presets
+- Built-in templates + template management subcommands
+- `export` command — export page content
+- `jsonutil` and `duration` utility packages
+- GitHub Actions CI/CD — build, test, lint, security, release, docs, spec drift
+- GoReleaser cross-platform builds + Docker + Homebrew + Scoop
+- npm/Python package scaffolds
+- VitePress documentation site
+- README.md, LICENSE, SECURITY.md, project config files
 
 ### Out of Scope
 
@@ -88,5 +103,22 @@ Give AI agents and automation reliable, structured access to Confluence content 
 | CQL lastModified + client-side dedup | Date-only granularity in CQL requires timestamp comparison | ✓ Good |
 | map[string]string for template data | Prevents SSTI — no struct access from templates | ✓ Good |
 
+## Evolution
+
+This document evolves at phase transitions and milestone boundaries.
+
+**After each phase transition** (via `/gsd:transition`):
+1. Requirements invalidated? → Move to Out of Scope with reason
+2. Requirements validated? → Move to Validated with phase reference
+3. New requirements emerged? → Add to Active
+4. Decisions to log? → Add to Key Decisions
+5. "What This Is" still accurate? → Update if drifted
+
+**After each milestone** (via `/gsd:complete-milestone`):
+1. Full review of all sections
+2. Core Value check — still the right priority?
+3. Audit Out of Scope — reasons still valid?
+4. Update Context with current state
+
 ---
-*Last updated: 2026-03-20 after v1.1 milestone completion*
+*Last updated: 2026-03-28 after v1.2 milestone started*
