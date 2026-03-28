@@ -1,6 +1,33 @@
-# Build output
+# Binary
 cf
-*.test
+/dist/
 
-# Claude Code state
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.*
+
+# Website (VitePress doc site)
+website/node_modules/
+website/.vitepress/dist/
+website/.vitepress/cache/
+website/commands/
+website/guide/error-codes.md
+
+# Claude Code
 .claude/
+
+# Test
+coverage.out
+
+# Planning
+.planning/
