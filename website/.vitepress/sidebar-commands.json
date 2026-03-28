@@ -1,0 +1,150 @@
+[
+  {
+    "text": "admin-key",
+    "link": "/commands/admin-key"
+  },
+  {
+    "text": "app",
+    "link": "/commands/app"
+  },
+  {
+    "text": "attachments",
+    "link": "/commands/attachments"
+  },
+  {
+    "text": "avatar",
+    "link": "/commands/avatar"
+  },
+  {
+    "text": "batch",
+    "link": "/commands/batch"
+  },
+  {
+    "text": "blogposts",
+    "link": "/commands/blogposts"
+  },
+  {
+    "text": "classification-levels",
+    "link": "/commands/classification-levels"
+  },
+  {
+    "text": "comments",
+    "link": "/commands/comments"
+  },
+  {
+    "text": "configure",
+    "link": "/commands/configure"
+  },
+  {
+    "text": "content",
+    "link": "/commands/content"
+  },
+  {
+    "text": "custom-content",
+    "link": "/commands/custom-content"
+  },
+  {
+    "text": "data-policies",
+    "link": "/commands/data-policies"
+  },
+  {
+    "text": "databases",
+    "link": "/commands/databases"
+  },
+  {
+    "text": "diff",
+    "link": "/commands/diff"
+  },
+  {
+    "text": "embeds",
+    "link": "/commands/embeds"
+  },
+  {
+    "text": "export",
+    "link": "/commands/export"
+  },
+  {
+    "text": "folders",
+    "link": "/commands/folders"
+  },
+  {
+    "text": "footer-comments",
+    "link": "/commands/footer-comments"
+  },
+  {
+    "text": "inline-comments",
+    "link": "/commands/inline-comments"
+  },
+  {
+    "text": "labels",
+    "link": "/commands/labels"
+  },
+  {
+    "text": "pages",
+    "link": "/commands/pages"
+  },
+  {
+    "text": "preset",
+    "link": "/commands/preset"
+  },
+  {
+    "text": "raw",
+    "link": "/commands/raw"
+  },
+  {
+    "text": "schema",
+    "link": "/commands/schema"
+  },
+  {
+    "text": "search",
+    "link": "/commands/search"
+  },
+  {
+    "text": "space-permissions",
+    "link": "/commands/space-permissions"
+  },
+  {
+    "text": "space-role-mode",
+    "link": "/commands/space-role-mode"
+  },
+  {
+    "text": "space-roles",
+    "link": "/commands/space-roles"
+  },
+  {
+    "text": "spaces",
+    "link": "/commands/spaces"
+  },
+  {
+    "text": "tasks",
+    "link": "/commands/tasks"
+  },
+  {
+    "text": "templates",
+    "link": "/commands/templates"
+  },
+  {
+    "text": "user",
+    "link": "/commands/user"
+  },
+  {
+    "text": "users-bulk",
+    "link": "/commands/users-bulk"
+  },
+  {
+    "text": "version",
+    "link": "/commands/version"
+  },
+  {
+    "text": "watch",
+    "link": "/commands/watch"
+  },
+  {
+    "text": "whiteboards",
+    "link": "/commands/whiteboards"
+  },
+  {
+    "text": "workflow",
+    "link": "/commands/workflow"
+  }
+]
