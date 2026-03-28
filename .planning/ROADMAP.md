@@ -229,8 +229,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 16-01-PLAN.md — Schema registration for all hand-written commands and aggregation in schema_cmd.go + batch.go
-- [ ] 16-02-PLAN.md — Standalone gendocs binary with VitePress Markdown, sidebar JSON, and error codes generation
+- [x] 16-01-PLAN.md — Schema registration for all hand-written commands and aggregation in schema_cmd.go + batch.go
+- [x] 16-02-PLAN.md — Standalone gendocs binary with VitePress Markdown, sidebar JSON, and error codes generation
 
 ### Phase 17: Release Infrastructure
 **Goal**: The project has complete CI/CD, cross-platform binary distribution, and standard open-source project files ready for public release.
@@ -241,7 +241,13 @@ Plans:
   2. Security pipeline (gosec + govulncheck) runs on push and weekly; spec-drift detection runs daily, auto-regenerates commands, and creates a PR; Dependabot submits weekly PRs for Go modules and GitHub Actions
   3. `npm install -g confluence-cf` and `pip install confluence-cf` install working binary wrappers that download the correct platform binary on postinstall
   4. Repository root contains README.md (with install methods, quick start, agent integration guide), LICENSE (Apache 2.0), SECURITY.md (vulnerability reporting policy), .golangci.yml, .gitignore, and Makefile with lint/docs/spec-update targets
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 17-01-PLAN.md — Project config files, GoReleaser, Dockerfile, LICENSE, and SECURITY.md
+- [ ] 17-02-PLAN.md — npm and Python package distribution scaffolds
+- [ ] 17-03-PLAN.md — GitHub Actions workflows (CI, release, security, spec-drift, docs, dependabot)
+- [ ] 17-04-PLAN.md — Comprehensive README.md with install, features, and agent integration
 
 ### Phase 18: Documentation Site
 **Goal**: A public documentation site provides getting-started guides, command reference, and agent integration documentation.
@@ -276,6 +282,6 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 13. Content Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
 | 14. Version Diff | v1.2 | 2/2 | Complete | 2026-03-28 |
 | 15. Workflow Commands | v1.2 | 2/2 | Complete | 2026-03-28 |
-| 16. Schema + Gendocs | 2/2 | Complete   | Complete    | 2026-03-28 |
-| 17. Release Infrastructure | v1.2 | 0/0 | Not started | - |
+| 16. Schema + Gendocs | v1.2 | 2/2 | Complete | 2026-03-28 |
+| 17. Release Infrastructure | v1.2 | 0/4 | Planning | - |
 | 18. Documentation Site | v1.2 | 0/0 | Not started | - |
