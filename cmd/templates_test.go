@@ -132,6 +132,181 @@ func TestTemplatesList_EmptyDir(t *testing.T) {
 	}
 }
 
+func TestTemplatesShow_Builtin(t *testing.T) {
+	setupTemplateEnv(t, "", nil)
+
+	rootCmd := cmd.RootCommand()
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetArgs([]string{"templates", "show", "meeting-notes"})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+
+	var output struct {
+		Name      string   `json:"name"`
+		Title     string   `json:"title"`
+		Body      string   `json:"body"`
+		Source    string   `json:"source"`
+		Variables []string `json:"variables"`
+	}
+	if err := json.Unmarshal(buf.Bytes(), &output); err != nil {
+		t.Fatalf("unmarshal: %v (raw: %s)", err, buf.String())
+	}
+	if output.Name != "meeting-notes" {
+		t.Errorf("name = %q, want %q", output.Name, "meeting-notes")
+	}
+	if output.Source != "builtin" {
+		t.Errorf("source = %q, want %q", output.Source, "builtin")
+	}
+	if len(output.Variables) == 0 {
+		t.Error("expected non-empty variables array")
+	}
+	// Verify XHTML is NOT escaped (no \u003c in output).
+	if strings.Contains(buf.String(), "\\u003c") {
+		t.Errorf("output contains HTML-escaped characters: %s", buf.String())
+	}
+}
+
+func TestTemplatesShow_UserTemplate(t *testing.T) {
+	setupTemplateEnv(t, "", map[string]string{
+		"my-tmpl": `{"title":"{{.title}}","body":"<p>Hello {{.name}}</p>"}`,
+	})
+
+	rootCmd := cmd.RootCommand()
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetArgs([]string{"templates", "show", "my-tmpl"})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+
+	var output struct {
+		Name      string   `json:"name"`
+		Title     string   `json:"title"`
+		Body      string   `json:"body"`
+		Source    string   `json:"source"`
+		Variables []string `json:"variables"`
+	}
+	if err := json.Unmarshal(buf.Bytes(), &output); err != nil {
+		t.Fatalf("unmarshal: %v (raw: %s)", err, buf.String())
+	}
+	if output.Name != "my-tmpl" {
+		t.Errorf("name = %q, want %q", output.Name, "my-tmpl")
+	}
+	if output.Source != "user" {
+		t.Errorf("source = %q, want %q", output.Source, "user")
+	}
+	if len(output.Variables) != 2 {
+		t.Errorf("got %d variables, want 2 (title, name)", len(output.Variables))
+	}
+}
+
+func TestTemplatesShow_NotFound(t *testing.T) {
+	setupTemplateEnv(t, "", nil)
+
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	rootCmd := cmd.RootCommand()
+	rootCmd.SetArgs([]string{"templates", "show", "nonexistent-template"})
+	err := rootCmd.Execute()
+
+	w.Close()
+	os.Stderr = oldStderr
+	var stderrBuf bytes.Buffer
+	stderrBuf.ReadFrom(r)
+
+	if err == nil {
+		t.Fatal("expected error for nonexistent template")
+	}
+	if !strings.Contains(stderrBuf.String(), "not_found") {
+		t.Errorf("expected not_found error, got: %s", stderrBuf.String())
+	}
+}
+
+func TestTemplatesCreate_FromPage(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != "GET" || !strings.HasPrefix(r.URL.Path, "/wiki/api/v2/pages/") {
+			t.Errorf("unexpected request: %s %s", r.Method, r.URL.Path)
+		}
+		// Verify body-format=storage query param.
+		if r.URL.Query().Get("body-format") != "storage" {
+			t.Errorf("expected body-format=storage, got %q", r.URL.Query().Get("body-format"))
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]any{
+			"id":    "123",
+			"title": "My Page Title",
+			"body": map[string]any{
+				"storage": map[string]any{
+					"representation": "storage",
+					"value":          "<p>Page content here</p>",
+				},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	dir := setupTemplateEnv(t, srv.URL, nil)
+
+	rootCmd := cmd.RootCommand()
+	buf := new(bytes.Buffer)
+	rootCmd.SetOut(buf)
+	rootCmd.SetArgs([]string{
+		"templates", "create",
+		"--from-page", "123",
+		"--name", "my-template",
+	})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Execute() error: %v", err)
+	}
+
+	// Verify output includes created status.
+	if !strings.Contains(buf.String(), "created") {
+		t.Errorf("expected 'created' in output, got: %s", buf.String())
+	}
+
+	// Verify template file was written.
+	tmplPath := filepath.Join(dir, "templates", "my-template.json")
+	data, err := os.ReadFile(tmplPath)
+	if err != nil {
+		t.Fatalf("template file not found at %s: %v", tmplPath, err)
+	}
+	if !strings.Contains(string(data), "My Page Title") {
+		t.Errorf("template file missing title: %s", data)
+	}
+}
+
+func TestTemplatesCreate_MissingName(t *testing.T) {
+	setupTemplateEnv(t, "", nil)
+
+	oldStderr := os.Stderr
+	r, w, _ := os.Pipe()
+	os.Stderr = w
+
+	rootCmd := cmd.RootCommand()
+	rootCmd.SetArgs([]string{
+		"templates", "create",
+		"--from-page", "123",
+		"--name", "",
+	})
+	err := rootCmd.Execute()
+
+	w.Close()
+	os.Stderr = oldStderr
+	var stderrBuf bytes.Buffer
+	stderrBuf.ReadFrom(r)
+
+	if err == nil {
+		t.Fatal("expected error for missing --name")
+	}
+	if !strings.Contains(stderrBuf.String(), "validation_error") {
+		t.Errorf("expected validation_error, got: %s", stderrBuf.String())
+	}
+}
+
 func TestPagesCreate_WithTemplate(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != "POST" || r.URL.Path != "/wiki/api/v2/pages" {
