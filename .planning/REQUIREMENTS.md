@@ -81,7 +81,7 @@ Deferred to future milestone. Tracked but not in current roadmap.
 
 ### Advanced Export
 
-- **CONT-08**: User can export page as PDF (blocked: no Confluence Cloud REST API — CONFCLOUD-61557)
+- **CONT-08**: User can export page as PDF (blocked: no Confluence Cloud REST API -- CONFCLOUD-61557)
 
 ## Out of Scope
 
@@ -102,51 +102,51 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| DIFF-01 | — | Pending |
-| DIFF-02 | — | Pending |
-| DIFF-03 | — | Pending |
-| WKFL-01 | — | Pending |
-| WKFL-02 | — | Pending |
-| WKFL-03 | — | Pending |
-| WKFL-04 | — | Pending |
-| WKFL-05 | — | Pending |
-| WKFL-06 | — | Pending |
-| CONT-01 | — | Pending |
-| CONT-02 | — | Pending |
-| CONT-03 | — | Pending |
-| CONT-04 | — | Pending |
-| CONT-05 | — | Pending |
-| CONT-06 | — | Pending |
-| CONT-07 | — | Pending |
-| UTIL-01 | — | Pending |
-| UTIL-02 | — | Pending |
-| UTIL-03 | — | Pending |
-| CICD-01 | — | Pending |
-| CICD-02 | — | Pending |
-| CICD-03 | — | Pending |
-| CICD-04 | — | Pending |
-| CICD-05 | — | Pending |
-| CICD-06 | — | Pending |
-| CICD-07 | — | Pending |
-| CICD-08 | — | Pending |
-| CICD-09 | — | Pending |
-| CICD-10 | — | Pending |
-| DOCS-01 | — | Pending |
-| DOCS-02 | — | Pending |
-| DOCS-03 | — | Pending |
-| DOCS-04 | — | Pending |
-| DOCS-05 | — | Pending |
-| CONF-01 | — | Pending |
-| CONF-02 | — | Pending |
-| CONF-03 | — | Pending |
-| SCHM-01 | — | Pending |
-| SCHM-02 | — | Pending |
+| UTIL-01 | Phase 12 | Pending |
+| UTIL-02 | Phase 12 | Pending |
+| UTIL-03 | Phase 12 | Pending |
+| CONT-01 | Phase 13 | Pending |
+| CONT-02 | Phase 13 | Pending |
+| CONT-03 | Phase 13 | Pending |
+| CONT-04 | Phase 13 | Pending |
+| CONT-05 | Phase 13 | Pending |
+| CONT-06 | Phase 13 | Pending |
+| CONT-07 | Phase 13 | Pending |
+| DIFF-01 | Phase 14 | Pending |
+| DIFF-02 | Phase 14 | Pending |
+| DIFF-03 | Phase 14 | Pending |
+| WKFL-01 | Phase 15 | Pending |
+| WKFL-02 | Phase 15 | Pending |
+| WKFL-03 | Phase 15 | Pending |
+| WKFL-04 | Phase 15 | Pending |
+| WKFL-05 | Phase 15 | Pending |
+| WKFL-06 | Phase 15 | Pending |
+| SCHM-01 | Phase 16 | Pending |
+| SCHM-02 | Phase 16 | Pending |
+| DOCS-05 | Phase 16 | Pending |
+| CICD-01 | Phase 17 | Pending |
+| CICD-02 | Phase 17 | Pending |
+| CICD-03 | Phase 17 | Pending |
+| CICD-04 | Phase 17 | Pending |
+| CICD-05 | Phase 17 | Pending |
+| CICD-06 | Phase 17 | Pending |
+| CICD-07 | Phase 17 | Pending |
+| CICD-08 | Phase 17 | Pending |
+| CICD-09 | Phase 17 | Pending |
+| CICD-10 | Phase 17 | Pending |
+| DOCS-01 | Phase 17 | Pending |
+| DOCS-02 | Phase 17 | Pending |
+| DOCS-03 | Phase 17 | Pending |
+| CONF-01 | Phase 17 | Pending |
+| CONF-02 | Phase 17 | Pending |
+| CONF-03 | Phase 17 | Pending |
+| DOCS-04 | Phase 18 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 39 total
-- Mapped to phases: 0
-- Unmapped: 39
+- Mapped to phases: 39
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-03-28*
-*Last updated: 2026-03-28 after initial definition*
+*Last updated: 2026-03-28 after roadmap creation*
