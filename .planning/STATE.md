@@ -4,8 +4,8 @@ milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: completed
 stopped_at: Completed 16-02-PLAN.md
-last_updated: "2026-03-28T16:52:01.356Z"
-last_activity: 2026-03-28 -- Completed 16-02-PLAN.md
+last_updated: "2026-03-28T16:55:05.427Z"
+last_activity: 2026-03-28
 progress:
   total_phases: 7
   completed_phases: 5
@@ -25,10 +25,10 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 
 ## Current Position
 
-Phase: 16 (schema-gendocs) — COMPLETE
-Plan: 2 of 2 (all complete)
+Phase: 17
+Plan: Not started
 Status: Phase 16 complete
-Last activity: 2026-03-28 -- Completed 16-02-PLAN.md
+Last activity: 2026-03-28
 
 Progress: [██████████] 100% (2/2 plans in phase 16)
 
