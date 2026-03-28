@@ -255,7 +255,7 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 9. Custom Content | v1.1 | 1/1 | Complete | 2026-03-20 |
 | 10. Output Presets and Templates | v1.1 | 2/2 | Complete | 2026-03-20 |
 | 11. Watch | v1.1 | 1/1 | Complete | 2026-03-20 |
-| 12. Internal Utilities | v1.2 | 0/3 | Planning | - |
+| 12. Internal Utilities | 1/3 | In Progress|  | - |
 | 13. Content Utilities | v1.2 | 0/0 | Not started | - |
 | 14. Version Diff | v1.2 | 0/0 | Not started | - |
 | 15. Workflow Commands | v1.2 | 0/0 | Not started | - |
