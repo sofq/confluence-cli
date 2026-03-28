@@ -29,6 +29,7 @@ var skipClientCommands = map[string]bool{
 	"help":       true,
 	"schema":     true,
 	"templates":  true,
+	"preset":     true,
 }
 
 var rootCmd = &cobra.Command{
@@ -295,6 +296,7 @@ func init() {
 	mergeCommand(rootCmd, custom_contentCmd) // Phase 9: custom content workflow overrides
 	rootCmd.AddCommand(templatesCmd)              // Phase 10: content template operations
 	rootCmd.AddCommand(watchCmd)                  // Phase 11: content change watcher
+	rootCmd.AddCommand(presetCmd)                 // Phase 13: preset list command
 
 	// Override cobra's default help output so that "cf" with no args and
 	// "cf help <resource>" emit JSON errors to stderr instead of plain text

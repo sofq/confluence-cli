@@ -67,8 +67,8 @@ func setupTemplateEnv(t *testing.T, srvURL string, templates map[string]string) 
 
 func TestTemplatesList_WithTemplates(t *testing.T) {
 	setupTemplateEnv(t, "", map[string]string{
-		"meeting-notes":  `{"title":"{{.title}}","body":"<p>Meeting</p>"}`,
-		"status-report":  `{"title":"Status","body":"<p>Report</p>"}`,
+		"meeting-notes": `{"title":"{{.title}}","body":"<p>Meeting</p>"}`,
+		"status-report": `{"title":"Status","body":"<p>Report</p>"}`,
 	})
 
 	rootCmd := cmd.RootCommand()
@@ -79,15 +79,26 @@ func TestTemplatesList_WithTemplates(t *testing.T) {
 		t.Fatalf("Execute() error: %v", err)
 	}
 
-	var names []string
-	if err := json.Unmarshal(buf.Bytes(), &names); err != nil {
+	type entry struct {
+		Name   string `json:"name"`
+		Source string `json:"source"`
+	}
+	var entries []entry
+	if err := json.Unmarshal(buf.Bytes(), &entries); err != nil {
 		t.Fatalf("unmarshal output: %v (raw: %s)", err, buf.String())
 	}
-	if len(names) != 2 {
-		t.Fatalf("got %d templates, want 2", len(names))
+	// 2 user templates + 5 built-in not overlapping (adr, blank, decision, retrospective, runbook) = 7.
+	// "meeting-notes" is both user and built-in; user wins.
+	if len(entries) != 7 {
+		t.Fatalf("got %d templates, want 7; entries=%v", len(entries), entries)
 	}
-	if names[0] != "meeting-notes" || names[1] != "status-report" {
-		t.Errorf("got %v, want [meeting-notes status-report]", names)
+	// Verify user templates have source "user".
+	for _, e := range entries {
+		if e.Name == "meeting-notes" || e.Name == "status-report" {
+			if e.Source != "user" {
+				t.Errorf("%s source = %q, want %q", e.Name, e.Source, "user")
+			}
+		}
 	}
 }
 
@@ -102,12 +113,22 @@ func TestTemplatesList_EmptyDir(t *testing.T) {
 		t.Fatalf("Execute() error: %v", err)
 	}
 
-	var names []string
-	if err := json.Unmarshal(buf.Bytes(), &names); err != nil {
+	type entry struct {
+		Name   string `json:"name"`
+		Source string `json:"source"`
+	}
+	var entries []entry
+	if err := json.Unmarshal(buf.Bytes(), &entries); err != nil {
 		t.Fatalf("unmarshal output: %v (raw: %s)", err, buf.String())
 	}
-	if len(names) != 0 {
-		t.Errorf("got %v, want empty array", names)
+	// No user templates, but 6 built-in templates should appear.
+	if len(entries) != 6 {
+		t.Errorf("got %d entries, want 6 built-in; entries=%v", len(entries), entries)
+	}
+	for _, e := range entries {
+		if e.Source != "builtin" {
+			t.Errorf("%s source = %q, want %q", e.Name, e.Source, "builtin")
+		}
 	}
 }
 
