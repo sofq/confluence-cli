@@ -48,7 +48,7 @@ Give AI agents and automation reliable, structured access to Confluence content 
 **Goal:** Close the feature gap with jr by adding workflow commands, version diff, built-in presets/templates, and replicate the full CI/CD, documentation, and release infrastructure.
 
 **Target features:**
-- `diff` command — page version history viewer
+- ~~`diff` command — page version history viewer~~ — Validated in Phase 14: Version Diff
 - `workflow` commands — move, copy, publish, restrict, archive, comment
 - ~~`preset list` subcommand + built-in presets~~ — Validated in Phase 13: Content Utilities
 - ~~Built-in templates + template management subcommands~~ — Validated in Phase 13: Content Utilities
@@ -121,4 +121,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-03-28 after Phase 13 completion*
+*Last updated: 2026-03-28 after Phase 14 completion*
