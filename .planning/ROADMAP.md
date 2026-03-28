@@ -185,9 +185,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 13-01-PLAN.md — Built-in templates, template package refactoring, and preset list command
-- [ ] 13-02-PLAN.md — Templates show, create --from-page commands, and list output refactoring
-- [ ] 13-03-PLAN.md — Export command with single-page and recursive tree NDJSON modes
+- [x] 13-01-PLAN.md — Built-in templates, template package refactoring, and preset list command
+- [x] 13-02-PLAN.md — Templates show, create --from-page commands, and list output refactoring
+- [x] 13-03-PLAN.md — Export command with single-page and recursive tree NDJSON modes
 
 ### Phase 14: Version Diff
 **Goal**: Users can compare page versions and understand what changed, when, and by whom.
@@ -197,7 +197,11 @@ Plans:
   1. `cf diff --id <pageId>` outputs a structured JSON diff comparing the two most recent versions, including change statistics (lines added/removed) and version metadata (author, timestamp)
   2. `cf diff --id <pageId> --since 2h` filters the version history to only show changes within the last 2 hours, using the duration parser from Phase 12
   3. `cf diff --id <pageId> --from 3 --to 5` compares two explicit version numbers and outputs the structured diff between them
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 14-01-PLAN.md — Create internal/diff package with types, parseSince, lineStats, and Compare
+- [ ] 14-02-PLAN.md — Create diff command with API wiring, all flag modes, tests, and root registration
 
 ### Phase 15: Workflow Commands
 **Goal**: Users can perform content lifecycle operations (move, copy, publish, comment, restrict, archive) through dedicated workflow subcommands.
@@ -261,8 +265,8 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 10. Output Presets and Templates | v1.1 | 2/2 | Complete | 2026-03-20 |
 | 11. Watch | v1.1 | 1/1 | Complete | 2026-03-20 |
 | 12. Internal Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
-| 13. Content Utilities | 2/3 | In Progress| Complete    | 2026-03-28 |
-| 14. Version Diff | v1.2 | 0/0 | Not started | - |
+| 13. Content Utilities | v1.2 | 3/3 | Complete | 2026-03-28 |
+| 14. Version Diff | v1.2 | 0/2 | In Progress | - |
 | 15. Workflow Commands | v1.2 | 0/0 | Not started | - |
 | 16. Schema + Gendocs | v1.2 | 0/0 | Not started | - |
 | 17. Release Infrastructure | v1.2 | 0/0 | Not started | - |
