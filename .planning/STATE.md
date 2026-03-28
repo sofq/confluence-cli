@@ -2,16 +2,16 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
-status: executing
-stopped_at: Completed 12-01 and 12-02 (Wave 1)
-last_updated: "2026-03-28T13:55:04.641Z"
-last_activity: 2026-03-28 — Completed Wave 1 (12-01 jsonutil+duration, 12-02 preset)
+status: completed
+stopped_at: Completed 12-03-PLAN.md
+last_updated: "2026-03-28T14:04:04.251Z"
+last_activity: 2026-03-28 — Completed 12-03 SetEscapeHTML refactoring (all 3 plans done)
 progress:
   total_phases: 7
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 3
-  completed_plans: 2
-  percent: 66
+  completed_plans: 3
+  percent: 100
 ---
 
 # Project State
@@ -26,11 +26,11 @@ See: .planning/PROJECT.md (updated 2026-03-28)
 ## Current Position
 
 Phase: 12 of 18 (Internal Utilities) — first of 7 phases in v1.2
-Plan: 2 of 3 in current phase
-Status: Executing
-Last activity: 2026-03-28 — Completed Wave 1 (12-01 jsonutil+duration, 12-02 preset)
+Plan: 3 of 3 in current phase (COMPLETE)
+Status: Phase Complete
+Last activity: 2026-03-28 — Completed 12-03 SetEscapeHTML refactoring (all 3 plans done)
 
-Progress: [███░░░░░░░] 33% (1/3 plans in phase 12)
+Progress: [██████████] 100% (3/3 plans in phase 12)
 
 ## Performance Metrics
 
@@ -60,6 +60,7 @@ Progress: [███░░░░░░░] 33% (1/3 plans in phase 12)
 
 | Phase 12 P01 | 2min | 2 tasks | 4 files |
 | Phase 12 P02 | 3min | 2 tasks | 3 files |
+| Phase 12 P03 | 5min | 2 tasks | 9 files |
 
 ## Accumulated Context
 
@@ -78,6 +79,7 @@ Recent decisions affecting current work:
 - [Phase 12-01]: Calendar time conventions for duration: 1d=24h, 1w=168h (not Jira work-time)
 - [Phase 12-01]: NewEncoder added beyond jr pattern for streaming use cases (errors.go, watch.go)
 - [Phase 12-02]: Import alias preset_pkg for preset package in cmd/root.go (local var preset conflicts with package name)
+- [Phase 12]: Removed unused encoding/json import from errors.go, bytes from jq.go, both from root.go after jsonutil consolidation
 
 ### Pending Todos
 
@@ -92,6 +94,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T13:55:04.639Z
-Stopped at: Completed Wave 1 (12-01, 12-02)
+Last session: 2026-03-28T14:04:04.249Z
+Stopped at: Completed 12-03-PLAN.md
 Resume file: None
