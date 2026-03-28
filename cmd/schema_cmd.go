@@ -28,6 +28,11 @@ var schemaCmd = &cobra.Command{
 		compactFlag, _ := cmd.Flags().GetBool("compact")
 
 		allOps := generated.AllSchemaOps()
+		allOps = append(allOps, DiffSchemaOps()...)
+		allOps = append(allOps, WorkflowSchemaOps()...)
+		allOps = append(allOps, ExportSchemaOps()...)
+		allOps = append(allOps, PresetSchemaOps()...)
+		allOps = append(allOps, TemplatesSchemaOps()...)
 
 		if compactFlag || (len(args) == 0 && !listFlag) {
 			data, _ := jsonutil.MarshalNoEscape(compactSchema(allOps))

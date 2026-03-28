@@ -148,8 +148,13 @@ func runBatch(cmd *cobra.Command, args []string) error {
 		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 	}
 
-	// Build opMap from generated.AllSchemaOps() — key is "resource verb".
+	// Build opMap from generated + hand-written ops — key is "resource verb".
 	allOps := generated.AllSchemaOps()
+	allOps = append(allOps, DiffSchemaOps()...)
+	allOps = append(allOps, WorkflowSchemaOps()...)
+	allOps = append(allOps, ExportSchemaOps()...)
+	allOps = append(allOps, PresetSchemaOps()...)
+	allOps = append(allOps, TemplatesSchemaOps()...)
 	opMap := make(map[string]generated.SchemaOp, len(allOps))
 	for _, op := range allOps {
 		key := op.Resource + " " + op.Verb
