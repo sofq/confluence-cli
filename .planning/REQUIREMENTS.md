@@ -29,8 +29,8 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 - [x] **CONT-03**: CLI ships 6 built-in templates (blank, meeting-notes, decision, runbook, retrospective, adr)
 - [ ] **CONT-04**: User can inspect a template definition via `templates show <name>`
 - [ ] **CONT-05**: User can create a template from an existing page via `templates create --from-page`
-- [ ] **CONT-06**: User can export page body in requested format via `export` command
-- [ ] **CONT-07**: User can recursively export a page tree as NDJSON via `export --tree`
+- [x] **CONT-06**: User can export page body in requested format via `export` command
+- [x] **CONT-07**: User can recursively export a page tree as NDJSON via `export --tree`
 
 ### Internal Packages
 
@@ -110,8 +110,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONT-03 | Phase 13 | Complete |
 | CONT-04 | Phase 13 | Pending |
 | CONT-05 | Phase 13 | Pending |
-| CONT-06 | Phase 13 | Pending |
-| CONT-07 | Phase 13 | Pending |
+| CONT-06 | Phase 13 | Complete |
+| CONT-07 | Phase 13 | Complete |
 | DIFF-01 | Phase 14 | Pending |
 | DIFF-02 | Phase 14 | Pending |
 | DIFF-03 | Phase 14 | Pending |

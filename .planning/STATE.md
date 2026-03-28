@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: executing
-stopped_at: Completed 13-01-PLAN.md
-last_updated: "2026-03-28T14:51:30.270Z"
+stopped_at: Completed 13-03-PLAN.md
+last_updated: "2026-03-28T14:58:17.975Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 7
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
   percent: 67
 ---
 
@@ -62,6 +62,7 @@ Progress: [███████░░░] 67% (1/3 plans in phase 13)
 | Phase 12 P02 | 3min | 2 tasks | 3 files |
 | Phase 12 P03 | 5min | 2 tasks | 9 files |
 | Phase 13 P01 | 4min | 2 tasks | 6 files |
+| Phase 13 P03 | 3min | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,7 @@ Recent decisions affecting current work:
 - [Phase 12]: Removed unused encoding/json import from errors.go, bytes from jq.go, both from root.go after jsonutil consolidation
 - [Phase 13]: Built-in templates in separate builtin.go file (keeps template.go clean)
 - [Phase 13]: User templates override built-in for same name; Save() rejects overwrite
+- [Phase 13]: Body field as json.RawMessage preserves full API response body including format metadata
 
 ### Pending Todos
 
@@ -97,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T14:51:30.268Z
-Stopped at: Completed 13-01-PLAN.md
+Last session: 2026-03-28T14:58:17.973Z
+Stopped at: Completed 13-03-PLAN.md
 Resume file: None
