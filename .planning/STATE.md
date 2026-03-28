@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
 status: completed
-stopped_at: Completed 17-02-PLAN.md
-last_updated: "2026-03-28T17:38:40.742Z"
+stopped_at: Completed 17-04-PLAN.md
+last_updated: "2026-03-28T17:44:25.037Z"
 last_activity: 2026-03-28
 progress:
   total_phases: 7
   completed_phases: 5
   total_plans: 16
-  completed_plans: 13
+  completed_plans: 15
   percent: 100
 ---
 
@@ -71,6 +71,7 @@ Progress: [██████████] 100% (2/2 plans in phase 16)
 | Phase 16-schema-gendocs P01 | 3min | 2 tasks | 8 files |
 | Phase 16-schema-gendocs P02 | 2min | 2 tasks | 2 files |
 | Phase 17-02 P02 | 2min | 2 tasks | 5 files |
+| Phase 17-04 P04 | 2min | 1 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,7 @@ Recent decisions affecting current work:
 - [Phase 16-schema-gendocs]: Used --output flag instead of positional arg for gendocs CLI
 - [Phase 17-02]: Adapted jr reference patterns exactly -- same download/extract logic, platform maps, archive naming
 - [Phase 17-02]: npm version 0.1.0 per D-07, Python version 0.0.0 (release workflow sets via sed)
+- [Phase 17-04]: Mirrored jr README structure exactly per D-09/D-10 with 12 cf feature showcase sections
 
 ### Pending Todos
 
@@ -122,6 +124,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T17:38:40.738Z
-Stopped at: Completed 17-02-PLAN.md
+Last session: 2026-03-28T17:44:25.035Z
+Stopped at: Completed 17-04-PLAN.md
 Resume file: None
