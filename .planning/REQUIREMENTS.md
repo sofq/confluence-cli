@@ -57,7 +57,7 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 - [ ] **DOCS-02**: LICENSE file (Apache 2.0)
 - [ ] **DOCS-03**: SECURITY.md with vulnerability reporting policy
 - [ ] **DOCS-04**: VitePress documentation site with guide pages and auto-generated command reference
-- [ ] **DOCS-05**: `gendocs` binary generates VitePress sidebar JSON and per-command docs from Cobra tree
+- [x] **DOCS-05**: `gendocs` binary generates VitePress sidebar JSON and per-command docs from Cobra tree
 
 ### Project Config
 
@@ -123,7 +123,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | WKFL-06 | Phase 15 | Complete |
 | SCHM-01 | Phase 16 | Complete |
 | SCHM-02 | Phase 16 | Complete |
-| DOCS-05 | Phase 16 | Pending |
+| DOCS-05 | Phase 16 | Complete |
 | CICD-01 | Phase 17 | Pending |
 | CICD-02 | Phase 17 | Pending |
 | CICD-03 | Phase 17 | Pending |
