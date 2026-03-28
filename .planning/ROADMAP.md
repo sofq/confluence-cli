@@ -289,4 +289,4 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 15. Workflow Commands | v1.2 | 2/2 | Complete | 2026-03-28 |
 | 16. Schema + Gendocs | v1.2 | 2/2 | Complete | 2026-03-28 |
 | 17. Release Infrastructure | v1.2 | 4/4 | Complete | 2026-03-28 |
-| 18. Documentation Site | v1.2 | 0/3 | In Progress | - |
+| 18. Documentation Site | 1/3 | In Progress|  | - |
