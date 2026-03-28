@@ -9,9 +9,9 @@ Requirements for v1.2 Workflow, Parity & Release Infrastructure milestone. Each 
 
 ### Version Diff
 
-- [ ] **DIFF-01**: User can compare two page versions and see structured JSON diff output
-- [ ] **DIFF-02**: User can filter version diffs by time range using `--since` with human-friendly durations
-- [ ] **DIFF-03**: User can specify `--from` and `--to` version numbers for explicit comparison
+- [x] **DIFF-01**: User can compare two page versions and see structured JSON diff output
+- [x] **DIFF-02**: User can filter version diffs by time range using `--since` with human-friendly durations
+- [x] **DIFF-03**: User can specify `--from` and `--to` version numbers for explicit comparison
 
 ### Workflow Commands
 
@@ -112,9 +112,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CONT-05 | Phase 13 | Complete |
 | CONT-06 | Phase 13 | Complete |
 | CONT-07 | Phase 13 | Complete |
-| DIFF-01 | Phase 14 | Pending |
-| DIFF-02 | Phase 14 | Pending |
-| DIFF-03 | Phase 14 | Pending |
+| DIFF-01 | Phase 14 | Complete |
+| DIFF-02 | Phase 14 | Complete |
+| DIFF-03 | Phase 14 | Complete |
 | WKFL-01 | Phase 15 | Pending |
 | WKFL-02 | Phase 15 | Pending |
 | WKFL-03 | Phase 15 | Pending |

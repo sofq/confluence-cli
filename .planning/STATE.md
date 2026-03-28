@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: Workflow, Parity & Release Infrastructure
-status: completed
-stopped_at: Phase 14 context gathered
-last_updated: "2026-03-28T15:13:40.973Z"
-last_activity: 2026-03-28
+status: executing
+stopped_at: Completed 14-01-PLAN.md
+last_updated: "2026-03-28T15:37:29.000Z"
+last_activity: 2026-03-28 -- Phase 14 execution started
 progress:
   total_phases: 7
   completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_plans: 8
+  completed_plans: 7
   percent: 100
 ---
 
@@ -21,14 +21,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-28)
 
 **Core value:** Give AI agents reliable, structured JSON access to Confluence content through a CLI
-**Current focus:** Phase 13 — Content Utilities
+**Current focus:** Phase 14 — version-diff
 
 ## Current Position
 
-Phase: 14 of 18 (version diff)
-Plan: Not started
-Status: Complete
-Last activity: 2026-03-28
+Phase: 14 (version-diff) — EXECUTING
+Plan: 1 of 2
+Status: Executing Phase 14
+Last activity: 2026-03-28 -- Phase 14 execution started
 
 Progress: [██████████] 100% (3/3 plans in phase 13)
 
@@ -64,6 +64,7 @@ Progress: [██████████] 100% (3/3 plans in phase 13)
 | Phase 13 P01 | 4min | 2 tasks | 6 files |
 | Phase 13 P02 | 3min | 2 tasks | 2 files |
 | Phase 13 P03 | 3min | 2 tasks | 3 files |
+| Phase 14-version-diff P01 | 3min | 1 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,9 @@ Recent decisions affecting current work:
 - [Phase 13]: User templates override built-in for same name; Save() rejects overwrite
 - [Phase 13]: Manual client construction in templates create rather than removing templates from skipClientCommands
 - [Phase 13]: Body field as json.RawMessage preserves full API response body including format metadata
+- [Phase 14-version-diff]: ParseSince tries ISO date formats before duration.Parse (pitfall 6 avoidance)
+- [Phase 14-version-diff]: LineStats uses frequency-map comparison per D-04, not Myers/LCS
+- [Phase 14-version-diff]: --since and --from/--to mutually exclusive (validation error)
 
 ### Pending Todos
 
@@ -101,6 +105,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-28T15:13:40.970Z
-Stopped at: Phase 14 context gathered
-Resume file: .planning/phases/14-version-diff/14-CONTEXT.md
+Last session: 2026-03-28T15:37:28.997Z
+Stopped at: Completed 14-01-PLAN.md
+Resume file: None
