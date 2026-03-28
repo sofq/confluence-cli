@@ -1,0 +1,105 @@
+name: Spec Drift Check
+
+on:
+  schedule:
+    - cron: "0 9 * * *" # Every day at 9:00 UTC
+  workflow_dispatch: # Allow manual trigger
+
+permissions:
+  contents: read
+
+jobs:
+  check-drift:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
+        with:
+          go-version-file: go.mod
+
+      - name: Download latest Confluence OpenAPI spec
+        run: |
+          curl -sL "https://dac-static.atlassian.com/cloud/confluence/openapi-v2.v3.json" -o spec/confluence-v2-latest.json
+
+      - name: Check for spec changes
+        id: diff
+        run: |
+          if diff -q spec/confluence-v2.json spec/confluence-v2-latest.json > /dev/null 2>&1; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            echo "No spec changes detected."
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+            echo "Spec has changed!"
+          fi
+
+      - name: Regenerate commands from new spec
+        if: steps.diff.outputs.changed == 'true'
+        run: |
+          cp spec/confluence-v2-latest.json spec/confluence-v2.json
+          go run ./gen/...
+
+      - name: Check if generated code changed
+        if: steps.diff.outputs.changed == 'true'
+        id: code
+        run: |
+          if git diff --quiet -- '*.go'; then
+            echo "code_changed=false" >> "$GITHUB_OUTPUT"
+            echo "Spec changed but generated code is identical."
+          else
+            echo "code_changed=true" >> "$GITHUB_OUTPUT"
+            echo "Generated code has changed!"
+            git diff --stat -- '*.go'
+          fi
+
+      - name: Run tests
+        if: steps.diff.outputs.changed == 'true'
+        run: go build ./... && go test ./internal/... ./gen/...
+
+      - name: Determine next patch version
+        if: steps.code.outputs.code_changed == 'true'
+        id: version
+        run: |
+          LATEST_TAG=$(git tag --sort=-v:refname | head -1)
+          if [ -z "$LATEST_TAG" ]; then
+            NEXT="v0.0.1"
+          else
+            VERSION="${LATEST_TAG#v}"
+            MAJOR=$(echo "$VERSION" | cut -d. -f1)
+            MINOR=$(echo "$VERSION" | cut -d. -f2)
+            PATCH=$(echo "$VERSION" | cut -d. -f3)
+            NEXT="v${MAJOR}.${MINOR}.$((PATCH + 1))"
+          fi
+          echo "next_tag=$NEXT" >> "$GITHUB_OUTPUT"
+          echo "Next release: $NEXT"
+
+      - name: Create PR for spec update
+        if: steps.diff.outputs.changed == 'true'
+        id: pr
+        uses: peter-evans/create-pull-request@c0f553fe549906ede9cf27b5156039d195d2ece0 # v8
+        with:
+          commit-message: "deps: update Confluence OpenAPI spec"
+          title: "deps: update Confluence OpenAPI spec"
+          body: |
+            The upstream Confluence REST API v2 OpenAPI spec has changed.
+
+            This PR updates the spec and regenerates all commands.
+
+            **Code changed:** ${{ steps.code.outputs.code_changed == 'true' && 'Yes — generated commands updated' || 'No — spec-only change' }}
+            ${{ steps.code.outputs.code_changed == 'true' && format('**Auto-release:** {0} (after merge)', steps.version.outputs.next_tag) || '**Auto-release:** None (spec-only)' }}
+
+            Source: https://dac-static.atlassian.com/cloud/confluence/openapi-v2.v3.json
+          branch: auto/spec-update
+          labels: ${{ steps.code.outputs.code_changed == 'true' && 'dependencies,auto-release' || 'dependencies' }}
+          delete-branch: true
+
+      - name: Enable auto-merge
+        if: steps.pr.outputs.pull-request-operation == 'created' || steps.pr.outputs.pull-request-operation == 'updated'
+        run: gh pr merge "${{ steps.pr.outputs.pull-request-url }}" --auto --squash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
