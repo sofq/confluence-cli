@@ -165,7 +165,12 @@ Plans:
   1. `internal/jsonutil.MarshalNoEscape()` serializes Go values to JSON without HTML-escaping `&`, `<`, `>` characters in XHTML content, and existing commands can adopt it
   2. `internal/duration.Parse("2h")`, `Parse("1d")`, `Parse("1w")` return correct `time.Duration` values using calendar conventions (1d=24h, 1w=168h), and invalid input returns a descriptive error
   3. `internal/preset.Lookup(name, profile)` resolves presets through the three-tier chain (profile config > user preset file > built-in), and `List()` returns all available presets with their source attribution (built-in, user, profile)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 12-01-PLAN.md — Create jsonutil and duration internal packages with tests
+- [ ] 12-02-PLAN.md — Create preset package with three-tier resolution and wire into cmd/root.go
+- [ ] 12-03-PLAN.md — Refactor all existing SetEscapeHTML call sites to use jsonutil
 
 ### Phase 13: Content Utilities
 **Goal**: Users have access to built-in presets and templates out of the box, can manage templates, and can extract page content via export.
@@ -250,7 +255,7 @@ Note: Phases 13, 14, and 15 all depend on Phase 12 but not on each other, so the
 | 9. Custom Content | v1.1 | 1/1 | Complete | 2026-03-20 |
 | 10. Output Presets and Templates | v1.1 | 2/2 | Complete | 2026-03-20 |
 | 11. Watch | v1.1 | 1/1 | Complete | 2026-03-20 |
-| 12. Internal Utilities | v1.2 | 0/0 | Not started | - |
+| 12. Internal Utilities | v1.2 | 0/3 | Planning | - |
 | 13. Content Utilities | v1.2 | 0/0 | Not started | - |
 | 14. Version Diff | v1.2 | 0/0 | Not started | - |
 | 15. Workflow Commands | v1.2 | 0/0 | Not started | - |
