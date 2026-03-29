@@ -7,9 +7,7 @@ Give your AI agent (Claude Code, Cursor, Copilot, or custom bots) reliable, toke
 ## Install
 
 ```bash
-pip install confluence-cf
-# or
-uv tool install confluence-cf
+npm install -g confluence-cf
 ```
 
 ## Why cf?
@@ -52,7 +50,7 @@ echo '[
 ## Also available via
 
 - **Homebrew**: `brew install sofq/tap/cf`
-- **npm**: `npm install -g confluence-cf`
+- **pip**: `pip install confluence-cf`
 - **Scoop**: `scoop bucket add sofq https://github.com/sofq/scoop-bucket && scoop install cf`
 - **Docker**: `docker run --rm ghcr.io/sofq/cf version`
 - **Go**: `go install github.com/sofq/confluence-cli@latest`
