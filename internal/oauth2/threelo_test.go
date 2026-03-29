@@ -779,7 +779,7 @@ func TestThreeLOFullFlowWithCloudID(t *testing.T) {
 	}
 	// Extract port from redirect URI host.
 	_, portStr, _ := net.SplitHostPort(cbParsed.Host)
-	fmt.Sscanf(portStr, "%d", &port)
+	_, _ = fmt.Sscanf(portStr, "%d", &port)
 
 	// Send the callback.
 	cbURL := fmt.Sprintf("http://localhost:%d/callback?state=%s&code=authcode123", port, state)
@@ -892,7 +892,7 @@ func TestThreeLOFullFlowDiscoverCloudID(t *testing.T) {
 	}
 	_, portStr, _ := net.SplitHostPort(cbParsed.Host)
 	var port int
-	fmt.Sscanf(portStr, "%d", &port)
+	_, _ = fmt.Sscanf(portStr, "%d", &port)
 
 	cbURL := fmt.Sprintf("http://localhost:%d/callback?state=%s&code=authcode456", port, state)
 	resp, err := http.Get(cbURL) //nolint:noctx
@@ -989,7 +989,7 @@ func TestThreeLOFullFlowDiscoveryError(t *testing.T) {
 	}
 	_, portStr, _ := net.SplitHostPort(cbParsed.Host)
 	var port int
-	fmt.Sscanf(portStr, "%d", &port)
+	_, _ = fmt.Sscanf(portStr, "%d", &port)
 
 	cbURL := fmt.Sprintf("http://localhost:%d/callback?state=%s&code=authcode789", port, state)
 	resp, err := http.Get(cbURL) //nolint:noctx
@@ -1080,7 +1080,7 @@ func TestThreeLOScopesAlreadyContainOfflineAccess(t *testing.T) {
 	}
 	_, portStr, _ := net.SplitHostPort(cbParsed.Host)
 	var port int
-	fmt.Sscanf(portStr, "%d", &port)
+	_, _ = fmt.Sscanf(portStr, "%d", &port)
 
 	cbURL := fmt.Sprintf("http://localhost:%d/callback?state=%s&code=scopecode", port, state)
 	resp, err := http.Get(cbURL) //nolint:noctx
@@ -1173,7 +1173,7 @@ func TestThreeLOExchangeCodeFailure(t *testing.T) {
 	}
 	_, portStr, _ := net.SplitHostPort(cbParsed.Host)
 	var port int
-	fmt.Sscanf(portStr, "%d", &port)
+	_, _ = fmt.Sscanf(portStr, "%d", &port)
 
 	cbURL := fmt.Sprintf("http://localhost:%d/callback?state=%s&code=failcode", port, state)
 	resp, err := http.Get(cbURL) //nolint:noctx

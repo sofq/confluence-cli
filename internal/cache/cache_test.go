@@ -117,7 +117,7 @@ func TestGetReadFileError(t *testing.T) {
 	if err := os.MkdirAll(cacheFilePath, 0o700); err != nil {
 		t.Fatalf("MkdirAll failed: %v", err)
 	}
-	t.Cleanup(func() { os.RemoveAll(cacheFilePath) })
+	t.Cleanup(func() { _ = os.RemoveAll(cacheFilePath) })
 
 	got, ok := cache.Get(key, 24*time.Hour)
 	if ok {

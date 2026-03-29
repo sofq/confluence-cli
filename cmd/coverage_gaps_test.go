@@ -106,7 +106,7 @@ func dialRefusedURL(t *testing.T) string {
 		t.Fatalf("net.Listen: %v", err)
 	}
 	addr := l.Addr().String()
-	l.Close()
+	_ = l.Close()
 	return "http://" + addr
 }
 
