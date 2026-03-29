@@ -22,12 +22,12 @@ jobs:
     permissions:
       contents: write
       packages: write
-    # Skip if manually dispatched — release already exists
-    if: github.event_name != 'workflow_dispatch'
+    # Run for both tag push and workflow_dispatch
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
           fetch-depth: 0
+          ref: ${{ env.TAG }}
 
       - uses: actions/setup-go@4b73464bb391d4059bd26b0524d20df3927bd417 # v6
         with:
