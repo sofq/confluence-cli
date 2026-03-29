@@ -218,6 +218,5 @@ See the full [workflow command reference](/commands/workflow) for all flags and 
 
 - [Filtering & Presets](./filtering) --- cut 8,000-token responses down to ~50 tokens
 - [Discovering Commands](./discovery) --- explore 242 commands with `cf schema`
-- [Templates](./templates) --- create pages from predefined patterns with variables
 - [Global Flags](./global-flags) --- full reference for all persistent flags
 - [Agent Integration](./agent-integration) --- how AI agents can use `cf` effectively

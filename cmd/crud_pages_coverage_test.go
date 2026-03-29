@@ -16,7 +16,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"strings"
 	"testing"
 
@@ -170,8 +169,7 @@ func TestPagesCreate_MissingSpaceID(t *testing.T) {
 	}))
 	defer srv.Close()
 	ctx := withClientCRUD(srv)
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "", "title": "T", "body": "<p>b</p>", "template": "", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
+	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "", "title": "T", "body": "<p>b</p>", "parent-id": ""})
 	if err := cmd.RunPagesWorkflowCreate(flagCmd, nil); err == nil {
 		t.Error("expected validation error for missing --space-id")
 	}
@@ -184,8 +182,7 @@ func TestPagesCreate_MissingTitle(t *testing.T) {
 	}))
 	defer srv.Close()
 	ctx := withClientCRUD(srv)
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "", "body": "<p>b</p>", "template": "", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
+	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "", "body": "<p>b</p>", "parent-id": ""})
 	if err := cmd.RunPagesWorkflowCreate(flagCmd, nil); err == nil {
 		t.Error("expected validation error for missing --title")
 	}
@@ -198,24 +195,9 @@ func TestPagesCreate_MissingBody(t *testing.T) {
 	}))
 	defer srv.Close()
 	ctx := withClientCRUD(srv)
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "T", "body": "", "template": "", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
+	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "T", "body": "", "parent-id": ""})
 	if err := cmd.RunPagesWorkflowCreate(flagCmd, nil); err == nil {
 		t.Error("expected validation error for missing --body")
-	}
-}
-
-// TestPagesCreate_TemplateAndBodyConflict covers the template+body conflict branch.
-func TestPagesCreate_TemplateAndBodyConflict(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Error("unexpected HTTP call")
-	}))
-	defer srv.Close()
-	ctx := withClientCRUD(srv)
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "T", "body": "<p>x</p>", "template": "some-tpl", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
-	if err := cmd.RunPagesWorkflowCreate(flagCmd, nil); err == nil {
-		t.Error("expected validation error when both --template and --body are provided")
 	}
 }
 
@@ -229,8 +211,7 @@ func TestPagesCreate_Success(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 	ctx := withClientCRUD(srv)
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "Test Page", "body": "<p>hi</p>", "template": "", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
+	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "Test Page", "body": "<p>hi</p>", "parent-id": ""})
 	if err := cmd.RunPagesWorkflowCreate(flagCmd, nil); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -246,8 +227,7 @@ func TestPagesCreate_WithParentID(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 	ctx := withClientCRUD(srv)
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "Child", "body": "<p>c</p>", "template": "", "parent-id": "99"})
-	flagCmd.Flags().StringArray("var", nil, "")
+	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "Child", "body": "<p>c</p>", "parent-id": "99"})
 	if err := cmd.RunPagesWorkflowCreate(flagCmd, nil); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
@@ -264,8 +244,7 @@ func TestPagesCreate_HTTPError(t *testing.T) {
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
 	ctx := withClientCRUD(srv)
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "T", "body": "<p>b</p>", "template": "", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
+	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "T", "body": "<p>b</p>", "parent-id": ""})
 	if err := cmd.RunPagesWorkflowCreate(flagCmd, nil); err == nil {
 		t.Error("expected error from 500 response")
 	}
@@ -1266,21 +1245,10 @@ func TestPagesGetByID_NoClient(t *testing.T) {
 
 // TestPagesCreate_NoClient covers the client.FromContext error branch.
 func TestPagesCreate_NoClient(t *testing.T) {
-	flagCmd := noClientCmd(map[string]string{"space-id": "1", "title": "T", "body": "<p>b</p>", "template": "", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
+	flagCmd := noClientCmd(map[string]string{"space-id": "1", "title": "T", "body": "<p>b</p>", "parent-id": ""})
 	if err := cmd.RunPagesWorkflowCreate(flagCmd, nil); err == nil {
 		t.Error("expected error when no client in context")
 	}
-}
-
-// TestPagesCreate_NoClient_TemplateResolution covers the client.FromContext error
-// in the template resolution branch (templateName != "" and bodyVal == "").
-func TestPagesCreate_NoClient_TemplateResolution(t *testing.T) {
-	flagCmd := noClientCmd(map[string]string{"space-id": "", "title": "", "body": "", "template": "some-tpl", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
-	// This will fail during template resolution (template not found), not at FromContext.
-	// Still exercises the RunE body past FromContext.
-	_ = cmd.RunPagesWorkflowCreate(flagCmd, nil)
 }
 
 // TestPagesUpdate_NoClient covers the client.FromContext error branch.
@@ -1364,60 +1332,6 @@ func TestCCDelete_NoClient(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// Additional edge case coverage
-// ---------------------------------------------------------------------------
-
-// TestPagesCreate_TemplateLookupFails covers the resolveTemplate error path:
-// when --template is set (with no --body), the template lookup fails and
-// resolveErr != nil branches are taken.
-func TestPagesCreate_TemplateLookupFails(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		t.Error("unexpected HTTP call")
-	}))
-	defer srv.Close()
-	ctx := withClientCRUD(srv)
-	// template="no-such-template", body="" → resolveTemplate returns error
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "T", "body": "", "template": "no-such-template", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
-	err := cmd.RunPagesWorkflowCreate(flagCmd, nil)
-	if err == nil {
-		t.Error("expected error when template not found")
-	}
-}
-
-// TestPagesCreate_TemplateResolvesSpaceID covers the branch where a template
-// provides the spaceID when --space-id is not explicitly given.
-// We use a valid built-in template (if any) or inject via the ResolveTemplate
-// exported helper to confirm the branch executes. Since we cannot inject a
-// template with spaceID easily, we instead verify that the branch is reached
-// when --space-id is empty and the template resolves (even if the template has
-// no spaceID, the branch condition is simply false and execution continues).
-//
-// NOTE: This test intentionally focuses on the title-override sub-branch
-// (title == "") by providing no --title so that rendered.Title is used.
-// A real template is required; we use the "meeting-notes" template if it exists,
-// falling back gracefully if it does not.
-func TestPagesCreate_TemplateResolvesTitle(t *testing.T) {
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{"id":"1","title":"From Template","version":{"number":1}}`)
-	}))
-	defer srv.Close()
-	ctx := withClientCRUD(srv)
-
-	// Check if the "meeting-notes" template exists; skip if not.
-	_, err := cmd.ResolveTemplate(nil, "meeting-notes", nil)
-	if err != nil {
-		t.Skip("meeting-notes template not available, skipping")
-	}
-
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "", "body": "", "template": "meeting-notes", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
-	// The test passes as long as we don't panic; a network error is acceptable.
-	_ = cmd.RunPagesWorkflowCreate(flagCmd, nil)
-}
-
-// ---------------------------------------------------------------------------
 // WriteOutput error paths — triggered by setting an invalid JQ filter on the
 // client so that WriteOutput returns ExitValidation instead of ExitOK.
 // ---------------------------------------------------------------------------
@@ -1448,8 +1362,7 @@ func TestPagesCreate_WriteOutputError(t *testing.T) {
 
 	c := makeClientBadJQ(srv)
 	ctx := client.NewContext(context.Background(), c)
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "T", "body": "<p>b</p>", "template": "", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
+	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "123", "title": "T", "body": "<p>b</p>", "parent-id": ""})
 	err := cmd.RunPagesWorkflowCreate(flagCmd, nil)
 	if err == nil {
 		t.Error("expected error when WriteOutput fails due to bad JQ filter")
@@ -1475,44 +1388,3 @@ func TestCCCreate_WriteOutputError(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// Template spaceID branch — pages.go:151.47,153.5
-// Triggered when --space-id is empty but the resolved template provides a SpaceID.
-// ---------------------------------------------------------------------------
-
-// TestPagesCreate_TemplateWithSpaceID covers the branch where a template
-// provides spaceID (rendered.SpaceID != "") and --space-id was not given.
-// We write a minimal template JSON to a temp directory and point CF_CONFIG_PATH
-// there so that cftemplate.Dir() resolves to the temp templates dir.
-func TestPagesCreate_TemplateWithSpaceID(t *testing.T) {
-	// Create a temp config directory with a templates subdirectory.
-	tmpDir := t.TempDir()
-	tplDir := tmpDir + "/templates"
-	if err := os.MkdirAll(tplDir, 0o755); err != nil {
-		t.Fatalf("mkdir templates: %v", err)
-	}
-	// Write a minimal template that has a space_id.
-	tplJSON := `{"title":"Test Page","body":"<p>content</p>","space_id":"789"}`
-	if err := os.WriteFile(tplDir+"/spaceid-tpl.json", []byte(tplJSON), 0o644); err != nil {
-		t.Fatalf("write template: %v", err)
-	}
-	// Point config path into the temp dir so template.Dir() finds our template.
-	t.Setenv("CF_CONFIG_PATH", tmpDir+"/config.json")
-
-	mux := http.NewServeMux()
-	mux.HandleFunc("/pages", func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{"id":"99","title":"Test Page","version":{"number":1}}`)
-	})
-	srv := httptest.NewServer(mux)
-	defer srv.Close()
-	ctx := withClientCRUD(srv)
-
-	// --space-id is empty so the template's space_id will be used.
-	// --title is also empty so rendered.Title will be used.
-	flagCmd := newFlagCmd(ctx, map[string]string{"space-id": "", "title": "", "body": "", "template": "spaceid-tpl", "parent-id": ""})
-	flagCmd.Flags().StringArray("var", nil, "")
-	if err := cmd.RunPagesWorkflowCreate(flagCmd, nil); err != nil {
-		t.Errorf("unexpected error: %v", err)
-	}
-}

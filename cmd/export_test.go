@@ -12,7 +12,6 @@ import (
 	"github.com/sofq/confluence-cli/internal/client"
 	"github.com/sofq/confluence-cli/internal/oauth2"
 	preset_pkg "github.com/sofq/confluence-cli/internal/preset"
-	cftemplate "github.com/sofq/confluence-cli/internal/template"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -174,11 +173,6 @@ func FetchV1(cmd *cobra.Command, c *client.Client, fullURL string) ([]byte, int)
 // FetchV1WithBody exposes the package-private fetchV1WithBody helper for tests.
 func FetchV1WithBody(cmd *cobra.Command, c *client.Client, method, fullURL string, body io.Reader) ([]byte, int) {
 	return fetchV1WithBody(cmd, c, method, fullURL, body)
-}
-
-// ResolveTemplate exposes the package-private resolveTemplate helper for tests.
-func ResolveTemplate(w io.Writer, templateName string, varFlags []string) (*cftemplate.RenderedTemplate, error) {
-	return resolveTemplate(w, templateName, varFlags)
 }
 
 // RunSearch exposes runSearch for tests.

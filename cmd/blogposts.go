@@ -129,29 +129,6 @@ var blogposts_workflow_create = &cobra.Command{
 		spaceID, _ := cmd.Flags().GetString("space-id")
 		title, _ := cmd.Flags().GetString("title")
 		bodyVal, _ := cmd.Flags().GetString("body")
-		templateName, _ := cmd.Flags().GetString("template")
-		varFlags, _ := cmd.Flags().GetStringArray("var")
-
-		// Template resolution (before validation so template can provide title/body/space-id).
-		if templateName != "" {
-			if bodyVal != "" {
-				apiErr := &cferrors.APIError{ErrorType: "validation_error", Message: "cannot use --template and --body together"}
-				apiErr.WriteJSON(c.Stderr)
-				return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
-			}
-			rendered, resolveErr := resolveTemplate(c.Stderr, templateName, varFlags)
-			if resolveErr != nil {
-				return resolveErr
-			}
-			if title == "" {
-				title = rendered.Title
-			}
-			bodyVal = rendered.Body
-			if spaceID == "" && rendered.SpaceID != "" {
-				spaceID = rendered.SpaceID
-			}
-		}
-
 		// Validate required flags.
 		if strings.TrimSpace(spaceID) == "" {
 			apiErr := &cferrors.APIError{ErrorType: "validation_error", Message: "--space-id must not be empty"}
@@ -298,8 +275,6 @@ func init() {
 	blogposts_workflow_create.Flags().String("space-id", "", "Space ID to create blog post in (required)")
 	blogposts_workflow_create.Flags().String("title", "", "Blog post title (required)")
 	blogposts_workflow_create.Flags().String("body", "", "Blog post body in storage format XML (required)")
-	blogposts_workflow_create.Flags().String("template", "", "Content template name to use")
-	blogposts_workflow_create.Flags().StringArray("var", nil, "Template variable in key=value format (repeatable)")
 
 	// update-blog-post flags
 	blogposts_workflow_update.Flags().String("id", "", "Blog post ID to update (required)")

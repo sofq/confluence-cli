@@ -28,7 +28,6 @@ var skipClientCommands = map[string]bool{
 	"completion": true,
 	"help":       true,
 	"schema":     true,
-	"templates":  true,
 	"preset":     true,
 }
 
@@ -293,7 +292,6 @@ func init() {
 	mergeCommand(rootCmd, blogpostsCmd) // Phase 7: blog post workflow overrides
 	mergeCommand(rootCmd, attachmentsCmd)    // Phase 8: attachment workflow overrides
 	mergeCommand(rootCmd, custom_contentCmd) // Phase 9: custom content workflow overrides
-	rootCmd.AddCommand(templatesCmd)              // Phase 10: content template operations
 	rootCmd.AddCommand(watchCmd)                  // Phase 11: content change watcher
 	rootCmd.AddCommand(presetCmd)                 // Phase 13: preset list command
 	rootCmd.AddCommand(exportCmd)                 // Phase 13: page content export

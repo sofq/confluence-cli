@@ -92,7 +92,7 @@ func TestCommandPagesContainHandWrittenCommands(t *testing.T) {
 	}
 
 	// Check hand-written command pages exist.
-	handWritten := []string{"diff.md", "workflow.md", "export.md", "preset.md", "templates.md"}
+	handWritten := []string{"diff.md", "workflow.md", "export.md", "preset.md"}
 	for _, name := range handWritten {
 		path := filepath.Join(tmpDir, "commands", name)
 		if _, err := os.Stat(path); os.IsNotExist(err) {
@@ -158,7 +158,6 @@ func TestBuildSchemaLookupIncludesHandWritten(t *testing.T) {
 	}{
 		{"diff", "diff"},
 		{"workflow", "move"},
-		{"templates", "show"},
 	}
 
 	for _, c := range checks {

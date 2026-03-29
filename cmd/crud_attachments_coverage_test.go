@@ -444,34 +444,6 @@ func TestBlogpostsCreate_FetchError(t *testing.T) {
 	}
 }
 
-// TestBlogpostsCreate_TemplateConflict covers the --template + --body conflict validation.
-func TestBlogpostsCreate_TemplateConflict(t *testing.T) {
-	srv := newMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		jsonOK(w, `{}`)
-	})
-
-	_, stderr := runCLICmd(t, srv.URL, "blogposts", "create-blog-post",
-		"--space-id", "123", "--title", "My Post",
-		"--body", "<p>content</p>", "--template", "some-template")
-	if !strings.Contains(stderr, "template") && !strings.Contains(stderr, "body") && !strings.Contains(stderr, "validation") {
-		t.Errorf("expected template+body conflict error, got: %q", stderr)
-	}
-}
-
-// TestBlogpostsCreate_TemplateResolveFail covers the template resolution error branch.
-func TestBlogpostsCreate_TemplateResolveFail(t *testing.T) {
-	srv := newMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		jsonOK(w, `{}`)
-	})
-
-	_, stderr := runCLICmd(t, srv.URL, "blogposts", "create-blog-post",
-		"--space-id", "123", "--title", "My Post",
-		"--template", "nonexistent-template-xyz")
-	if !strings.Contains(stderr, "error") && !strings.Contains(stderr, "template") {
-		t.Errorf("expected template resolution error, got: %q", stderr)
-	}
-}
-
 // ---------------------------------------------------------------------------
 // cmd/blogposts.go — update-blog-post
 // ---------------------------------------------------------------------------
@@ -1096,65 +1068,3 @@ func TestAttachmentsUpload_DryRunSuccess(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// cmd/blogposts.go — create-blog-post template providing spaceId
-// ---------------------------------------------------------------------------
-
-// TestBlogpostsCreate_TemplateProvideSpaceID covers the branch where a template
-// provides space_id and --space-id flag is omitted (line 150-152 in blogposts.go).
-func TestBlogpostsCreate_TemplateProvideSpaceID(t *testing.T) {
-	templateJSON := `{"title":"{{.title}}","body":"<p>{{.content}}</p>","space_id":"{{.spaceId}}"}`
-
-	srv := newMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodPost && strings.HasSuffix(r.URL.Path, "/blogposts") {
-			jsonOK(w, `{"id":"bp5","title":"Template Post"}`)
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	})
-
-	cmd.ResetRootPersistentFlags()
-	t.Cleanup(func() { cmd.ResetRootPersistentFlags() })
-	setupTemplateEnv(t, srv.URL, map[string]string{
-		"space-template": templateJSON,
-	})
-
-	oldOut := os.Stdout
-	oldErr := os.Stderr
-	rOut, wOut, _ := os.Pipe()
-	_, wErr, _ := os.Pipe()
-	os.Stdout = wOut
-	os.Stderr = wErr
-
-	root := cmd.RootCommand()
-	root.SetArgs([]string{
-		"blogposts", "create-blog-post",
-		"--template", "space-template",
-		"--var", "title=Template Post",
-		"--var", "content=Body content",
-		"--var", "spaceId=999",
-	})
-	_ = root.Execute()
-
-	wOut.Close()
-	wErr.Close()
-	os.Stdout = oldOut
-	os.Stderr = oldErr
-
-	var outBuf strings.Builder
-	buf := make([]byte, 4096)
-	for {
-		n, err := rOut.Read(buf)
-		if n > 0 {
-			outBuf.Write(buf[:n])
-		}
-		if err != nil {
-			break
-		}
-	}
-	stdout := outBuf.String()
-
-	if !strings.Contains(stdout, "bp5") {
-		t.Errorf("expected blog post id (template spaceId path), got: %q", stdout)
-	}
-}

@@ -164,7 +164,7 @@ func TestSchemaIncludesHandWrittenOps(t *testing.T) {
 		t.Fatalf("schema --list output is not a valid JSON string array: %v", err)
 	}
 
-	expected := []string{"diff", "workflow", "export", "preset", "templates"}
+	expected := []string{"diff", "workflow", "export", "preset"}
 	resourceSet := make(map[string]bool, len(resources))
 	for _, r := range resources {
 		resourceSet[r] = true
@@ -255,7 +255,7 @@ func TestSchemaCompactIncludesHandWritten(t *testing.T) {
 		t.Fatalf("schema --compact output is not a valid JSON object: %v", err)
 	}
 
-	expected := []string{"diff", "workflow", "export", "preset", "templates"}
+	expected := []string{"diff", "workflow", "export", "preset"}
 	for _, want := range expected {
 		if _, ok := compact[want]; !ok {
 			t.Errorf("schema --compact missing hand-written resource %q", want)

@@ -78,7 +78,6 @@ func buildSchemaLookup() map[schemaKey]generated.SchemaOp {
 	all = append(all, cmd.WorkflowSchemaOps()...)
 	all = append(all, cmd.ExportSchemaOps()...)
 	all = append(all, cmd.PresetSchemaOps()...)
-	all = append(all, cmd.TemplatesSchemaOps()...)
 	for _, op := range all {
 		m[schemaKey{op.Resource, op.Verb}] = op
 	}

@@ -146,7 +146,6 @@ func runBatch(cmd *cobra.Command, args []string) error {
 	allOps = append(allOps, WorkflowSchemaOps()...)
 	allOps = append(allOps, ExportSchemaOps()...)
 	allOps = append(allOps, PresetSchemaOps()...)
-	allOps = append(allOps, TemplatesSchemaOps()...)
 	opMap := make(map[string]generated.SchemaOp, len(allOps))
 	for _, op := range allOps {
 		key := op.Resource + " " + op.Verb
