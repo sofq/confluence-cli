@@ -461,3 +461,54 @@ func TestLoadUserPresets_NonExistentError(t *testing.T) {
 		t.Fatal("expected error when presets path points to a directory, got nil")
 	}
 }
+
+// TestUserPresetsPathFallback covers the error branch inside the default
+// userPresetsPath implementation (lines 28-30 of preset.go) where
+// os.UserConfigDir() fails and the function falls back to os.UserHomeDir().
+// On Unix, os.UserConfigDir() fails when both HOME and XDG_CONFIG_HOME are
+// unset; on macOS it specifically needs HOME.
+// TestSetUserPresetsPath covers the SetUserPresetsPath export in testing_export.go.
+func TestSetUserPresetsPath(t *testing.T) {
+	var called bool
+	old := SetUserPresetsPath(func() string {
+		called = true
+		return "/test/path/presets.json"
+	})
+	defer func() { SetUserPresetsPath(old) }()
+
+	path := userPresetsPath()
+	if !called {
+		t.Error("SetUserPresetsPath: injected function was not stored")
+	}
+	if path != "/test/path/presets.json" {
+		t.Errorf("userPresetsPath() = %q, want /test/path/presets.json", path)
+	}
+}
+
+func TestUserPresetsPathFallback(t *testing.T) {
+	if os.Getenv("HOME") == "" {
+		t.Skip("HOME already unset; cannot produce meaningful fallback test")
+	}
+
+	// Restore the package-level var to the original implementation before
+	// overriding env vars, so we execute the real default function body.
+	// Any earlier test that replaced userPresetsPath will have restored it via
+	// t.Cleanup, so we capture the current value (which is the original) and
+	// put it back when done.
+	origFn := userPresetsPath
+	t.Cleanup(func() { userPresetsPath = origFn })
+
+	// Unset the env vars that os.UserConfigDir() reads on Unix / macOS.
+	t.Setenv("HOME", "")
+	t.Setenv("XDG_CONFIG_HOME", "")
+
+	// Call the default implementation directly (origFn still holds the
+	// original closure; userPresetsPath has not been replaced yet).
+	path := origFn()
+
+	// The fallback path ends with the expected suffix regardless of the
+	// exact home directory value (which may be empty).
+	if !strings.HasSuffix(path, filepath.Join(".config", "cf", "presets.json")) {
+		t.Errorf("fallback path = %q; want suffix %q", path, filepath.Join(".config", "cf", "presets.json"))
+	}
+}

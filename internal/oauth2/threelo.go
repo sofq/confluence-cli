@@ -24,6 +24,9 @@ var (
 	resourcesEndpoint    = ResourcesURL
 	openBrowserFunc      = openBrowser
 	callbackTimeout      = 5 * time.Minute
+	listenFunc           = func() (net.Listener, error) {
+		return net.Listen("tcp", "127.0.0.1:0")
+	}
 )
 
 // generateCodeVerifier creates a PKCE code verifier: 32 random bytes,
@@ -47,16 +50,23 @@ func generateState() string {
 	return hex.EncodeToString(b)
 }
 
+// browserCommand returns the executable name and extra args for opening a URL
+// on the given OS. Extracted for testability.
+func browserCommand(goos string) (string, []string) {
+	switch goos {
+	case "darwin":
+		return "open", nil
+	case "windows":
+		return "rundll32", []string{"url.dll,FileProtocolHandler"}
+	default:
+		return "xdg-open", nil
+	}
+}
+
 // openBrowser opens the given URL in the user's default browser.
 func openBrowser(u string) error {
-	switch runtime.GOOS {
-	case "darwin":
-		return exec.Command("open", u).Start() // #nosec G204 -- u is an OAuth authorization URL constructed from trusted config, not user input
-	case "windows":
-		return exec.Command("rundll32", "url.dll,FileProtocolHandler", u).Start() // #nosec G204 -- u is an OAuth authorization URL constructed from trusted config, not user input
-	default:
-		return exec.Command("xdg-open", u).Start() // #nosec G204 -- u is an OAuth authorization URL constructed from trusted config, not user input
-	}
+	name, args := browserCommand(runtime.GOOS)
+	return exec.Command(name, append(args, u)...).Start() // #nosec G204 -- u is an OAuth authorization URL constructed from trusted config, not user input
 }
 
 // refreshToken exchanges a refresh token for a new access token.
@@ -255,7 +265,7 @@ func ThreeLO(clientID, clientSecret, scopes, cloudID string, store *FileStore) (
 	}
 
 	// 3. Full browser flow.
-	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	listener, err := listenFunc()
 	if err != nil {
 		return nil, fmt.Errorf("starting callback server: %w", err)
 	}

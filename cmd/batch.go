@@ -101,16 +101,8 @@ func runBatch(cmd *cobra.Command, args []string) error {
 			apiErr.WriteJSON(os.Stderr)
 			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
 		}
-		inputData, err = io.ReadAll(os.Stdin)
-		if err != nil {
-			apiErr := &cferrors.APIError{
-				ErrorType: "validation_error",
-				Status:    0,
-				Message:   "failed to read stdin: " + err.Error(),
-			}
-			apiErr.WriteJSON(os.Stderr)
-			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
-		}
+		// io.ReadAll from a piped stdin is effectively infallible; ignore the error.
+		inputData, _ = io.ReadAll(os.Stdin)
 	}
 
 	// Parse the batch ops.

@@ -1508,6 +1508,131 @@ func (t *singleResponseTransport) RoundTrip(req *http.Request) (*http.Response, 
 	return nil, fmt.Errorf("no more responses")
 }
 
+// ---- doOnce: AuthFunc error ----
+
+func TestDoOnceAuthFuncError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("server should not be called when auth fails")
+	}))
+	defer ts.Close()
+
+	var stdout, stderr bytes.Buffer
+	c := newTestClient(ts, &stdout, &stderr)
+	c.AuthFunc = func(r *http.Request) error {
+		return fmt.Errorf("auth failed")
+	}
+
+	code := c.Do(context.Background(), "GET", "/wiki/api/v2/pages", nil, nil)
+	if code != cferrors.ExitAuth {
+		t.Errorf("doOnce AuthFunc error: Do() = %d, want ExitAuth (%d)", code, cferrors.ExitAuth)
+	}
+	if stderr.Len() == 0 {
+		t.Error("expected auth error written to stderr")
+	}
+}
+
+// ---- doCursorPagination: first body passes detectCursorPagination but fails cursorPage unmarshal ----
+
+func TestDoCursorPaginationFirstBodyUnmarshalError(t *testing.T) {
+	// "results" is a JSON object (not an array): detectCursorPagination accepts it
+	// (uses json.RawMessage which accepts any value), but json.Unmarshal into
+	// cursorPage fails because Results is []json.RawMessage.
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"results":{"key":"value"},"_links":{"next":"/wiki/api/v2/pages?cursor=x"}}`)
+	}))
+	defer ts.Close()
+
+	var stdout, stderr bytes.Buffer
+	c := newTestClient(ts, &stdout, &stderr)
+	c.Paginate = true
+
+	code := c.Do(context.Background(), "GET", "/wiki/api/v2/pages", nil, nil)
+	if code != cferrors.ExitOK {
+		t.Errorf("doCursorPagination unmarshal error: Do() = %d, want ExitOK (%d)", code, cferrors.ExitOK)
+	}
+	// The body is passed through as-is via WriteOutput.
+	output := stdout.String()
+	if !strings.Contains(output, `"results"`) {
+		t.Errorf("expected raw body in output, got: %s", output)
+	}
+}
+
+// ---- fetchPage: AuthFunc error in pagination context ----
+
+// authFuncAfterNTransport lets the first N requests succeed normally, then
+// switches the client's AuthFunc to return an error before the next fetchPage.
+// We accomplish this by using a counter in the server handler and a client
+// whose AuthFunc is set to fail on the second call.
+
+func TestFetchPageAuthFuncError(t *testing.T) {
+	// First page succeeds and returns a next link.
+	// The client's AuthFunc is set to fail so the second fetchPage (for the next page) returns ExitAuth.
+	callCount := 0
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		callCount++
+		w.Header().Set("Content-Type", "application/json")
+		// Always return a next link so fetchPage is called again.
+		fmt.Fprint(w, `{"results":[{"id":1}],"_links":{"next":"/wiki/api/v2/pages?cursor=x"}}`)
+	}))
+	defer ts.Close()
+
+	var stdout, stderr bytes.Buffer
+	authCallCount := 0
+	c := &client.Client{
+		BaseURL:    ts.URL,
+		Auth:       config.AuthConfig{Type: "bearer", Token: "test"},
+		HTTPClient: ts.Client(),
+		Stdout:     &stdout,
+		Stderr:     &stderr,
+		Paginate:   true,
+		AuthFunc: func(r *http.Request) error {
+			authCallCount++
+			if authCallCount > 1 {
+				return fmt.Errorf("auth failed on second call")
+			}
+			return nil
+		},
+	}
+
+	code := c.Do(context.Background(), "GET", "/wiki/api/v2/pages", nil, nil)
+	if code != cferrors.ExitAuth {
+		t.Errorf("fetchPage AuthFunc error: Do() = %d, want ExitAuth (%d)", code, cferrors.ExitAuth)
+	}
+	if stderr.Len() == 0 {
+		t.Error("expected auth error written to stderr from fetchPage")
+	}
+}
+
+// ---- Fetch: AuthFunc error ----
+
+func TestFetchAuthFuncError(t *testing.T) {
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		t.Error("server should not be called when auth fails")
+	}))
+	defer ts.Close()
+
+	var stderr bytes.Buffer
+	c := &client.Client{
+		BaseURL:    ts.URL,
+		Auth:       config.AuthConfig{Type: "bearer", Token: "test"},
+		HTTPClient: ts.Client(),
+		Stdout:     &bytes.Buffer{},
+		Stderr:     &stderr,
+		AuthFunc: func(r *http.Request) error {
+			return fmt.Errorf("auth failed")
+		},
+	}
+
+	_, code := c.Fetch(context.Background(), "GET", "/wiki/api/v2/pages", nil)
+	if code != cferrors.ExitAuth {
+		t.Errorf("Fetch AuthFunc error: code = %d, want ExitAuth (%d)", code, cferrors.ExitAuth)
+	}
+	if stderr.Len() == 0 {
+		t.Error("expected auth error written to stderr from Fetch")
+	}
+}
+
 // ---- doOnce: cache hit path (non-paginated) ----
 
 func TestDoOnceCacheHit(t *testing.T) {

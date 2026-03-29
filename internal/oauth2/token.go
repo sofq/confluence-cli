@@ -74,10 +74,8 @@ func (s *FileStore) Save(t *Token) error {
 		return err
 	}
 
-	data, err := json.Marshal(t) // #nosec G117 -- token struct is intentionally serialized for credential cache storage
-	if err != nil {
-		return err
-	}
+	// json.Marshal cannot fail on Token (all basic field types).
+	data, _ := json.Marshal(t) // #nosec G117 -- token struct is intentionally serialized for credential cache storage
 
 	// Atomic write: write to temp file, then rename.
 	tmp := s.path() + ".tmp"

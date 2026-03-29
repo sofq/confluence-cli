@@ -215,3 +215,29 @@ func TestFileStoreSaveMkdirAllError(t *testing.T) {
 		t.Error("expected MkdirAll error for read-only parent, got nil")
 	}
 }
+
+func TestFileStoreSaveRenameError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("rename-blocking via directory not reliable on Windows")
+	}
+
+	dir := t.TempDir()
+	store := NewFileStore(dir, "rename-err")
+
+	// Create a directory at the token path so os.Rename fails: it cannot
+	// atomically replace a directory with a file.
+	tokenPath := store.path()
+	if err := os.MkdirAll(tokenPath, 0o755); err != nil {
+		t.Fatalf("MkdirAll failed: %v", err)
+	}
+	// Place a file inside so the directory is non-empty and cannot be removed
+	// implicitly by rename on any platform.
+	if err := os.WriteFile(filepath.Join(tokenPath, "blocker"), []byte("x"), 0o644); err != nil {
+		t.Fatalf("WriteFile blocker failed: %v", err)
+	}
+
+	tok := &Token{AccessToken: "test", ExpiresIn: 3600, ObtainedAt: time.Now()}
+	if err := store.Save(tok); err == nil {
+		t.Fatal("expected rename error when token path is a non-empty directory, got nil")
+	}
+}

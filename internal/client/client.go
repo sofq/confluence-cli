@@ -45,6 +45,7 @@ type Client struct {
 	AuditLogger *audit.Logger  // nil = no logging
 	Profile     string         // active profile name (for audit entries)
 	Operation   string         // operation name (for audit entries, set by batch)
+	AuthFunc    func(*http.Request) error // override ApplyAuth for testing; nil = use default
 }
 
 // NewContext stores the client in the given context and returns the new context.
@@ -80,6 +81,9 @@ func QueryFromFlags(cmd *cobra.Command, names ...string) url.Values {
 // ApplyAuth sets authentication headers on the request according to the
 // client's Auth configuration. Returns an error if authentication setup fails.
 func (c *Client) ApplyAuth(req *http.Request) error {
+	if c.AuthFunc != nil {
+		return c.AuthFunc(req)
+	}
 	switch strings.ToLower(c.Auth.Type) {
 	case "bearer":
 		req.Header.Set("Authorization", "Bearer "+c.Auth.Token)

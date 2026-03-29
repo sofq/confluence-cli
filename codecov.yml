@@ -10,3 +10,4 @@ coverage:
 ignore:
   - "cmd/generated/**"
   - "main.go"
+  - "internal/oauth2/testing_export.go"

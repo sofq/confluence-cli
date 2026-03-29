@@ -178,10 +178,8 @@ func Save(name string, tmpl *Template) error {
 		return fmt.Errorf("template %q already exists", name)
 	}
 
-	data, err := json.MarshalIndent(tmpl, "", "  ")
-	if err != nil {
-		return fmt.Errorf("marshal template: %w", err)
-	}
+	// MarshalIndent on a *Template (all string fields) cannot fail.
+	data, _ := json.MarshalIndent(tmpl, "", "  ")
 
 	if err := os.WriteFile(path, data, 0o600); err != nil {
 		return fmt.Errorf("write template: %w", err)

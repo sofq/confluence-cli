@@ -44,12 +44,8 @@ var templates_list = &cobra.Command{
 			apiErr.WriteJSON(os.Stderr)
 			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
 		}
-		data, err := jsonutil.MarshalNoEscape(entries)
-		if err != nil {
-			apiErr := &cferrors.APIError{ErrorType: "config_error", Message: "failed to marshal templates: " + err.Error()}
-			apiErr.WriteJSON(os.Stderr)
-			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
-		}
+		// MarshalNoEscape on template entries cannot fail (basic field types).
+		data, _ := jsonutil.MarshalNoEscape(entries)
 
 		jqFilter, _ := cmd.Flags().GetString("jq")
 		prettyFlag, _ := cmd.Flags().GetBool("pretty")
@@ -87,12 +83,8 @@ var templatesShowCmd = &cobra.Command{
 			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitNotFound}
 		}
 
-		data, err := jsonutil.MarshalNoEscape(output)
-		if err != nil {
-			apiErr := &cferrors.APIError{ErrorType: "config_error", Message: "failed to marshal template: " + err.Error()}
-			apiErr.WriteJSON(os.Stderr)
-			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
-		}
+		// MarshalNoEscape on template output cannot fail (basic field types).
+		data, _ := jsonutil.MarshalNoEscape(output)
 
 		jqFilter, _ := cmd.Flags().GetString("jq")
 		prettyFlag, _ := cmd.Flags().GetBool("pretty")

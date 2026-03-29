@@ -10,10 +10,8 @@ var versionCmd = &cobra.Command{
 	Short: "Print version as JSON",
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		out, err := jsonutil.MarshalNoEscape(map[string]string{"version": Version})
-		if err != nil {
-			return err
-		}
+		// MarshalNoEscape on a map[string]string cannot fail.
+		out, _ := jsonutil.MarshalNoEscape(map[string]string{"version": Version})
 		return schemaOutput(cmd, out)
 	},
 }
