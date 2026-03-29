@@ -12,7 +12,7 @@ const (
 	AuthorizationURL = "https://auth.atlassian.com/authorize"
 
 	// TokenURL is the Atlassian OAuth2 token endpoint.
-	TokenURL = "https://auth.atlassian.com/oauth/token"
+	TokenURL = "https://auth.atlassian.com/oauth/token" // #nosec G101 -- not a credential, this is a well-known public endpoint URL
 
 	// ResourcesURL is the Atlassian endpoint for listing accessible resources.
 	ResourcesURL = "https://api.atlassian.com/oauth/token/accessible-resources"
@@ -20,7 +20,7 @@ const (
 
 // Token represents an OAuth2 access token response with metadata.
 type Token struct {
-	AccessToken  string    `json:"access_token"`
+	AccessToken  string    `json:"access_token"` // #nosec G117 -- intentionally serialized for token cache storage
 	TokenType    string    `json:"token_type"`
 	ExpiresIn    int       `json:"expires_in"`
 	RefreshToken string    `json:"refresh_token,omitempty"`
@@ -74,7 +74,7 @@ func (s *FileStore) Save(t *Token) error {
 		return err
 	}
 
-	data, err := json.Marshal(t)
+	data, err := json.Marshal(t) // #nosec G117 -- token struct is intentionally serialized for credential cache storage
 	if err != nil {
 		return err
 	}

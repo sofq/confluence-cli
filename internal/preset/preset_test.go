@@ -178,7 +178,7 @@ func TestLookup_ThreeTierResolution(t *testing.T) {
 	}
 
 	// Builtin preset not in profile or user resolves as "builtin".
-	expr, source, err = Lookup("titles", profilePresets)
+	_, source, err = Lookup("titles", profilePresets)
 	if err != nil {
 		t.Fatal(err)
 	}

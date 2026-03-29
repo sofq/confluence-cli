@@ -128,7 +128,7 @@ var attachments_workflow_upload = &cobra.Command{
 			apiErr.WriteJSON(c.Stderr)
 			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
 		}
-		writer.Close()
+		_ = writer.Close()
 
 		// Create HTTP request.
 		req, err := http.NewRequestWithContext(cmd.Context(), "POST", fullURL, &buf)

@@ -68,7 +68,7 @@ func TestBatch_ValidSingleOp(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
-	root.Execute()
+	_ = root.Execute()
 
 	outW.Close()
 	errW.Close()
@@ -76,9 +76,9 @@ func TestBatch_ValidSingleOp(t *testing.T) {
 	os.Stderr = oldErr
 
 	var outBuf bytes.Buffer
-	outBuf.ReadFrom(outR)
+	_, _ = outBuf.ReadFrom(outR)
 	var errBuf bytes.Buffer
-	errBuf.ReadFrom(errR)
+	_, _ = errBuf.ReadFrom(errR)
 
 	output := strings.TrimSpace(outBuf.String())
 	if output == "" {
@@ -144,7 +144,7 @@ func TestBatch_PartialFailure(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
-	root.Execute()
+	_ = root.Execute()
 
 	outW.Close()
 	errW.Close()
@@ -152,9 +152,9 @@ func TestBatch_PartialFailure(t *testing.T) {
 	os.Stderr = oldErr
 
 	var outBuf bytes.Buffer
-	outBuf.ReadFrom(outR)
+	_, _ = outBuf.ReadFrom(outR)
 	var errBuf bytes.Buffer
-	errBuf.ReadFrom(errR)
+	_, _ = errBuf.ReadFrom(errR)
 	_ = errBuf
 
 	output := strings.TrimSpace(outBuf.String())
@@ -171,8 +171,8 @@ func TestBatch_PartialFailure(t *testing.T) {
 	}
 
 	var code0, code1 int
-	json.Unmarshal(results[0]["exit_code"], &code0)
-	json.Unmarshal(results[1]["exit_code"], &code1)
+	_ = json.Unmarshal(results[0]["exit_code"], &code0)
+	_ = json.Unmarshal(results[1]["exit_code"], &code1)
 
 	if code0 != 0 {
 		t.Errorf("op[0] exit_code: want 0, got %d", code0)
@@ -209,13 +209,13 @@ func TestBatch_UnknownCommand(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
-	root.Execute()
+	_ = root.Execute()
 
 	outW.Close()
 	os.Stdout = oldOut
 
 	var outBuf bytes.Buffer
-	outBuf.ReadFrom(outR)
+	_, _ = outBuf.ReadFrom(outR)
 	output := strings.TrimSpace(outBuf.String())
 
 	var results []map[string]json.RawMessage
@@ -226,7 +226,7 @@ func TestBatch_UnknownCommand(t *testing.T) {
 		t.Fatalf("expected 1 result, got %d", len(results))
 	}
 	var exitCode int
-	json.Unmarshal(results[0]["exit_code"], &exitCode)
+	_ = json.Unmarshal(results[0]["exit_code"], &exitCode)
 	if exitCode != 1 {
 		t.Errorf("unknown command: exit_code want 1, got %d", exitCode)
 	}
@@ -242,7 +242,7 @@ func TestBatch_InvalidJSON(t *testing.T) {
 		t.Fatalf("create temp: %v", err)
 	}
 	defer f.Close()
-	f.WriteString("this is not json")
+	_, _ = f.WriteString("this is not json")
 	inputFile := f.Name()
 
 	t.Setenv("CF_BASE_URL", "http://localhost:9")
@@ -260,7 +260,7 @@ func TestBatch_InvalidJSON(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
-	root.Execute()
+	_ = root.Execute()
 
 	errW.Close()
 	outW.Close()
@@ -268,8 +268,8 @@ func TestBatch_InvalidJSON(t *testing.T) {
 	os.Stdout = oldOut
 
 	var errBuf, outBuf bytes.Buffer
-	errBuf.ReadFrom(errR)
-	outBuf.ReadFrom(outR)
+	_, _ = errBuf.ReadFrom(errR)
+	_, _ = outBuf.ReadFrom(outR)
 
 	stderrOut := strings.TrimSpace(errBuf.String())
 	if stderrOut == "" {
@@ -314,13 +314,13 @@ func TestBatch_MissingRequiredPathParam(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"batch", "--input", inputFile, "--dry-run=false"})
-	root.Execute()
+	_ = root.Execute()
 
 	outW.Close()
 	os.Stdout = oldOut
 
 	var outBuf bytes.Buffer
-	outBuf.ReadFrom(outR)
+	_, _ = outBuf.ReadFrom(outR)
 	output := strings.TrimSpace(outBuf.String())
 
 	var results []map[string]json.RawMessage
@@ -328,7 +328,7 @@ func TestBatch_MissingRequiredPathParam(t *testing.T) {
 		t.Fatalf("output is not valid JSON array: %v\nOutput: %s", err, output)
 	}
 	var exitCode int
-	json.Unmarshal(results[0]["exit_code"], &exitCode)
+	_ = json.Unmarshal(results[0]["exit_code"], &exitCode)
 	// ExitValidation = 4
 	if exitCode != 4 {
 		t.Errorf("missing path param: exit_code want 4, got %d; output: %s", exitCode, output)
@@ -362,7 +362,7 @@ func TestBatch_MaxBatchExceeded(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"batch", "--input", inputFile, "--max-batch", "2", "--dry-run=false"})
-	root.Execute()
+	_ = root.Execute()
 
 	errW.Close()
 	outW.Close()
@@ -370,9 +370,9 @@ func TestBatch_MaxBatchExceeded(t *testing.T) {
 	os.Stdout = oldOut
 
 	var errBuf bytes.Buffer
-	errBuf.ReadFrom(errR)
+	_, _ = errBuf.ReadFrom(errR)
 	var outBuf bytes.Buffer
-	outBuf.ReadFrom(outR)
+	_, _ = outBuf.ReadFrom(outR)
 
 	stderrOut := strings.TrimSpace(errBuf.String())
 	if stderrOut == "" {
@@ -410,7 +410,7 @@ func TestBatch_EmptyArray(t *testing.T) {
 	os.Stdout = oldOut
 
 	var outBuf bytes.Buffer
-	outBuf.ReadFrom(outR)
+	_, _ = outBuf.ReadFrom(outR)
 	output := strings.TrimSpace(outBuf.String())
 
 	if err != nil {
@@ -498,13 +498,13 @@ func TestBatch_JQFilter(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"batch", "--input", inputFile, "--jq", ".[0].exit_code", "--dry-run=false"})
-	root.Execute()
+	_ = root.Execute()
 
 	outW.Close()
 	os.Stdout = oldOut
 
 	var outBuf bytes.Buffer
-	outBuf.ReadFrom(outR)
+	_, _ = outBuf.ReadFrom(outR)
 	output := strings.TrimSpace(outBuf.String())
 
 	// .[0].exit_code should return the integer 0
@@ -542,13 +542,13 @@ func TestBatch_MultiOpSuccess(t *testing.T) {
 	root := cmd.RootCommand()
 	// Pass --jq "" to reset any jq flag state from prior test runs (cobra singleton).
 	root.SetArgs([]string{"batch", "--input", inputFile, "--jq", "", "--dry-run=false"})
-	root.Execute()
+	_ = root.Execute()
 
 	outW.Close()
 	os.Stdout = oldOut
 
 	var outBuf bytes.Buffer
-	outBuf.ReadFrom(outR)
+	_, _ = outBuf.ReadFrom(outR)
 	output := strings.TrimSpace(outBuf.String())
 
 	var results []map[string]json.RawMessage
@@ -560,7 +560,7 @@ func TestBatch_MultiOpSuccess(t *testing.T) {
 	}
 	for i, r := range results {
 		var exitCode int
-		json.Unmarshal(r["exit_code"], &exitCode)
+		_ = json.Unmarshal(r["exit_code"], &exitCode)
 		if exitCode != 0 {
 			t.Errorf("result[%d] exit_code: want 0, got %d", i, exitCode)
 		}

@@ -107,7 +107,7 @@ func TestConfigureEmptyBaseURLReturnsValidationError(t *testing.T) {
 	os.Stderr = oldStderr
 
 	var stderrBuf bytes.Buffer
-	stderrBuf.ReadFrom(r)
+	_, _ = stderrBuf.ReadFrom(r)
 	stderrOutput := stderrBuf.String()
 
 	// Should have error (AlreadyWrittenError)
@@ -146,7 +146,7 @@ func TestConfigureDeleteWithoutProfileReturnsValidationError(t *testing.T) {
 	os.Stderr = oldStderr
 
 	var stderrBuf bytes.Buffer
-	stderrBuf.ReadFrom(r)
+	_, _ = stderrBuf.ReadFrom(r)
 
 	if err == nil {
 		t.Error("configure --delete without --profile should return error")
@@ -168,13 +168,13 @@ func TestConfigureDeleteNonExistentProfileReturnsNotFound(t *testing.T) {
 		"--delete",
 		"--profile", "nonexistent-profile",
 	})
-	root.Execute()
+	_ = root.Execute()
 
 	w.Close()
 	os.Stderr = oldStderr
 
 	var stderrBuf bytes.Buffer
-	stderrBuf.ReadFrom(r)
+	_, _ = stderrBuf.ReadFrom(r)
 	stderrOutput := strings.TrimSpace(stderrBuf.String())
 
 	if stderrOutput == "" {

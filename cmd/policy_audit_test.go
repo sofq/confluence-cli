@@ -94,8 +94,8 @@ func captureExecute(t *testing.T, args []string) (stdout, stderr string, exitCod
 	os.Stderr = oldErr
 
 	var outBuf, errBuf bytes.Buffer
-	outBuf.ReadFrom(rOut)
-	errBuf.ReadFrom(rErr)
+	_, _ = outBuf.ReadFrom(rOut)
+	_, _ = errBuf.ReadFrom(rErr)
 
 	return strings.TrimSpace(outBuf.String()), strings.TrimSpace(errBuf.String()), exitCode
 }
@@ -117,7 +117,7 @@ func okServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"ok":true}`))
+		_, _ = w.Write([]byte(`{"ok":true}`))
 	}))
 	t.Cleanup(ts.Close)
 	return ts
@@ -273,7 +273,7 @@ func TestPolicyNoFieldsBehavesNormally(t *testing.T) {
 func TestAuditLogWritesNDJSONEntry(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"results":[]}`))
+		_, _ = w.Write([]byte(`{"results":[]}`))
 	}))
 	t.Cleanup(ts.Close)
 

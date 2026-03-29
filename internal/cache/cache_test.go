@@ -47,7 +47,7 @@ func TestKeyUniqueness(t *testing.T) {
 			t.Error("Key should not be empty")
 		}
 		for _, c := range k {
-			if !('0' <= c && c <= '9') && !('a' <= c && c <= 'f') {
+			if ('0' > c || c > '9') && ('a' > c || c > 'f') {
 				t.Errorf("Key %q contains non-hex character %q", k, c)
 			}
 		}

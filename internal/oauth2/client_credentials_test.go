@@ -56,7 +56,7 @@ func TestClientCredentialsFetchesNewToken(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"access_token": "new-token",
 			"token_type":   "Bearer",
 			"expires_in":   3600,
@@ -93,7 +93,7 @@ func TestClientCredentialsFetchesNewToken(t *testing.T) {
 func TestClientCredentialsHTTPError(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(401)
-		w.Write([]byte(`{"error":"invalid_client"}`))
+		_, _ = w.Write([]byte(`{"error":"invalid_client"}`))
 	}))
 	defer srv.Close()
 
@@ -116,7 +116,7 @@ func TestClientCredentialsHTTPError(t *testing.T) {
 func TestClientCredentialsExpiredCacheFetchesNew(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"access_token": "refreshed-token",
 			"token_type":   "Bearer",
 			"expires_in":   3600,
