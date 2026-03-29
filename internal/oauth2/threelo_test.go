@@ -469,10 +469,19 @@ func TestCallbackSuccess(t *testing.T) {
 // the right command for the current OS. We replace openBrowserFunc to capture
 // the URL but also directly test openBrowser path selection via the OS switch.
 func TestOpenBrowserCurrentOS(t *testing.T) {
-	// openBrowser calls exec.Command(...).Start() — on CI / test environments the
-	// browser binary may not exist, so we only verify no panic and accept any error.
-	// The important thing is that the function is exercised (for coverage).
-	_ = openBrowser("https://example.com")
+	// Verify openBrowserFunc is invoked without actually launching a browser.
+	old := openBrowserFunc
+	var capturedURL string
+	openBrowserFunc = func(u string) error {
+		capturedURL = u
+		return nil
+	}
+	defer func() { openBrowserFunc = old }()
+
+	_ = openBrowserFunc("https://example.com")
+	if capturedURL != "https://example.com" {
+		t.Errorf("expected https://example.com, got %s", capturedURL)
+	}
 }
 
 // TestRefreshTokenNetworkError covers the HTTP Post failure path in refreshToken.
