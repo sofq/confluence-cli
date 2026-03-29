@@ -82,11 +82,6 @@ echo '[{"command":"pages get","args":{"id":"12345"},"jq":".title"},{"command":"p
 # Watch for changes (NDJSON stream — always use --max-events in automated contexts)
 cf watch --cql "space = DEV" --interval 30s --max-events 50
 
-# Templates — create pages from predefined patterns
-cf templates list                                   # list all templates
-cf templates show meeting-notes                     # show template definition
-cf pages create --template meeting-notes --var title="Q1 Review" --var date="2026-03-28"
-cf templates create my-template --from 12345        # create from existing page
 ```
 
 ## Discovery
@@ -97,8 +92,6 @@ cf schema --list              # all resource names only
 cf schema pages               # all operations for 'pages'
 cf schema pages get           # full schema with flags for one operation
 cf preset list                # list available output presets
-cf templates list             # list available templates
-cf templates show <name>      # show a template's variables
 ```
 
 ## Batch Command Names

@@ -901,6 +901,69 @@ func TestBatch_PerOpJQFilter(t *testing.T) {
 	}
 }
 
+// TestBatch_StdinInput covers cmd/batch.go:105 — the io.ReadAll(os.Stdin) path
+// when no --input flag is given and JSON is piped via stdin.
+func TestBatch_StdinInput(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"results":[],"_links":{}}`)
+	}))
+	defer srv.Close()
+
+	t.Setenv("CF_BASE_URL", srv.URL)
+	t.Setenv("CF_AUTH_TYPE", "bearer")
+	t.Setenv("CF_AUTH_TOKEN", "test-token")
+	t.Setenv("CF_AUTH_USER", "")
+	t.Setenv("CF_PROFILE", "")
+
+	// Pipe JSON ops to stdin.
+	ops := `[{"command":"pages get","args":{}}]`
+	stdinR, stdinW, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe: %v", err)
+	}
+	_, _ = stdinW.WriteString(ops)
+	stdinW.Close()
+
+	origStdin := os.Stdin
+	os.Stdin = stdinR
+	defer func() {
+		os.Stdin = origStdin
+		stdinR.Close()
+	}()
+
+	oldOut := os.Stdout
+	outR, outW, _ := os.Pipe()
+	os.Stdout = outW
+	oldErr := os.Stderr
+	_, errW, _ := os.Pipe()
+	os.Stderr = errW
+
+	cmd.ResetRootPersistentFlags()
+	root := cmd.RootCommand()
+	root.SetArgs([]string{"batch"})
+	_ = root.Execute()
+
+	outW.Close()
+	errW.Close()
+	os.Stdout = oldOut
+	os.Stderr = oldErr
+
+	var outBuf bytes.Buffer
+	_, _ = outBuf.ReadFrom(outR)
+	output := strings.TrimSpace(outBuf.String())
+	if output == "" {
+		t.Fatal("expected JSON output from batch via stdin, got empty")
+	}
+	var results []map[string]json.RawMessage
+	if err := json.Unmarshal([]byte(output), &results); err != nil {
+		t.Fatalf("output is not valid JSON array: %v\nOutput: %s", err, output)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+}
+
 // TestExecuteBatchOps_ContextPropagation verifies batch ops work with a cancelled context.
 func TestExecuteBatchOps_ContextPropagation(t *testing.T) {
 	// Use a slow server that never responds to test context cancellation.

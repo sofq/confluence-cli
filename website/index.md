@@ -11,8 +11,6 @@ features:
     details: "cf search with CQL queries. Filter by space, type, label, last modified. Structured JSON results."
   - title: Workflow Commands
     details: "cf workflow move, copy, publish, archive, comment, restrict. Simple flags, no raw JSON."
-  - title: Templates
-    details: "cf pages create --template meeting-notes --var title='Q1 Review'. Built-in patterns with variables."
   - title: Version Diff
     details: "cf diff --id 12345 --since 2h. See what changed, structured JSON, not a wall of text."
   - title: Real-time Watch
@@ -41,27 +39,6 @@ features:
 <!-- Killer demos -->
 <div class="terminal-section">
   <h2 class="section-title">See it in action</h2>
-
-  <div class="terminal-window">
-    <div class="terminal-header">
-      <div class="terminal-dots">
-        <span class="dot red"></span>
-        <span class="dot yellow"></span>
-        <span class="dot green"></span>
-      </div>
-      <div class="terminal-title">templates -- create pages from patterns</div>
-    </div>
-    <div class="terminal-body">
-
-```bash
-cf pages create --template meeting-notes \
-  --spaceId 123456 \
-  --var title="Q1 Review" \
-  --var date="2026-03-28"
-```
-
-  </div>
-  </div>
 
   <div class="terminal-window">
     <div class="terminal-header">

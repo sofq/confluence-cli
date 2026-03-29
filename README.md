@@ -94,16 +94,6 @@ cf watch --cql "space = DEV" --interval 30s --max-events 50
 
 Events: `initial`, `created`, `updated`, `removed`.
 
-### Templates — structured page creation
-
-```bash
-cf templates list
-cf pages create --template meeting-notes --var title="Q1 Review" --var date="2026-03-28"
-cf templates create my-template --from 12345
-```
-
-Built-in: `meeting-notes`, `decision`, `retrospective`, `runbook`, `adr`, `rfc`.
-
 ### Diff — structured version comparison
 
 ```bash

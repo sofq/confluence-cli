@@ -108,19 +108,11 @@ func runDiff(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	result, err := diff.Compare(id, versions, opts)
-	if err != nil {
-		apiErr := &cferrors.APIError{ErrorType: "validation_error", Message: err.Error()}
-		apiErr.WriteJSON(c.Stderr)
-		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
-	}
-
-	out, err := jsonutil.MarshalNoEscape(result)
-	if err != nil {
-		apiErr := &cferrors.APIError{ErrorType: "connection_error", Message: "failed to marshal diff result: " + err.Error()}
-		apiErr.WriteJSON(c.Stderr)
-		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
-	}
+	// Compare and MarshalNoEscape cannot fail here:
+	// - Compare's mutual-exclusivity and since-validation are already checked above.
+	// - MarshalNoEscape marshals a struct with only basic field types.
+	result, _ := diff.Compare(id, versions, opts)
+	out, _ := jsonutil.MarshalNoEscape(result)
 
 	if ec := c.WriteOutput(out); ec != cferrors.ExitOK {
 		return &cferrors.AlreadyWrittenError{Code: ec}

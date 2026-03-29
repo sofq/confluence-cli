@@ -75,9 +75,6 @@ cf search search-content \
 # Content uses Confluence storage format (XHTML, not Markdown)
 cf pages create --spaceId 123456 --title "Deploy Runbook" \
   --body "<h1>Steps</h1><p>Follow these steps...</p>"
-
-# From a template
-cf pages create --template meeting-notes --var title="Q1 Review" --var date="2026-03-28"
 ```
 
 ### Update a page
@@ -170,23 +167,6 @@ cf watch --cql "space = DEV AND type = page" --interval 1m --max-events 20
 Events: `initial` (first poll), `created`, `updated`, `removed`.
 
 **Important:** Always use `--max-events` when calling from an automated/agent context — agents cannot send Ctrl-C (SIGINT) to stop the stream.
-
-### Create pages from templates
-```bash
-# List available templates (meeting-notes, decision, retrospective, runbook, adr, rfc)
-cf templates list
-
-# Show a template's variables
-cf templates show meeting-notes
-
-# Create page from a template
-cf pages create --template meeting-notes --var title="Q1 Review" --var date="2026-03-28"
-
-# Create a user-defined template from an existing page
-cf templates create my-template --from 12345
-```
-
-User-defined templates are stored in `~/.config/cf/templates/` as JSON files.
 
 ### Raw API call (escape hatch)
 ```bash

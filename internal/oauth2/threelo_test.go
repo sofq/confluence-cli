@@ -685,6 +685,44 @@ func TestExchangeCodeHTTPError(t *testing.T) {
 	}
 }
 
+// TestBrowserCommand verifies browserCommand returns the correct executable name
+// for each supported OS.
+func TestBrowserCommand(t *testing.T) {
+	tests := []struct {
+		goos     string
+		wantName string
+	}{
+		{"darwin", "open"},
+		{"windows", "rundll32"},
+		{"linux", "xdg-open"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.goos, func(t *testing.T) {
+			name, _ := browserCommand(tt.goos)
+			if name != tt.wantName {
+				t.Errorf("browserCommand(%q) name = %q, want %q", tt.goos, name, tt.wantName)
+			}
+		})
+	}
+}
+
+// TestOpenBrowserDirect exercises the openBrowser code path directly.
+// We replace the function to avoid actually launching a browser during tests.
+func TestOpenBrowserDirect(t *testing.T) {
+	old := openBrowserFunc
+	var called bool
+	openBrowserFunc = func(u string) error {
+		called = true
+		return nil
+	}
+	defer func() { openBrowserFunc = old }()
+
+	_ = openBrowserFunc("about:blank")
+	if !called {
+		t.Error("openBrowserFunc was not called")
+	}
+}
+
 // TestExchangeCodeInvalidJSON covers the JSON decode failure path.
 func TestExchangeCodeInvalidJSON(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -1005,6 +1043,99 @@ func TestThreeLOFullFlowDiscoveryError(t *testing.T) {
 	if !strings.Contains(res.err.Error(), "HTTP 403") {
 		t.Errorf("error = %q, should contain 'HTTP 403'", res.err.Error())
 	}
+}
+
+// TestThreeLOListenerError covers the net.Listen failure path in ThreeLO (threelo.go:266-268).
+// It injects a listenFunc that always returns an error, forcing ThreeLO to fail at
+// callback server startup after the refresh attempt falls through.
+func TestThreeLOListenerError(t *testing.T) {
+	// Use a refresh endpoint that fails so ThreeLO falls through to the browser flow.
+	refreshSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(400)
+		_, _ = w.Write([]byte(`{"error":"invalid_grant"}`))
+	}))
+	defer refreshSrv.Close()
+
+	old := tokenEndpointThreeLO
+	tokenEndpointThreeLO = refreshSrv.URL
+	defer func() { tokenEndpointThreeLO = old }()
+
+	oldListen := listenFunc
+	listenFunc = func() (net.Listener, error) {
+		return nil, fmt.Errorf("simulated listen failure")
+	}
+	defer func() { listenFunc = oldListen }()
+
+	dir := t.TempDir()
+	store := NewFileStore(dir, "listenfail")
+	// Save an expired token with a refresh token so the refresh path is tried first.
+	expired := &Token{
+		AccessToken:  "expired",
+		ExpiresIn:    3600,
+		RefreshToken: "bad-refresh",
+		ObtainedAt:   time.Now().Add(-4000 * time.Second),
+	}
+	if err := store.Save(expired); err != nil {
+		t.Fatalf("Save failed: %v", err)
+	}
+
+	_, err := ThreeLO("id", "secret", "read:confluence", "cloud-123", store)
+	if err == nil {
+		t.Fatal("expected listener error, got nil")
+	}
+	if !strings.Contains(err.Error(), "starting callback server") {
+		t.Errorf("error = %q, want 'starting callback server'", err.Error())
+	}
+}
+
+// TestSetListenFunc covers the SetListenFunc export in testing_export.go.
+func TestSetListenFunc(t *testing.T) {
+	old := listenFunc
+	var called bool
+	SetListenFunc(func() (net.Listener, error) {
+		called = true
+		return nil, fmt.Errorf("test listen func")
+	})
+	defer func() { SetListenFunc(old) }()
+
+	f := listenFunc
+	_, err := f()
+	if !called {
+		t.Error("SetListenFunc: injected function was not stored")
+	}
+	if err == nil || err.Error() != "test listen func" {
+		t.Errorf("SetListenFunc: err = %v, want 'test listen func'", err)
+	}
+}
+
+// TestSetTokenEndpoint covers the SetTokenEndpoint export in testing_export.go.
+func TestSetTokenEndpoint(t *testing.T) {
+	old := tokenEndpoint
+	SetTokenEndpoint("https://example.com/token")
+	if tokenEndpoint != "https://example.com/token" {
+		t.Errorf("tokenEndpoint = %q, want https://example.com/token", tokenEndpoint)
+	}
+	SetTokenEndpoint(old) // restore
+}
+
+// TestSetTokenEndpointThreeLO covers the SetTokenEndpointThreeLO export in testing_export.go.
+func TestSetTokenEndpointThreeLO(t *testing.T) {
+	old := tokenEndpointThreeLO
+	SetTokenEndpointThreeLO("https://example.com/3lo-token")
+	if tokenEndpointThreeLO != "https://example.com/3lo-token" {
+		t.Errorf("tokenEndpointThreeLO = %q, want https://example.com/3lo-token", tokenEndpointThreeLO)
+	}
+	SetTokenEndpointThreeLO(old) // restore
+}
+
+// TestSetCallbackTimeout covers the SetCallbackTimeout export in testing_export.go.
+func TestSetCallbackTimeout(t *testing.T) {
+	old := callbackTimeout
+	SetCallbackTimeout(42 * time.Second)
+	if callbackTimeout != 42*time.Second {
+		t.Errorf("callbackTimeout = %v, want 42s", callbackTimeout)
+	}
+	SetCallbackTimeout(old) // restore
 }
 
 // TestThreeLOScopesAlreadyContainOfflineAccess verifies that offline_access

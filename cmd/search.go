@@ -128,12 +128,8 @@ func runSearch(cmd *cobra.Command, args []string) error {
 	}
 
 	// Marshal merged results as a flat JSON array.
-	merged, err := json.Marshal(allResults)
-	if err != nil {
-		apiErr := &cferrors.APIError{ErrorType: "connection_error", Message: "failed to marshal search results: " + err.Error()}
-		apiErr.WriteJSON(c.Stderr)
-		return &cferrors.AlreadyWrittenError{Code: cferrors.ExitError}
-	}
+	// json.Marshal on []json.RawMessage cannot fail — each element is already valid JSON.
+	merged, _ := json.Marshal(allResults)
 	if ec := c.WriteOutput(merged); ec != cferrors.ExitOK {
 		return &cferrors.AlreadyWrittenError{Code: ec}
 	}

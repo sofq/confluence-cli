@@ -7,7 +7,6 @@ package cmd_test
 //   - cmd/pages.go        (fetchPageVersion)
 //   - cmd/search.go       (fetchV1, runSearch)
 //   - cmd/spaces.go       (resolveSpaceID)
-//   - cmd/templates.go    (resolveTemplate)
 
 import (
 	"bytes"
@@ -17,7 +16,6 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -54,47 +52,6 @@ func newCobraCmd(c *client.Client) *cobra.Command {
 	ctx := client.NewContext(context.Background(), c)
 	cmd.SetContext(ctx)
 	return cmd
-}
-
-// setupTempTemplateDir creates a temp config dir with optional JSON template
-// files and sets CF_CONFIG_PATH so the template package finds them.
-// Returns the config dir.
-func setupTempTemplateDir(t *testing.T, templates map[string]string) string {
-	t.Helper()
-	dir := t.TempDir()
-	cfgPath := filepath.Join(dir, "config.json")
-	cfg := &config.Config{
-		DefaultProfile: "default",
-		Profiles: map[string]config.Profile{
-			"default": {
-				BaseURL: "http://localhost",
-				Auth:    config.AuthConfig{Type: "bearer", Token: "tok"},
-			},
-		},
-	}
-	if err := config.SaveTo(cfg, cfgPath); err != nil {
-		t.Fatalf("SaveTo: %v", err)
-	}
-	t.Setenv("CF_CONFIG_PATH", cfgPath)
-	t.Setenv("CF_BASE_URL", "")
-	t.Setenv("CF_AUTH_TYPE", "")
-	t.Setenv("CF_AUTH_TOKEN", "")
-	t.Setenv("CF_AUTH_USER", "")
-	t.Setenv("CF_PROFILE", "")
-
-	if len(templates) > 0 {
-		tmplDir := filepath.Join(dir, "templates")
-		if err := os.MkdirAll(tmplDir, 0o755); err != nil {
-			t.Fatal(err)
-		}
-		for name, content := range templates {
-			p := filepath.Join(tmplDir, name+".json")
-			if err := os.WriteFile(p, []byte(content), 0o644); err != nil {
-				t.Fatal(err)
-			}
-		}
-	}
-	return dir
 }
 
 // dialRefused returns a URL that will refuse connections immediately.
@@ -602,131 +559,3 @@ func TestRunSearch_NoClientInContext(t *testing.T) {
 	}
 }
 
-// ---------------------------------------------------------------------------
-// templates.go — resolveTemplate
-// ---------------------------------------------------------------------------
-
-// TestResolveTemplate_NilWriter covers the branch where w == nil and os.Stderr is used.
-func TestResolveTemplate_NilWriter(t *testing.T) {
-	setupTempTemplateDir(t, nil)
-
-	// Passing w=nil should not panic; it falls back to os.Stderr.
-	_, err := cmd.ResolveTemplate(nil, "nonexistent-template", nil)
-	if err == nil {
-		t.Error("expected error for nonexistent template, got nil")
-	}
-}
-
-// TestResolveTemplate_InvalidVarFormat covers the branch where a --var value
-// does not contain "=" and causes a validation error.
-func TestResolveTemplate_InvalidVarFormat(t *testing.T) {
-	setupTempTemplateDir(t, map[string]string{
-		"my-tmpl": `{"title":"Hello","body":"<p>World</p>"}`,
-	})
-
-	var errBuf bytes.Buffer
-	_, err := cmd.ResolveTemplate(&errBuf, "my-tmpl", []string{"not-key-value-format"})
-	if err == nil {
-		t.Error("expected error for invalid --var format, got nil")
-	}
-	if !strings.Contains(errBuf.String(), "validation_error") {
-		t.Errorf("expected validation_error in writer, got: %s", errBuf.String())
-	}
-}
-
-// TestResolveTemplate_TemplateNotFound covers the branch where the template
-// name doesn't exist, causing cftemplate.Load to return an error.
-func TestResolveTemplate_TemplateNotFound(t *testing.T) {
-	setupTempTemplateDir(t, nil)
-
-	var errBuf bytes.Buffer
-	_, err := cmd.ResolveTemplate(&errBuf, "does-not-exist-xyz", nil)
-	if err == nil {
-		t.Error("expected error for missing template, got nil")
-	}
-	if !strings.Contains(errBuf.String(), "config_error") {
-		t.Errorf("expected config_error in writer, got: %s", errBuf.String())
-	}
-}
-
-// TestResolveTemplate_RenderFailure covers the branch where the template has
-// a required variable that is NOT supplied, causing Render to return an error.
-func TestResolveTemplate_RenderFailure(t *testing.T) {
-	// The template uses {{.missing_var}} which requires the "missing_var" key.
-	// We supply no vars, so Render should fail.
-	setupTempTemplateDir(t, map[string]string{
-		"strict-tmpl": `{"title":"{{.required_var}}","body":"<p>body</p>"}`,
-	})
-
-	var errBuf bytes.Buffer
-	// Render will succeed if Go templates are lenient about missing keys.
-	// To reliably trigger render failure, create a template with invalid Go template syntax.
-	setupTempTemplateDir(t, map[string]string{
-		"bad-syntax-tmpl": `{"title":"{{.invalid template syntax","body":"<p>body</p>"}`,
-	})
-
-	_, err := cmd.ResolveTemplate(&errBuf, "bad-syntax-tmpl", nil)
-	if err == nil {
-		// Go's text/template may be lenient here; log but don't fail
-		t.Log("ResolveTemplate did not return error for bad syntax template (template loaded but not rendered?)")
-	}
-}
-
-// TestResolveTemplate_Success covers the happy path with a valid template and vars.
-func TestResolveTemplate_Success(t *testing.T) {
-	setupTempTemplateDir(t, map[string]string{
-		"simple-tmpl": `{"title":"{{.title}}","body":"<p>{{.content}}</p>"}`,
-	})
-
-	var errBuf bytes.Buffer
-	rendered, err := cmd.ResolveTemplate(&errBuf, "simple-tmpl", []string{"title=My Title", "content=Hello"})
-	if err != nil {
-		t.Fatalf("expected success, got error: %v (writer: %s)", err, errBuf.String())
-	}
-	if rendered == nil {
-		t.Fatal("expected non-nil rendered template")
-	}
-	if rendered.Title != "My Title" {
-		t.Errorf("title = %q, want %q", rendered.Title, "My Title")
-	}
-	if !strings.Contains(rendered.Body, "Hello") {
-		t.Errorf("body %q does not contain 'Hello'", rendered.Body)
-	}
-}
-
-// TestResolveTemplate_BuiltinTemplate covers resolving a built-in template
-// (which uses the cftemplate.Load fallback to built-ins) with required vars.
-func TestResolveTemplate_BuiltinTemplate(t *testing.T) {
-	setupTempTemplateDir(t, nil)
-
-	var errBuf bytes.Buffer
-	// "blank" is a built-in template requiring {{.title}}.
-	rendered, err := cmd.ResolveTemplate(&errBuf, "blank", []string{"title=My Blank Page"})
-	if err != nil {
-		t.Fatalf("expected success for built-in 'blank' template, got: %v (writer: %s)", err, errBuf.String())
-	}
-	if rendered == nil {
-		t.Fatal("expected non-nil rendered template")
-	}
-	if rendered.Title != "My Blank Page" {
-		t.Errorf("title = %q, want %q", rendered.Title, "My Blank Page")
-	}
-}
-
-// TestResolveTemplate_RenderMissingVar covers the case where the template render
-// fails because a required variable is not provided (missingkey=error).
-func TestResolveTemplate_RenderMissingVar(t *testing.T) {
-	setupTempTemplateDir(t, map[string]string{
-		"required-var-tmpl": `{"title":"{{.required_variable}}","body":"<p>body</p>"}`,
-	})
-
-	var errBuf bytes.Buffer
-	// Do NOT provide "required_variable" — Render should fail with missingkey=error.
-	_, err := cmd.ResolveTemplate(&errBuf, "required-var-tmpl", nil)
-	if err == nil {
-		t.Error("expected error for missing required template variable, got nil")
-	}
-	if !strings.Contains(errBuf.String(), "validation_error") {
-		t.Errorf("expected validation_error in writer for missing var, got: %s", errBuf.String())
-	}
-}

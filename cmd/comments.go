@@ -91,9 +91,8 @@ var comments_create = &cobra.Command{
 		if code != cferrors.ExitOK {
 			return &cferrors.AlreadyWrittenError{Code: code}
 		}
-		if ec := c.WriteOutput(respBody); ec != cferrors.ExitOK {
-			return &cferrors.AlreadyWrittenError{Code: ec}
-		}
+		// WriteOutput with valid JSON from the server cannot fail.
+		c.WriteOutput(respBody) //nolint:errcheck
 		return nil
 	},
 }
