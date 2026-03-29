@@ -162,3 +162,117 @@ func TestAPIErrorExitCode(t *testing.T) {
 		}
 	}
 }
+
+func TestAPIErrorError(t *testing.T) {
+	t.Run("without hint", func(t *testing.T) {
+		apiErr := &cferrors.APIError{
+			ErrorType: "not_found",
+			Status:    404,
+			Message:   "page does not exist",
+		}
+		got := apiErr.Error()
+		want := "not_found (status 404): page does not exist"
+		if got != want {
+			t.Errorf("Error() = %q, want %q", got, want)
+		}
+	})
+
+	t.Run("with hint", func(t *testing.T) {
+		apiErr := &cferrors.APIError{
+			ErrorType: "auth_failed",
+			Status:    401,
+			Message:   "unauthorized",
+			Hint:      "check your token",
+		}
+		got := apiErr.Error()
+		want := "auth_failed (status 401): unauthorized \u2014 check your token"
+		if got != want {
+			t.Errorf("Error() = %q, want %q", got, want)
+		}
+	})
+}
+
+func TestAPIErrorWriteStderr(t *testing.T) {
+	// WriteStderr writes to os.Stderr; we just verify it does not panic.
+	apiErr := &cferrors.APIError{
+		ErrorType: "server_error",
+		Status:    500,
+		Message:   "internal server error",
+	}
+	// This should not panic or return an error.
+	apiErr.WriteStderr()
+}
+
+func TestExitCodeFromStatusGenericBranches(t *testing.T) {
+	cases := []struct {
+		status int
+		want   int
+		label  string
+	}{
+		// generic 4xx (not one of the named codes)
+		{418, cferrors.ExitValidation, "generic 4xx"},
+		// default branch: status that doesn't match any range (e.g. 0)
+		{0, cferrors.ExitError, "default (0)"},
+		// another default: 1xx
+		{100, cferrors.ExitError, "default (100)"},
+	}
+	for _, tc := range cases {
+		got := cferrors.ExitCodeFromStatus(tc.status)
+		if got != tc.want {
+			t.Errorf("ExitCodeFromStatus(%d) [%s] = %d, want %d", tc.status, tc.label, got, tc.want)
+		}
+	}
+}
+
+func TestErrorTypeFromStatus(t *testing.T) {
+	cases := []struct {
+		status int
+		want   string
+	}{
+		{401, "auth_failed"},
+		{403, "auth_failed"},
+		{404, "not_found"},
+		{400, "validation_error"},
+		{422, "validation_error"},
+		{429, "rate_limited"},
+		{409, "conflict"},
+		{410, "gone"},
+		// generic 4xx
+		{418, "client_error"},
+		// generic 5xx
+		{500, "server_error"},
+		{503, "server_error"},
+		// default (no match)
+		{0, "connection_error"},
+		{100, "connection_error"},
+	}
+	for _, tc := range cases {
+		got := cferrors.ErrorTypeFromStatus(tc.status)
+		if got != tc.want {
+			t.Errorf("ErrorTypeFromStatus(%d) = %q, want %q", tc.status, got, tc.want)
+		}
+	}
+}
+
+func TestHintFromStatus(t *testing.T) {
+	cases := []struct {
+		status int
+		empty  bool
+		label  string
+	}{
+		{401, false, "401 hint present"},
+		{403, false, "403 hint present"},
+		{429, false, "429 hint present"},
+		{404, true, "404 no hint"},
+		{500, true, "500 no hint"},
+	}
+	for _, tc := range cases {
+		got := cferrors.HintFromStatus(tc.status)
+		if tc.empty && got != "" {
+			t.Errorf("HintFromStatus(%d) [%s] = %q, want empty string", tc.status, tc.label, got)
+		}
+		if !tc.empty && got == "" {
+			t.Errorf("HintFromStatus(%d) [%s] returned empty string, want non-empty hint", tc.status, tc.label)
+		}
+	}
+}

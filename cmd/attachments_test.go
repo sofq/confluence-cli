@@ -30,6 +30,7 @@ func setupAttachmentEnv(t *testing.T, srvURL string) {
 // captureOutput redirects os.Stdout and os.Stderr, runs fn, and returns captured output.
 func captureOutput(t *testing.T, fn func()) (stdout, stderr string) {
 	t.Helper()
+	cmd.ResetRootPersistentFlags()
 
 	oldStdout := os.Stdout
 	rout, wout, _ := os.Pipe()

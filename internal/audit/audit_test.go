@@ -169,3 +169,69 @@ func TestDefaultPath_EndsWithCfAuditLog(t *testing.T) {
 		t.Errorf("DefaultPath() = %q; want path ending in cf/audit.log", path)
 	}
 }
+
+func TestNewLogger_ErrorOnUnwritablePath(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("root can write anywhere; cannot test permission error")
+	}
+	// Use a path inside a read-only directory to trigger OpenFile error.
+	dir := t.TempDir()
+	if err := os.Chmod(dir, 0o500); err != nil {
+		t.Fatalf("Chmod failed: %v", err)
+	}
+	defer os.Chmod(dir, 0o700) //nolint:errcheck
+
+	logPath := filepath.Join(dir, "subdir", "audit.log")
+	_, err := audit.NewLogger(logPath)
+	// MkdirAll cannot create subdir inside read-only dir — should return error.
+	if err == nil {
+		t.Fatal("expected error when parent directory is read-only, got nil")
+	}
+}
+
+func TestNewLogger_ErrorOnUnwritableFile(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("root can write anywhere; cannot test permission error")
+	}
+	// Create a directory where the log file path should be — OpenFile on a dir fails.
+	dir := t.TempDir()
+	// Create a directory at the exact path where the log file should be created.
+	logPath := filepath.Join(dir, "audit.log")
+	if err := os.Mkdir(logPath, 0o700); err != nil {
+		t.Fatalf("Mkdir failed: %v", err)
+	}
+	_, err := audit.NewLogger(logPath)
+	if err == nil {
+		t.Fatal("expected error when log path is a directory, got nil")
+	}
+}
+
+func TestDefaultPath_FallbackWhenNoConfigDir(t *testing.T) {
+	// os.UserConfigDir() fails when $HOME is unset (both macOS and Linux).
+	// Unsetting HOME forces the fallback path: ~/.config/cf/audit.log.
+	original, hadHome := os.LookupEnv("HOME")
+	originalXDG := os.Getenv("XDG_CONFIG_HOME")
+	t.Cleanup(func() {
+		if hadHome {
+			os.Setenv("HOME", original)
+		} else {
+			os.Unsetenv("HOME")
+		}
+		if originalXDG != "" {
+			os.Setenv("XDG_CONFIG_HOME", originalXDG)
+		} else {
+			os.Unsetenv("XDG_CONFIG_HOME")
+		}
+	})
+
+	// Unset HOME so UserConfigDir returns an error, triggering the fallback.
+	os.Unsetenv("HOME")
+	os.Unsetenv("XDG_CONFIG_HOME")
+
+	path := audit.DefaultPath()
+	// With HOME unset, os.UserHomeDir() also fails; the fallback uses an empty
+	// home, so path will be ".config/cf/audit.log" or similar — just verify suffix.
+	if !strings.HasSuffix(path, filepath.Join("cf", "audit.log")) {
+		t.Errorf("DefaultPath() = %q; want path ending in cf/audit.log", path)
+	}
+}

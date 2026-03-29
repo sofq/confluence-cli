@@ -16,6 +16,7 @@ import (
 // capturing stdout and stderr. Uses setupTemplateEnv for config setup.
 func runDiffCommand(t *testing.T, srvURL string, args ...string) (stdout string, stderr string) {
 	t.Helper()
+	cmd.ResetRootPersistentFlags()
 	setupTemplateEnv(t, srvURL, nil)
 
 	oldStdout := os.Stdout

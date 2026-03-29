@@ -58,6 +58,7 @@ func makeWatchResult(id, typ, title, spaceKey string, spaceID int, when, modifie
 // server handler closes, which should be controlled by the test.
 func runWatchCommand(t *testing.T, srvURL string, extraArgs ...string) (stdout string, stderr string) {
 	t.Helper()
+	cmd.ResetRootPersistentFlags()
 
 	t.Setenv("CF_BASE_URL", srvURL+"/wiki/api/v2")
 	t.Setenv("CF_AUTH_TYPE", "bearer")

@@ -86,4 +86,28 @@ func TestApply(t *testing.T) {
 			t.Errorf("Apply(.[]) = %q, expected all elements", string(got))
 		}
 	})
+
+	t.Run("jq runtime error returns error", func(t *testing.T) {
+		// Applying .foo to a number produces a runtime type error in gojq.
+		input := []byte(`42`)
+		_, err := jq.Apply(input, ".foo")
+		if err == nil {
+			t.Fatal("Apply with runtime jq error should return error")
+		}
+		if !strings.Contains(strings.ToLower(err.Error()), "jq error") {
+			t.Errorf("expected error containing 'jq error', got: %v", err)
+		}
+	})
+
+	t.Run("filter producing zero results returns null", func(t *testing.T) {
+		// The `empty` filter produces no values — result should be the literal "null".
+		input := []byte(`{"a":1}`)
+		got, err := jq.Apply(input, "empty")
+		if err != nil {
+			t.Fatalf("Apply(empty) returned unexpected error: %v", err)
+		}
+		if string(got) != "null" {
+			t.Errorf("Apply(empty) = %q, want %q", string(got), "null")
+		}
+	})
 }
