@@ -193,7 +193,7 @@ func TestAttachmentsUpload_MultipartAndHeaders(t *testing.T) {
 			t.Errorf("failed to read body: %v", err)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`[{"id":"att-1","title":"report.pdf"}]`))
+		_, _ = w.Write([]byte(`[{"id":"att-1","title":"report.pdf"}]`))
 	}))
 	defer srv.Close()
 	setupAttachmentEnv(t, srv.URL)
@@ -271,7 +271,7 @@ func TestAttachmentsUpload_UsesSearchV1Domain(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedHost = r.Host
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`[{"id":"att-1"}]`))
+		_, _ = w.Write([]byte(`[{"id":"att-1"}]`))
 	}))
 	defer srv.Close()
 	setupAttachmentEnv(t, srv.URL)

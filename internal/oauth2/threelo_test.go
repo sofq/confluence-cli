@@ -55,7 +55,7 @@ func TestThreeLORefreshSuccess(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"access_token":  "refreshed-token",
 			"token_type":    "Bearer",
 			"expires_in":    3600,
@@ -113,7 +113,7 @@ func TestThreeLORefreshFailureFallsThrough(t *testing.T) {
 	// Refresh endpoint returns 400 (invalid_grant)
 	refreshSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(400)
-		w.Write([]byte(`{"error":"invalid_grant"}`))
+		_, _ = w.Write([]byte(`{"error":"invalid_grant"}`))
 	}))
 	defer refreshSrv.Close()
 
@@ -197,7 +197,7 @@ func TestExchangeCode(t *testing.T) {
 		}
 
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]interface{}{
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
 			"access_token":  "exchanged-token",
 			"token_type":    "Bearer",
 			"expires_in":    3600,
@@ -228,7 +228,7 @@ func TestDiscoverCloudIDSingleSite(t *testing.T) {
 			t.Errorf("Authorization = %q, want Bearer test-token", got)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]map[string]string{
+		_ = json.NewEncoder(w).Encode([]map[string]string{
 			{"id": "site-id-1", "name": "My Site", "url": "https://mysite.atlassian.net"},
 		})
 	}))
@@ -250,7 +250,7 @@ func TestDiscoverCloudIDSingleSite(t *testing.T) {
 func TestDiscoverCloudIDMultipleSites(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]map[string]string{
+		_ = json.NewEncoder(w).Encode([]map[string]string{
 			{"id": "site-1", "name": "Site One", "url": "https://one.atlassian.net"},
 			{"id": "site-2", "name": "Site Two", "url": "https://two.atlassian.net"},
 		})
@@ -274,7 +274,7 @@ func TestDiscoverCloudIDMultipleSites(t *testing.T) {
 func TestDiscoverCloudIDZeroSites(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode([]map[string]string{})
+		_ = json.NewEncoder(w).Encode([]map[string]string{})
 	}))
 	defer srv.Close()
 
@@ -321,7 +321,8 @@ func TestCallbackStateMismatch(t *testing.T) {
 	port := listener.Addr().(*net.TCPAddr).Port
 	go func() {
 		time.Sleep(50 * time.Millisecond)
-		http.Get(fmt.Sprintf("http://localhost:%d/callback?state=wrong&code=abc", port))
+		//nolint:errcheck
+		_, _ = http.Get(fmt.Sprintf("http://localhost:%d/callback?state=wrong&code=abc", port))
 	}()
 
 	_, err = waitForCallback(listener, "expected-state", 5*time.Second)

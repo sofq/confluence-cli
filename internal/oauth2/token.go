@@ -20,7 +20,7 @@ const (
 
 // Token represents an OAuth2 access token response with metadata.
 type Token struct {
-	AccessToken  string    `json:"access_token"`
+	AccessToken  string    `json:"access_token"` // #nosec G117 -- intentionally serialized for token cache storage
 	TokenType    string    `json:"token_type"`
 	ExpiresIn    int       `json:"expires_in"`
 	RefreshToken string    `json:"refresh_token,omitempty"`

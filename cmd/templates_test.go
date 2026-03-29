@@ -216,7 +216,7 @@ func TestTemplatesShow_NotFound(t *testing.T) {
 	w.Close()
 	os.Stderr = oldStderr
 	var stderrBuf bytes.Buffer
-	stderrBuf.ReadFrom(r)
+	_, _ = stderrBuf.ReadFrom(r)
 
 	if err == nil {
 		t.Fatal("expected error for nonexistent template")
@@ -236,7 +236,7 @@ func TestTemplatesCreate_FromPage(t *testing.T) {
 			t.Errorf("expected body-format=storage, got %q", r.URL.Query().Get("body-format"))
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id":    "123",
 			"title": "My Page Title",
 			"body": map[string]any{
@@ -297,7 +297,7 @@ func TestTemplatesCreate_MissingName(t *testing.T) {
 	w.Close()
 	os.Stderr = oldStderr
 	var stderrBuf bytes.Buffer
-	stderrBuf.ReadFrom(r)
+	_, _ = stderrBuf.ReadFrom(r)
 
 	if err == nil {
 		t.Fatal("expected error for missing --name")
@@ -326,7 +326,7 @@ func TestPagesCreate_WithTemplate(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		json.NewEncoder(w).Encode(map[string]string{"id": "123", "title": "Weekly Standup"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"id": "123", "title": "Weekly Standup"})
 	}))
 	defer srv.Close()
 
@@ -383,7 +383,7 @@ func TestPagesCreate_ZZ_TemplateAndBodyConflict(t *testing.T) {
 	w.Close()
 	os.Stderr = oldStderr
 	var stderrBuf bytes.Buffer
-	stderrBuf.ReadFrom(r)
+	_, _ = stderrBuf.ReadFrom(r)
 
 	if err == nil {
 		t.Fatal("expected error for --template + --body conflict")
@@ -407,7 +407,7 @@ func TestBlogpostsCreate_WithTemplate(t *testing.T) {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(200)
-		json.NewEncoder(w).Encode(map[string]string{"id": "456", "title": "March Update"})
+		_ = json.NewEncoder(w).Encode(map[string]string{"id": "456", "title": "March Update"})
 	}))
 	defer srv.Close()
 

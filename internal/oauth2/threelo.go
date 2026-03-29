@@ -51,11 +51,11 @@ func generateState() string {
 func openBrowser(u string) error {
 	switch runtime.GOOS {
 	case "darwin":
-		return exec.Command("open", u).Start()
+		return exec.Command("open", u).Start() // #nosec G204 -- u is an OAuth authorization URL constructed from trusted config, not user input
 	case "windows":
-		return exec.Command("rundll32", "url.dll,FileProtocolHandler", u).Start()
+		return exec.Command("rundll32", "url.dll,FileProtocolHandler", u).Start() // #nosec G204 -- u is an OAuth authorization URL constructed from trusted config, not user input
 	default:
-		return exec.Command("xdg-open", u).Start()
+		return exec.Command("xdg-open", u).Start() // #nosec G204 -- u is an OAuth authorization URL constructed from trusted config, not user input
 	}
 }
 
@@ -71,7 +71,7 @@ func refreshToken(clientID, clientSecret, refreshTok string, store *FileStore) (
 		"refresh_token": {refreshTok},
 	}
 
-	resp, err := http.Post(tokenEndpointThreeLO, "application/x-www-form-urlencoded",
+	resp, err := http.Post(tokenEndpointThreeLO, "application/x-www-form-urlencoded", // #nosec G107 -- tokenEndpointThreeLO is derived from the trusted TokenURL constant, not user input
 		strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("refresh token request failed: %w", err)
@@ -157,7 +157,9 @@ func waitForCallback(listener net.Listener, expectedState string, timeout time.D
 	codeCh := make(chan string, 1)
 	errCh := make(chan error, 1)
 
-	srv := &http.Server{}
+	srv := &http.Server{
+		ReadHeaderTimeout: 10 * time.Second, // mitigate Slowloris; this is a short-lived OAuth callback server
+	}
 	srv.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/callback" {
 			http.NotFound(w, r)
@@ -184,8 +186,8 @@ func waitForCallback(listener net.Listener, expectedState string, timeout time.D
 		codeCh <- code
 	})
 
-	go srv.Serve(listener)
-	defer srv.Close()
+	go func() { _ = srv.Serve(listener) }()
+	defer func() { _ = srv.Close() }()
 
 	select {
 	case code := <-codeCh:
@@ -208,7 +210,7 @@ func exchangeCode(clientID, clientSecret, code, redirectURI, verifier string) (*
 		"code_verifier": {verifier},
 	}
 
-	resp, err := http.Post(tokenEndpointThreeLO, "application/x-www-form-urlencoded",
+	resp, err := http.Post(tokenEndpointThreeLO, "application/x-www-form-urlencoded", // #nosec G107 -- tokenEndpointThreeLO is derived from the trusted TokenURL constant, not user input
 		strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, fmt.Errorf("token exchange failed: %w", err)

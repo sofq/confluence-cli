@@ -289,7 +289,7 @@ func TestWorkflow_Move_Success(t *testing.T) {
 		capturedMethod = r.Method
 		capturedPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id": "123", "title": "Moved Page", "status": "current",
 		})
 	})
@@ -319,10 +319,10 @@ func TestWorkflow_Copy_NoWait(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/wiki/rest/api/content/123/copy", func(w http.ResponseWriter, r *http.Request) {
 		capturedMethod = r.Method
-		io.Copy(&capturedBody, r.Body)
+		_, _ = io.Copy(&capturedBody, r.Body)
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusAccepted)
-		json.NewEncoder(w).Encode(map[string]any{"id": "task-1"})
+		_ = json.NewEncoder(w).Encode(map[string]any{"id": "task-1"})
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -380,7 +380,7 @@ func TestWorkflow_Publish_Success(t *testing.T) {
 	mux.HandleFunc("/wiki/api/v2/pages/123", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		if r.Method == "GET" {
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "123", "title": "Draft Page", "status": "draft",
 				"version": map[string]any{"number": 1},
 			})
@@ -388,8 +388,8 @@ func TestWorkflow_Publish_Success(t *testing.T) {
 		}
 		if r.Method == "PUT" {
 			putCalled = true
-			json.NewDecoder(r.Body).Decode(&putBody)
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewDecoder(r.Body).Decode(&putBody)
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "123", "title": "Draft Page", "status": "current",
 				"version": map[string]any{"number": 2},
 			})
@@ -435,9 +435,9 @@ func TestWorkflow_Comment_Success(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/wiki/api/v2/footer-comments", func(w http.ResponseWriter, r *http.Request) {
 		capturedPath = r.URL.Path
-		io.Copy(&capturedBody, r.Body)
+		_, _ = io.Copy(&capturedBody, r.Body)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id": "comment-1", "pageId": "123",
 			"body": map[string]any{
 				"value":          "<p>Hello World</p>",
@@ -489,7 +489,7 @@ func TestWorkflow_Restrict_View(t *testing.T) {
 		capturedMethod = r.Method
 		capturedPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"results": []map[string]any{
 				{"operation": "read", "restrictions": map[string]any{"user": map[string]any{"results": []any{}}}},
 			},
@@ -526,7 +526,7 @@ func TestWorkflow_Restrict_AddUser(t *testing.T) {
 		capturedQuery = r.URL.RawQuery
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{}"))
+		_, _ = w.Write([]byte("{}"))
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -558,7 +558,7 @@ func TestWorkflow_Restrict_RemoveUser(t *testing.T) {
 		capturedMethod = r.Method
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{}"))
+		_, _ = w.Write([]byte("{}"))
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -586,7 +586,7 @@ func TestWorkflow_Restrict_AddGroup(t *testing.T) {
 		capturedPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("{}"))
+		_, _ = w.Write([]byte("{}"))
 	})
 	srv := httptest.NewServer(mux)
 	defer srv.Close()
@@ -616,10 +616,10 @@ func TestWorkflow_Archive_Success(t *testing.T) {
 	mux.HandleFunc("/wiki/rest/api/content/archive", func(w http.ResponseWriter, r *http.Request) {
 		capturedMethod = r.Method
 		capturedPath = r.URL.Path
-		io.Copy(&capturedBody, r.Body)
+		_, _ = io.Copy(&capturedBody, r.Body)
 		w.Header().Set("Content-Type", "application/json")
 		// Return a completed response (no task ID -- immediate success).
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"status": "completed",
 		})
 	})

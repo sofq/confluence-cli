@@ -246,5 +246,5 @@ func init() {
 	watchCmd.Flags().Duration("interval", 60*time.Second, "polling interval (e.g. 30s, 2m)")
 	watchCmd.Flags().Int("max-polls", 0, "maximum number of polls before exiting (0 = unlimited, for testing)")
 	// Hide max-polls from help -- it's for testing only.
-	watchCmd.Flags().MarkHidden("max-polls")
+	_ = watchCmd.Flags().MarkHidden("max-polls")
 }

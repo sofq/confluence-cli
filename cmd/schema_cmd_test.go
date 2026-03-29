@@ -27,7 +27,7 @@ func TestSchemaListReturnsJSONArray(t *testing.T) {
 	}
 
 	var stdoutBuf bytes.Buffer
-	stdoutBuf.ReadFrom(r)
+	_, _ = stdoutBuf.ReadFrom(r)
 	output := strings.TrimSpace(stdoutBuf.String())
 
 	if output == "" {
@@ -58,7 +58,7 @@ func TestSchemaNoArgsReturnsValidJSON(t *testing.T) {
 	}
 
 	var stdoutBuf bytes.Buffer
-	stdoutBuf.ReadFrom(r)
+	_, _ = stdoutBuf.ReadFrom(r)
 	output := strings.TrimSpace(stdoutBuf.String())
 
 	if output == "" {
@@ -84,7 +84,7 @@ func TestSchemaOutputToStdout(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"schema", "--list"})
-	root.Execute()
+	_ = root.Execute()
 
 	w.Close()
 	we.Close()
@@ -92,10 +92,10 @@ func TestSchemaOutputToStdout(t *testing.T) {
 	os.Stderr = oldStderr
 
 	var stdoutBuf bytes.Buffer
-	stdoutBuf.ReadFrom(r)
+	_, _ = stdoutBuf.ReadFrom(r)
 
 	var stderrBuf bytes.Buffer
-	stderrBuf.ReadFrom(re)
+	_, _ = stderrBuf.ReadFrom(re)
 
 	if stdoutBuf.Len() == 0 {
 		t.Error("schema --list should write to stdout")
@@ -125,7 +125,7 @@ func TestSchemaCompactReturnsJSONObject(t *testing.T) {
 	}
 
 	var stdoutBuf bytes.Buffer
-	stdoutBuf.ReadFrom(r)
+	_, _ = stdoutBuf.ReadFrom(r)
 	output := strings.TrimSpace(stdoutBuf.String())
 
 	if output == "" {
@@ -156,7 +156,7 @@ func TestSchemaIncludesHandWrittenOps(t *testing.T) {
 	}
 
 	var stdoutBuf bytes.Buffer
-	stdoutBuf.ReadFrom(r)
+	_, _ = stdoutBuf.ReadFrom(r)
 	output := strings.TrimSpace(stdoutBuf.String())
 
 	var resources []string
@@ -193,7 +193,7 @@ func TestSchemaWorkflowListsSixVerbs(t *testing.T) {
 	}
 
 	var stdoutBuf bytes.Buffer
-	stdoutBuf.ReadFrom(r)
+	_, _ = stdoutBuf.ReadFrom(r)
 	output := strings.TrimSpace(stdoutBuf.String())
 
 	type schemaOp struct {
@@ -247,7 +247,7 @@ func TestSchemaCompactIncludesHandWritten(t *testing.T) {
 	}
 
 	var stdoutBuf bytes.Buffer
-	stdoutBuf.ReadFrom(r)
+	_, _ = stdoutBuf.ReadFrom(r)
 	output := strings.TrimSpace(stdoutBuf.String())
 
 	var compact map[string][]string

@@ -38,13 +38,13 @@ func TestRawInvalidMethodReturnsValidationError(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"raw", "FOO", "/wiki/api/v2/pages"})
-	root.Execute()
+	_ = root.Execute()
 
 	w.Close()
 	os.Stderr = oldStderr
 
 	var stderrBuf bytes.Buffer
-	stderrBuf.ReadFrom(r)
+	_, _ = stderrBuf.ReadFrom(r)
 	stderrOutput := strings.TrimSpace(stderrBuf.String())
 
 	if stderrOutput == "" {
@@ -79,7 +79,7 @@ func TestRawGETCallsServer(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"raw", "GET", "/wiki/api/v2/pages"})
-	root.Execute()
+	_ = root.Execute()
 
 	w.Close()
 	we.Close()
@@ -87,7 +87,7 @@ func TestRawGETCallsServer(t *testing.T) {
 	os.Stderr = oldStderr
 
 	var stdoutBuf bytes.Buffer
-	stdoutBuf.ReadFrom(r)
+	_, _ = stdoutBuf.ReadFrom(r)
 	output := strings.TrimSpace(stdoutBuf.String())
 
 	if output == "" {
@@ -114,13 +114,13 @@ func TestRawPOSTWithoutBodyReturnsValidationError(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"raw", "POST", "/wiki/api/v2/pages"})
-	root.Execute()
+	_ = root.Execute()
 
 	w.Close()
 	os.Stderr = oldStderr
 
 	var stderrBuf bytes.Buffer
-	stderrBuf.ReadFrom(r)
+	_, _ = stderrBuf.ReadFrom(r)
 	stderrOutput := strings.TrimSpace(stderrBuf.String())
 
 	if stderrOutput == "" {
@@ -155,7 +155,7 @@ func TestRawGETWithQueryParams(t *testing.T) {
 
 	root := cmd.RootCommand()
 	root.SetArgs([]string{"raw", "GET", "/wiki/api/v2/pages", "--query", "limit=5"})
-	root.Execute()
+	_ = root.Execute()
 
 	w.Close()
 	we.Close()
@@ -163,7 +163,7 @@ func TestRawGETWithQueryParams(t *testing.T) {
 	os.Stderr = oldStderr
 
 	var stdoutBuf bytes.Buffer
-	stdoutBuf.ReadFrom(r)
+	_, _ = stdoutBuf.ReadFrom(r)
 	output := strings.TrimSpace(stdoutBuf.String())
 
 	if !strings.Contains(output, "limit") {

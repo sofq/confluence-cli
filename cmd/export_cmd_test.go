@@ -50,7 +50,7 @@ func TestExport_SinglePage(t *testing.T) {
 			t.Errorf("expected body-format=storage, got %q", r.URL.Query().Get("body-format"))
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id":    "123",
 			"title": "Test Page",
 			"body": map[string]any{
@@ -80,7 +80,7 @@ func TestExport_ViewFormat(t *testing.T) {
 			t.Errorf("expected body-format=view, got %q", r.URL.Query().Get("body-format"))
 		}
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id": "123", "title": "Test",
 			"body": map[string]any{
 				"view": map[string]any{
@@ -120,7 +120,7 @@ func TestExport_Tree(t *testing.T) {
 		switch {
 		case strings.HasSuffix(path, "/pages/100") && !strings.Contains(path, "/children"):
 			// Root page
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "100", "title": "Root",
 				"body": map[string]any{
 					"storage": map[string]any{"representation": "storage", "value": "<p>Root</p>"},
@@ -128,7 +128,7 @@ func TestExport_Tree(t *testing.T) {
 			})
 		case strings.HasSuffix(path, "/pages/100/children"):
 			// Children of root
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"results": []map[string]any{
 					{"id": "200", "title": "Child A"},
 					{"id": "300", "title": "Child B"},
@@ -136,23 +136,23 @@ func TestExport_Tree(t *testing.T) {
 				"_links": map[string]string{},
 			})
 		case strings.HasSuffix(path, "/pages/200") && !strings.Contains(path, "/children"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "200", "title": "Child A",
 				"body": map[string]any{
 					"storage": map[string]any{"representation": "storage", "value": "<p>A</p>"},
 				},
 			})
 		case strings.HasSuffix(path, "/pages/200/children"):
-			json.NewEncoder(w).Encode(map[string]any{"results": []any{}, "_links": map[string]string{}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"results": []any{}, "_links": map[string]string{}})
 		case strings.HasSuffix(path, "/pages/300") && !strings.Contains(path, "/children"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "300", "title": "Child B",
 				"body": map[string]any{
 					"storage": map[string]any{"representation": "storage", "value": "<p>B</p>"},
 				},
 			})
 		case strings.HasSuffix(path, "/pages/300/children"):
-			json.NewEncoder(w).Encode(map[string]any{"results": []any{}, "_links": map[string]string{}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"results": []any{}, "_links": map[string]string{}})
 		default:
 			t.Errorf("unexpected path: %s", path)
 			w.WriteHeader(404)
@@ -173,7 +173,7 @@ func TestExport_Tree(t *testing.T) {
 		ID    string `json:"id"`
 		Depth int    `json:"depth"`
 	}
-	json.Unmarshal([]byte(lines[0]), &first)
+	_ = json.Unmarshal([]byte(lines[0]), &first)
 	if first.ID != "100" || first.Depth != 0 {
 		t.Errorf("first line: id=%q depth=%d, want id=100 depth=0", first.ID, first.Depth)
 	}
@@ -184,7 +184,7 @@ func TestExport_Tree(t *testing.T) {
 		ParentID string `json:"parentId"`
 		Depth    int    `json:"depth"`
 	}
-	json.Unmarshal([]byte(lines[1]), &second)
+	_ = json.Unmarshal([]byte(lines[1]), &second)
 	if second.Depth != 1 {
 		t.Errorf("second line depth = %d, want 1", second.Depth)
 	}
@@ -200,23 +200,23 @@ func TestExport_TreeDepthLimit(t *testing.T) {
 
 		switch {
 		case strings.HasSuffix(path, "/pages/100") && !strings.Contains(path, "/children"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "100", "title": "Root",
 				"body": map[string]any{"storage": map[string]any{"representation": "storage", "value": "<p>Root</p>"}},
 			})
 		case strings.HasSuffix(path, "/pages/100/children"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"results": []map[string]any{{"id": "200", "title": "Child"}},
 				"_links":  map[string]string{},
 			})
 		case strings.HasSuffix(path, "/pages/200") && !strings.Contains(path, "/children"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "200", "title": "Child",
 				"body": map[string]any{"storage": map[string]any{"representation": "storage", "value": "<p>Child</p>"}},
 			})
 		case strings.HasSuffix(path, "/pages/200/children"):
 			// Should NOT be called when depth=1, but if it is, return a grandchild
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"results": []map[string]any{{"id": "300", "title": "Grandchild"}},
 				"_links":  map[string]string{},
 			})
@@ -242,12 +242,12 @@ func TestExport_TreePartialFailure(t *testing.T) {
 
 		switch {
 		case strings.HasSuffix(path, "/pages/100") && !strings.Contains(path, "/children"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "100", "title": "Root",
 				"body": map[string]any{"storage": map[string]any{"representation": "storage", "value": "<p>Root</p>"}},
 			})
 		case strings.HasSuffix(path, "/pages/100/children"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"results": []map[string]any{
 					{"id": "200", "title": "Accessible"},
 					{"id": "403page", "title": "Forbidden"},
@@ -255,12 +255,12 @@ func TestExport_TreePartialFailure(t *testing.T) {
 				"_links": map[string]string{},
 			})
 		case strings.HasSuffix(path, "/pages/200") && !strings.Contains(path, "/children"):
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "200", "title": "Accessible",
 				"body": map[string]any{"storage": map[string]any{"value": "<p>OK</p>"}},
 			})
 		case strings.HasSuffix(path, "/pages/200/children"):
-			json.NewEncoder(w).Encode(map[string]any{"results": []any{}, "_links": map[string]string{}})
+			_ = json.NewEncoder(w).Encode(map[string]any{"results": []any{}, "_links": map[string]string{}})
 		case strings.HasSuffix(path, "/pages/403page"):
 			w.WriteHeader(403)
 			fmt.Fprintf(w, `{"message":"forbidden"}`)

@@ -17,16 +17,6 @@ import (
 	cferrors "github.com/sofq/confluence-cli/internal/errors"
 )
 
-func newTestClient(ts *httptest.Server, stdout, stderr *bytes.Buffer) *client.Client {
-	return &client.Client{
-		BaseURL:    ts.URL,
-		Auth:       config.AuthConfig{Type: "bearer", Token: "test-token"},
-		HTTPClient: ts.Client(),
-		Stdout:     stdout,
-		Stderr:     stderr,
-	}
-}
-
 func TestApplyAuthBasic(t *testing.T) {
 	req, _ := http.NewRequest("GET", "http://example.com", nil)
 	c := &client.Client{

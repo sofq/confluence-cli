@@ -116,7 +116,7 @@ func TestDiff_DefaultMode(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/wiki/api/v2/pages/123/versions", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"results": []map[string]any{
 				{"number": 2, "authorId": "user-2", "createdAt": "2026-03-15T00:00:00Z", "message": "update"},
 				{"number": 1, "authorId": "user-1", "createdAt": "2026-03-01T00:00:00Z", "message": "initial"},
@@ -129,14 +129,14 @@ func TestDiff_DefaultMode(t *testing.T) {
 		version := r.URL.Query().Get("version")
 		switch version {
 		case "1":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "123", "title": "Test",
 				"body": map[string]any{
 					"storage": map[string]any{"value": "<p>Hello</p>"},
 				},
 			})
 		case "2":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "123", "title": "Test",
 				"body": map[string]any{
 					"storage": map[string]any{"value": "<p>Hello World</p>"},
@@ -173,7 +173,7 @@ func TestDiff_SinceMode(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/wiki/api/v2/pages/123/versions", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"results": []map[string]any{
 				{"number": 3, "authorId": "user-3", "createdAt": "2026-03-28T10:00:00Z", "message": "third"},
 				{"number": 2, "authorId": "user-2", "createdAt": "2026-03-28T08:00:00Z", "message": "second"},
@@ -187,17 +187,17 @@ func TestDiff_SinceMode(t *testing.T) {
 		version := r.URL.Query().Get("version")
 		switch version {
 		case "2":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "123", "title": "Test",
 				"body": map[string]any{"storage": map[string]any{"value": "<p>V2</p>"}},
 			})
 		case "3":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "123", "title": "Test",
 				"body": map[string]any{"storage": map[string]any{"value": "<p>V3</p>"}},
 			})
 		default:
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "123", "title": "Test",
 				"body": map[string]any{"storage": map[string]any{"value": "<p>V1</p>"}},
 			})
@@ -228,12 +228,12 @@ func TestDiff_FromToMode(t *testing.T) {
 		version := r.URL.Query().Get("version")
 		switch version {
 		case "3":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "123", "title": "Test",
 				"body": map[string]any{"storage": map[string]any{"value": "<p>Version 3</p>"}},
 			})
 		case "5":
-			json.NewEncoder(w).Encode(map[string]any{
+			_ = json.NewEncoder(w).Encode(map[string]any{
 				"id": "123", "title": "Test",
 				"body": map[string]any{"storage": map[string]any{"value": "<p>Version 5</p>\n<p>Extra line</p>"}},
 			})
@@ -277,7 +277,7 @@ func TestDiff_EmptySinceRange(t *testing.T) {
 	mux.HandleFunc("/wiki/api/v2/pages/123/versions", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		// All versions are old -- outside any reasonable --since range.
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"results": []map[string]any{
 				{"number": 1, "authorId": "user-1", "createdAt": "2020-01-01T00:00:00Z", "message": "old"},
 			},
@@ -299,7 +299,7 @@ func TestDiff_BodyUnavailable(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/wiki/api/v2/pages/123/versions", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"results": []map[string]any{
 				{"number": 2, "authorId": "user-2", "createdAt": "2026-03-15T00:00:00Z", "message": "update"},
 				{"number": 1, "authorId": "user-1", "createdAt": "2026-03-01T00:00:00Z", "message": "initial"},
@@ -310,7 +310,7 @@ func TestDiff_BodyUnavailable(t *testing.T) {
 	mux.HandleFunc("/wiki/api/v2/pages/123", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		// Return page with empty body.storage.value (body unavailable).
-		json.NewEncoder(w).Encode(map[string]any{
+		_ = json.NewEncoder(w).Encode(map[string]any{
 			"id": "123", "title": "Test",
 			"body": map[string]any{
 				"storage": map[string]any{"value": ""},

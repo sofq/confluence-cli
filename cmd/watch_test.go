@@ -105,11 +105,11 @@ func TestWatch_PollAndEmit_TwoResults(t *testing.T) {
 				makeWatchResult("101", "page", "Page One", "ENG", 10, ts1, "Alice"),
 				makeWatchResult("102", "blogpost", "Blog Two", "ENG", 10, ts2, "Bob"),
 			}
-			w.Write(makeWatchSearchResponse(results))
+			_, _ = w.Write(makeWatchSearchResponse(results))
 		} else {
 			// Return empty on subsequent polls to avoid infinite loop;
 			// The test uses --max-polls=1 to stop after one poll.
-			w.Write(makeWatchSearchResponse(nil))
+			_, _ = w.Write(makeWatchSearchResponse(nil))
 		}
 	}))
 	defer srv.Close()
@@ -157,7 +157,7 @@ func TestWatch_Dedup_SameResults(t *testing.T) {
 	result := makeWatchResult("201", "page", "Stable Page", "ENG", 10, ts, "Alice")
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(makeWatchSearchResponse([]map[string]any{result}))
+		_, _ = w.Write(makeWatchSearchResponse([]map[string]any{result}))
 	}))
 	defer srv.Close()
 
@@ -187,11 +187,11 @@ func TestWatch_Dedup_UpdatedVersion(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		if pollCount == 1 {
 			result := makeWatchResult("301", "page", "Evolving Page", "ENG", 10, tsOld, "Alice")
-			w.Write(makeWatchSearchResponse([]map[string]any{result}))
+			_, _ = w.Write(makeWatchSearchResponse([]map[string]any{result}))
 		} else {
 			// Same content, newer version.when
 			result := makeWatchResult("301", "page", "Evolving Page", "ENG", 10, tsNew, "Bob")
-			w.Write(makeWatchSearchResponse([]map[string]any{result}))
+			_, _ = w.Write(makeWatchSearchResponse([]map[string]any{result}))
 		}
 	}))
 	defer srv.Close()
@@ -231,7 +231,7 @@ func TestWatch_HTTPError_ContinuesPolling(t *testing.T) {
 			// Second poll: success
 			w.Header().Set("Content-Type", "application/json")
 			result := makeWatchResult("401", "page", "After Error", "ENG", 10, recentTimestamp(5), "Alice")
-			w.Write(makeWatchSearchResponse([]map[string]any{result}))
+			_, _ = w.Write(makeWatchSearchResponse([]map[string]any{result}))
 		}
 	}))
 	defer srv.Close()
@@ -254,7 +254,7 @@ func TestWatch_HTTPError_ContinuesPolling(t *testing.T) {
 func TestWatch_Shutdown_EmitsShutdownEvent(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(makeWatchSearchResponse(nil))
+		_, _ = w.Write(makeWatchSearchResponse(nil))
 	}))
 	defer srv.Close()
 
@@ -281,7 +281,7 @@ func TestWatch_BuildWatchCQL(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		capturedCQL = r.URL.Query().Get("cql")
 		w.Header().Set("Content-Type", "application/json")
-		w.Write(makeWatchSearchResponse(nil))
+		_, _ = w.Write(makeWatchSearchResponse(nil))
 	}))
 	defer srv.Close()
 

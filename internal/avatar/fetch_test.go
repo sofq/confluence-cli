@@ -140,7 +140,7 @@ func TestFetchUserPages_HappyPath(t *testing.T) {
 		requestedCQL = r.URL.Query().Get("cql")
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write(makeContentResponse(pages, ""))
+		_, _ = w.Write(makeContentResponse(pages, ""))
 	}))
 	defer srv.Close()
 
@@ -187,7 +187,7 @@ func TestFetchUserPages_EmptyResults(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		w.Write([]byte(`{"results":[],"_links":{}}`))
+		_, _ = w.Write([]byte(`{"results":[],"_links":{}}`))
 	}))
 	defer srv.Close()
 
@@ -206,7 +206,7 @@ func TestFetchUserPages_HTTP401(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusUnauthorized)
-		w.Write([]byte(`{"message":"Unauthorized"}`))
+		_, _ = w.Write([]byte(`{"message":"Unauthorized"}`))
 	}))
 	defer srv.Close()
 

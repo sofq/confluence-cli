@@ -33,7 +33,7 @@ func ClientCredentials(clientID, clientSecret, scopes string, store *FileStore) 
 		data.Set("scope", scopes)
 	}
 
-	resp, err := http.Post(tokenEndpoint, "application/x-www-form-urlencoded", strings.NewReader(data.Encode()))
+	resp, err := http.Post(tokenEndpoint, "application/x-www-form-urlencoded", strings.NewReader(data.Encode())) // #nosec G107 -- tokenEndpoint is derived from the trusted TokenURL constant, not user input
 	if err != nil {
 		return nil, fmt.Errorf("token request failed: %w", err)
 	}

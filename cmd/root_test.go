@@ -24,7 +24,7 @@ func TestVersionFlagOutputsJSON(t *testing.T) {
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	_, _ = buf.ReadFrom(r)
 	output := buf.String()
 
 	// Check it is valid JSON
@@ -51,7 +51,7 @@ func TestVersionSubcommandOutputsJSON(t *testing.T) {
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	_, _ = buf.ReadFrom(r)
 	output := strings.TrimSpace(buf.String())
 
 	var out map[string]interface{}
@@ -78,7 +78,7 @@ func TestRootHelpOutputsJSON(t *testing.T) {
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
+	_, _ = buf.ReadFrom(r)
 	output := strings.TrimSpace(buf.String())
 
 	if output == "" {
