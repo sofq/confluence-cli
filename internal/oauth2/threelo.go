@@ -12,8 +12,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
-	"runtime"
 	"strings"
 	"time"
 )
@@ -48,25 +46,6 @@ func generateState() string {
 	b := make([]byte, 16)
 	_, _ = rand.Read(b)
 	return hex.EncodeToString(b)
-}
-
-// browserCommand returns the executable name and extra args for opening a URL
-// on the given OS. Extracted for testability.
-func browserCommand(goos string) (string, []string) {
-	switch goos {
-	case "darwin":
-		return "open", nil
-	case "windows":
-		return "rundll32", []string{"url.dll,FileProtocolHandler"}
-	default:
-		return "xdg-open", nil
-	}
-}
-
-// openBrowser opens the given URL in the user's default browser.
-func openBrowser(u string) error {
-	name, args := browserCommand(runtime.GOOS)
-	return exec.Command(name, append(args, u)...).Start() // #nosec G204 -- u is an OAuth authorization URL constructed from trusted config, not user input
 }
 
 // refreshToken exchanges a refresh token for a new access token.

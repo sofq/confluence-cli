@@ -11,3 +11,4 @@ ignore:
   - "cmd/generated/**"
   - "main.go"
   - "internal/oauth2/testing_export.go"
+  - "internal/oauth2/browser.go"
