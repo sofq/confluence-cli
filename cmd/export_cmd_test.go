@@ -17,6 +17,7 @@ import (
 // capturing stdout and stderr. Uses setupTemplateEnv for config setup.
 func runExportCommand(t *testing.T, srvURL string, args ...string) (stdout string, stderr string) {
 	t.Helper()
+	cmd.ResetRootPersistentFlags()
 	setupTemplateEnv(t, srvURL, nil)
 
 	oldStdout := os.Stdout
@@ -28,6 +29,7 @@ func runExportCommand(t *testing.T, srvURL string, args ...string) (stdout strin
 	os.Stderr = wErr
 
 	root := cmd.RootCommand()
+	resetExportFlags(root)
 	root.SetArgs(append([]string{"export"}, args...))
 	_ = root.Execute()
 

@@ -353,3 +353,186 @@ func TestRender_StaticTemplate(t *testing.T) {
 		t.Errorf("Body = %q", rendered.Body)
 	}
 }
+
+func TestList_ReadDirError(t *testing.T) {
+	// Point Dir() at a file path (not a directory), which makes ReadDir return a
+	// non-IsNotExist error — this covers the error-return branch in List().
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.json")
+	// Write a file where the templates directory is expected, so ReadDir fails
+	// with a non-ENOENT error.
+	tmplPath := filepath.Join(dir, "templates")
+	if err := os.WriteFile(tmplPath, []byte("not a dir"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(cfgPath, []byte(`{}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CF_CONFIG_PATH", cfgPath)
+
+	_, err := List()
+	if err == nil {
+		t.Fatal("List() expected error when templates dir is actually a file, got nil")
+	}
+}
+
+func TestList_SkipsDirectoryEntries(t *testing.T) {
+	// Subdirectories inside the templates dir should be silently skipped.
+	tmplDir := setupTempTemplates(t, map[string]string{
+		"valid": `{"title":"V","body":"v"}`,
+	})
+	// Create a subdirectory inside the templates dir.
+	if err := os.MkdirAll(filepath.Join(tmplDir, "subdir"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	entries, err := List()
+	if err != nil {
+		t.Fatalf("List() error: %v", err)
+	}
+	// "subdir" should NOT appear in the listing.
+	for _, e := range entries {
+		if e.Name == "subdir" {
+			t.Error("List() should not include directory entries")
+		}
+	}
+}
+
+func TestLoad_PathSeparatorError(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("CF_CONFIG_PATH", filepath.Join(dir, "config.json"))
+
+	_, err := Load("path/with/separator")
+	if err == nil {
+		t.Fatal("Load() expected error for name with path separator")
+	}
+}
+
+func TestLoad_InvalidJSONInUserFile(t *testing.T) {
+	setupTempTemplates(t, map[string]string{
+		"bad-json": `{not valid json`,
+	})
+	_, err := Load("bad-json")
+	if err == nil {
+		t.Fatal("Load() expected error for invalid JSON in user template")
+	}
+}
+
+func TestShow_PathSeparatorError(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("CF_CONFIG_PATH", filepath.Join(dir, "config.json"))
+
+	_, err := Show("path/with/separator")
+	if err == nil {
+		t.Fatal("Show() expected error for name with path separator")
+	}
+}
+
+func TestShow_InvalidJSONInUserFile(t *testing.T) {
+	setupTempTemplates(t, map[string]string{
+		"bad-json": `{not valid json`,
+	})
+	_, err := Show("bad-json")
+	if err == nil {
+		t.Fatal("Show() expected error for invalid JSON in user template file")
+	}
+}
+
+func TestSave_PathSeparatorError(t *testing.T) {
+	dir := t.TempDir()
+	t.Setenv("CF_CONFIG_PATH", filepath.Join(dir, "config.json"))
+
+	tmpl := &Template{Title: "T", Body: "B"}
+	err := Save("path/with/separator", tmpl)
+	if err == nil {
+		t.Fatal("Save() expected error for name with path separator")
+	}
+}
+
+func TestSave_MkdirAllError(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("root can write anywhere; cannot test permission error")
+	}
+	// Make Dir() return a path whose parent cannot have subdirs created in it.
+	// We do this by placing a regular file at the path where "templates" would
+	// be, then pointing config to a config.json whose parent is that file.
+	// Dir() = filepath.Dir(config.DefaultPath()) + "/templates"
+	// So if we set CF_CONFIG_PATH = <some-file>/config.json, Dir() will try
+	// MkdirAll(<some-file>/templates) which fails because <some-file> is a file.
+	dir := t.TempDir()
+	// Create a regular file named "cf" in the temp dir.
+	cfFile := filepath.Join(dir, "cf")
+	if err := os.WriteFile(cfFile, []byte("not a dir"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	// Point CF_CONFIG_PATH inside the "cf" file (which is actually a file, not a dir).
+	t.Setenv("CF_CONFIG_PATH", filepath.Join(cfFile, "config.json"))
+
+	tmpl := &Template{Title: "{{.title}}", Body: "<p>test</p>"}
+	err := Save("my-template", tmpl)
+	if err == nil {
+		t.Fatal("Save() expected error when MkdirAll fails (parent path is a file)")
+	}
+}
+
+func TestSave_WriteFileError(t *testing.T) {
+	if os.Getuid() == 0 {
+		t.Skip("root can write anywhere; cannot test permission error")
+	}
+	dir := t.TempDir()
+	cfgPath := filepath.Join(dir, "config.json")
+	if err := os.WriteFile(cfgPath, []byte(`{}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("CF_CONFIG_PATH", cfgPath)
+
+	// Create the templates directory but make it read-only so WriteFile fails.
+	tmplDir := filepath.Join(dir, "templates")
+	if err := os.MkdirAll(tmplDir, 0o500); err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chmod(tmplDir, 0o700) //nolint:errcheck
+
+	tmpl := &Template{Title: "{{.title}}", Body: "<p>test</p>"}
+	err := Save("my-template", tmpl)
+	if err == nil {
+		t.Fatal("Save() expected error when templates directory is read-only")
+	}
+}
+
+func TestRender_TitleParseError(t *testing.T) {
+	// An invalid Go template syntax in Title triggers the parse error branch.
+	tmpl := &Template{
+		Title: "{{.title",
+		Body:  "<p>content</p>",
+	}
+	_, err := Render(tmpl, map[string]string{"title": "T"})
+	if err == nil {
+		t.Fatal("Render() expected error for invalid title template syntax")
+	}
+}
+
+func TestRender_BodyMissingVariable(t *testing.T) {
+	// A missing variable in Body triggers the render body error branch.
+	tmpl := &Template{
+		Title: "{{.title}}",
+		Body:  "<p>{{.missing}}</p>",
+	}
+	_, err := Render(tmpl, map[string]string{"title": "T"})
+	if err == nil {
+		t.Fatal("Render() expected error for missing body variable")
+	}
+}
+
+func TestRender_SpaceIDMissingVariable(t *testing.T) {
+	// A missing variable in SpaceID triggers the render space_id error branch.
+	tmpl := &Template{
+		Title:   "{{.title}}",
+		Body:    "<p>content</p>",
+		SpaceID: "{{.missing_space}}",
+	}
+	_, err := Render(tmpl, map[string]string{"title": "T"})
+	if err == nil {
+		t.Fatal("Render() expected error for missing space_id variable")
+	}
+}

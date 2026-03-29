@@ -12,10 +12,6 @@
     "link": "/commands/attachments"
   },
   {
-    "text": "avatar",
-    "link": "/commands/avatar"
-  },
-  {
     "text": "batch",
     "link": "/commands/batch"
   },

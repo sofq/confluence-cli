@@ -290,7 +290,6 @@ func init() {
 	mergeCommand(rootCmd, commentsCmd) // replaces generated comments parent (use "comments" not "footer-comments")
 	mergeCommand(rootCmd, labelsCmd)   // replaces generated labels parent
 	rootCmd.AddCommand(searchCmd)      // no generated search command exists — add directly
-	rootCmd.AddCommand(avatarCmd)      // Phase 5: user writing style profiling
 	mergeCommand(rootCmd, blogpostsCmd) // Phase 7: blog post workflow overrides
 	mergeCommand(rootCmd, attachmentsCmd)    // Phase 8: attachment workflow overrides
 	mergeCommand(rootCmd, custom_contentCmd) // Phase 9: custom content workflow overrides

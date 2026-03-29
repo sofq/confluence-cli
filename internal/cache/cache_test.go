@@ -1,6 +1,8 @@
 package cache_test
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -98,5 +100,30 @@ func TestGetNonExistent(t *testing.T) {
 	}
 	if got != nil {
 		t.Errorf("Get should return nil for non-existent key, got: %q", string(got))
+	}
+}
+
+func TestGetReadFileError(t *testing.T) {
+	// Trigger the os.ReadFile error branch by placing a directory at the cache
+	// key path. Stat succeeds (it's a directory with a valid mtime), but
+	// os.ReadFile on a directory returns an error.
+	key := cache.Key("GET", "http://test-readfile-err.example.com/"+t.Name())
+	cacheFilePath := filepath.Join(cache.Dir(), key)
+
+	// Remove any existing entry first.
+	_ = os.Remove(cacheFilePath)
+
+	// Create a directory at the exact key path — Stat succeeds but ReadFile fails.
+	if err := os.MkdirAll(cacheFilePath, 0o700); err != nil {
+		t.Fatalf("MkdirAll failed: %v", err)
+	}
+	t.Cleanup(func() { os.RemoveAll(cacheFilePath) })
+
+	got, ok := cache.Get(key, 24*time.Hour)
+	if ok {
+		t.Error("Get should return false when ReadFile fails (key path is a directory)")
+	}
+	if got != nil {
+		t.Errorf("Get should return nil data when ReadFile fails, got: %q", string(got))
 	}
 }

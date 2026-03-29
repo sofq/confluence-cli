@@ -2,12 +2,31 @@ package oauth2
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 	"time"
 )
+
+// errorReader is an io.ReadCloser that returns an error on the first Read call.
+type errorReader struct{}
+
+func (errorReader) Read(p []byte) (int, error) { return 0, errors.New("simulated read error") }
+func (errorReader) Close() error               { return nil }
+
+// errorBodyTransport is a custom http.RoundTripper that responds with HTTP 200
+// but a body that always errors on Read.
+type errorBodyTransport struct{}
+
+func (errorBodyTransport) RoundTrip(r *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: 200,
+		Header:     make(http.Header),
+		Body:       errorReader{},
+	}, nil
+}
 
 func TestClientCredentialsCachedToken(t *testing.T) {
 	dir := t.TempDir()
@@ -147,6 +166,78 @@ func TestClientCredentialsExpiredCacheFetchesNew(t *testing.T) {
 	}
 	if tok.AccessToken != "refreshed-token" {
 		t.Errorf("AccessToken = %q, want refreshed-token", tok.AccessToken)
+	}
+}
+
+func TestClientCredentialsNetworkError(t *testing.T) {
+	// Point tokenEndpoint at a port that is not listening.
+	old := tokenEndpoint
+	tokenEndpoint = "http://127.0.0.1:1" // port 1 is reserved/refused
+	defer func() { tokenEndpoint = old }()
+
+	dir := t.TempDir()
+	store := NewFileStore(dir, "neterr")
+
+	_, err := ClientCredentials("id", "secret", "", store)
+	if err == nil {
+		t.Fatal("expected network error, got nil")
+	}
+	if !strings.Contains(err.Error(), "token request failed") {
+		t.Errorf("error = %q, should contain 'token request failed'", err.Error())
+	}
+}
+
+func TestClientCredentialsInvalidJSONResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(`not-valid-json`))
+	}))
+	defer srv.Close()
+
+	old := tokenEndpoint
+	tokenEndpoint = srv.URL
+	defer func() { tokenEndpoint = old }()
+
+	dir := t.TempDir()
+	store := NewFileStore(dir, "badjson")
+
+	_, err := ClientCredentials("id", "secret", "", store)
+	if err == nil {
+		t.Fatal("expected JSON decode error, got nil")
+	}
+	if !strings.Contains(err.Error(), "decoding token response") {
+		t.Errorf("error = %q, should contain 'decoding token response'", err.Error())
+	}
+}
+
+func TestClientCredentialsBodyReadError(t *testing.T) {
+	// Point tokenEndpoint at a local server so the HTTP POST connects, then
+	// override the default transport to return a body that errors on read.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(200)
+		_, _ = w.Write([]byte(`ignored`))
+	}))
+	defer srv.Close()
+
+	old := tokenEndpoint
+	tokenEndpoint = srv.URL
+	defer func() { tokenEndpoint = old }()
+
+	// Replace default transport so the response body returns a read error.
+	origTransport := http.DefaultClient.Transport
+	http.DefaultClient.Transport = errorBodyTransport{}
+	defer func() { http.DefaultClient.Transport = origTransport }()
+
+	dir := t.TempDir()
+	store := NewFileStore(dir, "bodyreaderr")
+
+	_, err := ClientCredentials("id", "secret", "", store)
+	if err == nil {
+		t.Fatal("expected body read error, got nil")
+	}
+	if !strings.Contains(err.Error(), "reading token response") {
+		t.Errorf("error = %q, should contain 'reading token response'", err.Error())
 	}
 }
 

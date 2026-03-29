@@ -380,6 +380,114 @@ func TestCompare_MutualExclusivity(t *testing.T) {
 	}
 }
 
+func TestCompare_InvalidSinceReturnsError(t *testing.T) {
+	versions := []VersionInput{
+		{
+			Meta:          VersionMeta{Number: 1, AuthorID: "user1", CreatedAt: "2026-01-01T00:00:00Z"},
+			Body:          "content",
+			BodyAvailable: true,
+		},
+	}
+	_, err := Compare("12345", versions, Options{Since: "not-a-valid-duration-or-date"})
+	if err == nil {
+		t.Fatal("expected error for invalid --since value, got nil")
+	}
+	if !strings.Contains(err.Error(), "invalid --since") {
+		t.Errorf("error = %q, want to contain 'invalid --since'", err.Error())
+	}
+}
+
+func TestCompare_SinceSkipsInvalidCreatedAt(t *testing.T) {
+	// A version with an unparseable CreatedAt should be silently skipped.
+	versions := []VersionInput{
+		{
+			Meta:          VersionMeta{Number: 1, AuthorID: "user1", CreatedAt: "not-a-date"},
+			Body:          "old content",
+			BodyAvailable: true,
+		},
+		{
+			Meta:          VersionMeta{Number: 2, AuthorID: "user2", CreatedAt: "2026-03-15T11:00:00Z"},
+			Body:          "new content",
+			BodyAvailable: true,
+		},
+	}
+	// Since 1h from fixedNow = cutoff at 2026-03-15T11:00:00Z; v2 is exactly at the boundary.
+	result, err := Compare("12345", versions, Options{Since: "2h", Now: fixedNow})
+	if err != nil {
+		t.Fatalf("Compare unexpected error: %v", err)
+	}
+	// v1 has invalid CreatedAt → skipped. v2 is within range. Single version → single diff.
+	if len(result.Diffs) != 1 {
+		t.Fatalf("len(Diffs) = %d, want 1 (v2 only; v1 skipped)", len(result.Diffs))
+	}
+	if result.Diffs[0].From != nil {
+		t.Errorf("From should be nil for single remaining version, got %+v", result.Diffs[0].From)
+	}
+	if result.Diffs[0].To == nil || result.Diffs[0].To.Number != 2 {
+		t.Errorf("To.Number = %v, want 2", result.Diffs[0].To)
+	}
+}
+
+func TestCompare_SingleVersionBodyUnavailable(t *testing.T) {
+	versions := []VersionInput{
+		{
+			Meta:          VersionMeta{Number: 1, AuthorID: "user1", CreatedAt: "2026-01-01T00:00:00Z"},
+			Body:          "",
+			BodyAvailable: false,
+		},
+	}
+	result, err := Compare("12345", versions, Options{})
+	if err != nil {
+		t.Fatalf("Compare unexpected error: %v", err)
+	}
+	if len(result.Diffs) != 1 {
+		t.Fatalf("len(Diffs) = %d, want 1", len(result.Diffs))
+	}
+	d := result.Diffs[0]
+	if d.Stats != nil {
+		t.Errorf("Stats should be nil when single version body unavailable, got %+v", d.Stats)
+	}
+	if d.Note == "" {
+		t.Error("Note should be set when single version body unavailable")
+	}
+	if !strings.Contains(d.Note, "1") {
+		t.Errorf("Note should mention version number 1, got %q", d.Note)
+	}
+}
+
+func TestCompare_BuildDiffEntryFromBodyUnavailable(t *testing.T) {
+	// Covers the buildDiffEntry branch where from.BodyAvailable is false.
+	versions := []VersionInput{
+		{
+			Meta:          VersionMeta{Number: 1, AuthorID: "user1", CreatedAt: "2026-01-01T00:00:00Z"},
+			Body:          "",
+			BodyAvailable: false,
+		},
+		{
+			Meta:          VersionMeta{Number: 2, AuthorID: "user2", CreatedAt: "2026-01-02T00:00:00Z"},
+			Body:          "new content",
+			BodyAvailable: true,
+		},
+	}
+	result, err := Compare("12345", versions, Options{})
+	if err != nil {
+		t.Fatalf("Compare unexpected error: %v", err)
+	}
+	if len(result.Diffs) != 1 {
+		t.Fatalf("len(Diffs) = %d, want 1", len(result.Diffs))
+	}
+	d := result.Diffs[0]
+	if d.Stats != nil {
+		t.Errorf("Stats should be nil when from body unavailable, got %+v", d.Stats)
+	}
+	if d.Note == "" {
+		t.Error("Note should be set when from body unavailable")
+	}
+	if !strings.Contains(d.Note, "1") {
+		t.Errorf("Note should mention from version number 1, got %q", d.Note)
+	}
+}
+
 func TestCompare_MultipleAdjacentPairs(t *testing.T) {
 	versions := []VersionInput{
 		{

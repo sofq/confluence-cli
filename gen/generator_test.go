@@ -304,6 +304,72 @@ func TestGenerateResource(t *testing.T) {
 	}
 }
 
+// TestDeduplicateVerbsDuplicates verifies that when two operations in the same
+// resource produce the same derived verb, deduplicateVerbs falls back to using
+// the full camelCase operationId (lowercased, kebab-joined) for disambiguation.
+func TestDeduplicateVerbsDuplicates(t *testing.T) {
+	// Both "getPage" and "getPages" resolve to verb "get" for resource "page"
+	// (Case 1: rest matches resource singular/plural).
+	ops := []Operation{
+		{OperationID: "getPage", Method: "GET", Path: "/pages/{id}"},
+		{OperationID: "getPages", Method: "GET", Path: "/pages"},
+	}
+	verbs := deduplicateVerbs(ops, "page")
+
+	if len(verbs) != 2 {
+		t.Fatalf("expected 2 verbs, got %d", len(verbs))
+	}
+	// Neither verb should remain as bare "get"; both should be the kebab-cased operationId.
+	for i, v := range verbs {
+		if v == "get" {
+			t.Errorf("verbs[%d] = %q: expected disambiguation but got bare verb", i, v)
+		}
+	}
+	// The first op "getPage" → ["get","Page"] → ["get","page"] → "get-page"
+	if verbs[0] != "get-page" {
+		t.Errorf("verbs[0] = %q, want %q", verbs[0], "get-page")
+	}
+	// The second op "getPages" → ["get","Pages"] → ["get","pages"] → "get-pages"
+	if verbs[1] != "get-pages" {
+		t.Errorf("verbs[1] = %q, want %q", verbs[1], "get-pages")
+	}
+}
+
+// TestDeduplicateVerbsNoDuplicates verifies the no-collision path returns
+// the same verbs that DeriveVerb produces.
+func TestDeduplicateVerbsNoDuplicates(t *testing.T) {
+	ops := []Operation{
+		{OperationID: "getPageById", Method: "GET", Path: "/pages/{id}"},
+		{OperationID: "createPage", Method: "POST", Path: "/pages"},
+	}
+	verbs := deduplicateVerbs(ops, "pages")
+	if len(verbs) != 2 {
+		t.Fatalf("expected 2 verbs, got %d", len(verbs))
+	}
+	if verbs[0] != "get-by-id" {
+		t.Errorf("verbs[0] = %q, want %q", verbs[0], "get-by-id")
+	}
+	if verbs[1] != "create" {
+		t.Errorf("verbs[1] = %q, want %q", verbs[1], "create")
+	}
+}
+
+// TestDeduplicateVerbsEmptyOperationID verifies that a duplicate with an empty
+// operationId is NOT replaced (the inner condition guards on op.OperationID != "").
+func TestDeduplicateVerbsEmptyOperationID(t *testing.T) {
+	// Both ops have no operationId; DeriveVerb falls back to strings.ToLower(method).
+	ops := []Operation{
+		{OperationID: "", Method: "GET", Path: "/a"},
+		{OperationID: "", Method: "GET", Path: "/b"},
+	}
+	verbs := deduplicateVerbs(ops, "res")
+	for i, v := range verbs {
+		if v != "get" {
+			t.Errorf("verbs[%d] = %q, want %q (empty operationId must not be replaced)", i, v, "get")
+		}
+	}
+}
+
 func TestGenerateInit(t *testing.T) {
 	dir := t.TempDir()
 	resources := []string{"pages", "spaces"}
