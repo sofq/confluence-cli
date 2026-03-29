@@ -707,10 +707,20 @@ func TestBrowserCommand(t *testing.T) {
 }
 
 // TestOpenBrowserDirect exercises the openBrowser code path directly.
-// It does not assert success because the underlying command may not exist on the
-// test platform; the goal is simply to execute the branch.
+// We replace the function to avoid actually launching a browser during tests.
 func TestOpenBrowserDirect(t *testing.T) {
-	_ = openBrowser("about:blank")
+	old := openBrowserFunc
+	var called bool
+	openBrowserFunc = func(u string) error {
+		called = true
+		return nil
+	}
+	defer func() { openBrowserFunc = old }()
+
+	_ = openBrowserFunc("about:blank")
+	if !called {
+		t.Error("openBrowserFunc was not called")
+	}
 }
 
 // TestExchangeCodeInvalidJSON covers the JSON decode failure path.
