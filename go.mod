@@ -6,7 +6,7 @@ require (
 	github.com/itchyny/gojq v0.12.18
 	github.com/pb33f/libopenapi v0.35.0
 	github.com/spf13/cobra v1.10.2
-	github.com/spf13/pflag v1.0.9
+	github.com/spf13/pflag v1.0.10
 )
 
 require (
