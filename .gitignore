@@ -31,3 +31,6 @@ coverage.out
 
 # Planning
 .planning/
+
+# README Craft
+.readme-craft/
