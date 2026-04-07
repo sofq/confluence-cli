@@ -24,12 +24,13 @@ Pure JSON on stdout. Structured errors on stderr. Semantic exit codes. 200+ auto
 
 <div align="center">
 
+[![npm](https://img.shields.io/npm/v/confluence-cf?style=for-the-badge&logo=npm&logoColor=white&labelColor=0b0f1a&color=7c5cff)](https://www.npmjs.com/package/confluence-cf)
+[![PyPI](https://img.shields.io/pypi/v/confluence-cf?style=for-the-badge&logo=pypi&logoColor=white&labelColor=0b0f1a&color=7c5cff)](https://pypi.org/project/confluence-cf/)
 [![Release](https://img.shields.io/github/v/release/sofq/confluence-cli?style=for-the-badge&logo=github&logoColor=white&labelColor=0b0f1a&color=7c5cff)](https://github.com/sofq/confluence-cli/releases)
 [![CI](https://img.shields.io/github/actions/workflow/status/sofq/confluence-cli/ci.yml?style=for-the-badge&logo=githubactions&logoColor=white&label=CI&labelColor=0b0f1a&color=3ddc97)](https://github.com/sofq/confluence-cli/actions/workflows/ci.yml)
 [![Coverage](https://img.shields.io/codecov/c/github/sofq/confluence-cli?style=for-the-badge&logo=codecov&logoColor=white&labelColor=0b0f1a&color=3ddc97)](https://codecov.io/gh/sofq/confluence-cli)
 [![Go](https://img.shields.io/badge/Go-1.22+-7c5cff?style=for-the-badge&logo=go&logoColor=white&labelColor=0b0f1a)](go.mod)
 [![License](https://img.shields.io/badge/License-Apache_2.0-7c5cff?style=for-the-badge&labelColor=0b0f1a)](LICENSE)
-[![Stars](https://img.shields.io/github/stars/sofq/confluence-cli?style=for-the-badge&logo=github&logoColor=white&labelColor=0b0f1a&color=7c5cff)](https://github.com/sofq/confluence-cli/stargazers)
 
 </div>
 
