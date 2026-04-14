@@ -95,8 +95,8 @@ cf blogposts list --jq '.results[] | {id, title}'
 ### Comments, Labels, Attachments
 ```bash
 cf workflow comment --id 12345 --body "Reviewed and approved"
-cf labels add --page-id 12345 --name "reviewed"
-cf labels remove --page-id 12345 --name "draft"
+cf labels add --page-id 12345 --label "reviewed"
+cf labels remove --page-id 12345 --label "draft"
 cf attachments upload --page-id 12345 --file ./diagram.png
 cf attachments list --page-id 12345 --jq '.results[] | {id, title}'
 ```
@@ -126,10 +126,10 @@ cf export --id 12345 --format storage  # raw Confluence storage format
 
 ### Watch for changes (NDJSON stream)
 ```bash
-cf watch --cql "space = DEV" --interval 30s --max-events 50
+cf watch --cql "space = DEV" --interval 30s --max-polls 50
 ```
 
-Events: `initial`, `created`, `updated`, `removed`. Always use `--max-events` in automated contexts — agents cannot send Ctrl-C to stop the stream.
+Events: `initial`, `created`, `updated`, `removed`. Always use `--max-polls` in automated contexts — agents cannot send Ctrl-C to stop the stream.
 
 ### Raw API call (escape hatch)
 ```bash
@@ -190,7 +190,8 @@ Errors are structured JSON on stderr. Branch on `exit_code`:
 | 3 | Not found (404) | Verify resource ID — do not retry |
 | 4 | Bad request (400/422) | Fix the request payload — do not retry |
 | 5 | Rate limited (429) | Wait `retry_after` seconds from stderr JSON, then retry |
-| 6 | Permission denied | Check access / space permissions |
+| 6 | Conflict (409) | Resource conflict — resolve and retry |
+| 7 | Server error (5xx) | Confluence server issue — retry with backoff |
 
 For rate limits (exit 5), parse `retry_after` from stderr JSON and wait. For connection errors (exit 1), retry with exponential backoff (1s, 2s, 4s, max 3 retries). Do not retry exit codes 3 or 4.
 
