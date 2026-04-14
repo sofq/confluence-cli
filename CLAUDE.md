@@ -11,7 +11,7 @@ cf configure --profile myprofile --delete  # remove a profile
 ## Key Patterns
 
 - **All output is JSON** on stdout. Errors are JSON on stderr.
-- **Exit codes are semantic**: 0=ok, 1=error, 2=auth, 3=not_found, 4=validation, 5=rate_limited, 6=permission
+- **Exit codes are semantic**: 0=ok, 1=error, 2=auth, 3=not_found, 4=validation, 5=rate_limited, 6=conflict, 7=server
 - **Use `--preset`** for common field sets: `cf pages get --id 12345 --preset agent` (presets: agent, brief, titles, meta, tree, search, diff)
 - **Use `--jq`** to reduce output tokens: `cf pages get --id 12345 --jq '{id: .id, title: .title}'`
 - **Use `--fields`** to limit Confluence response fields: `cf pages get --id 12345 --fields id,title,status`
@@ -48,8 +48,8 @@ cf blogposts list --jq '.results[] | {id, title}'
 cf workflow comment --id 12345 --body "Reviewed and approved"
 
 # Labels
-cf labels add --page-id 12345 --name "reviewed"
-cf labels remove --page-id 12345 --name "draft"
+cf labels add --page-id 12345 --label "reviewed"
+cf labels remove --page-id 12345 --label "draft"
 
 # Attachments
 cf attachments upload --page-id 12345 --file ./diagram.png
@@ -79,8 +79,8 @@ echo '{"spaceId":"123"}' | cf raw POST /wiki/api/v2/pages --body -  # stdin
 # Batch operations
 echo '[{"command":"pages get","args":{"id":"12345"},"jq":".title"},{"command":"pages get","args":{"id":"67890"},"jq":".title"}]' | cf batch
 
-# Watch for changes (NDJSON stream — always use --max-events in automated contexts)
-cf watch --cql "space = DEV" --interval 30s --max-events 50
+# Watch for changes (NDJSON stream — always use --max-polls in automated contexts)
+cf watch --cql "space = DEV" --interval 30s --max-polls 50
 
 ```
 
