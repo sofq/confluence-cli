@@ -132,6 +132,10 @@ func SearchV1Domain(baseURL string) string {
 // op using a background context and the provided client.
 func ExecuteBatchOps(c *client.Client, ops []BatchOp) []BatchResult {
 	allOps := generated.AllSchemaOps()
+	allOps = append(allOps, DiffSchemaOps()...)
+	allOps = append(allOps, WorkflowSchemaOps()...)
+	allOps = append(allOps, ExportSchemaOps()...)
+	allOps = append(allOps, PresetSchemaOps()...)
 	opMap := make(map[string]generated.SchemaOp, len(allOps))
 	for _, op := range allOps {
 		key := op.Resource + " " + op.Verb

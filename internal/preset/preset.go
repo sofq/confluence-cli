@@ -12,11 +12,11 @@ import (
 // builtinPresets contains the default presets shipped with cf.
 // Values are JQ expression strings applied to Confluence v2 API JSON responses.
 var builtinPresets = map[string]string{
-	"brief":  `.results[] | {id, title, status: .status.current}`,
-	"titles": `.results[] | .title`,
-	"agent":  `.results[] | {id, title, status: .status.current, spaceId, version: .version.number, _links}`,
-	"tree":   `.results[] | {id, title, parentId, childPosition: .position}`,
-	"meta":   `. | {id, title, status: .status.current, version: .version, createdAt, authorId: .authorId, spaceId}`,
+	"brief":  `if has("results") then .results[] | {id, title, status} else {id, title, status} end`,
+	"titles": `if has("results") then .results[] | .title else .title end`,
+	"agent":  `if has("results") then .results[] | {id, title, status, spaceId, version: .version.number, _links} else {id, title, status, spaceId, version: .version.number, _links} end`,
+	"tree":   `if has("results") then .results[] | {id, title, parentId, childPosition: .position} else {id, title, parentId, childPosition: .position} end`,
+	"meta":   `. | {id, title, status, version: .version, createdAt, authorId: .authorId, spaceId}`,
 	"search": `.results[] | {content: .content.id, title: .content.title, excerpt: .excerpt, url: .url}`,
 	"diff":   `. | {id, title, version: .version.number, body}`,
 }

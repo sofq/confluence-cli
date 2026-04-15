@@ -9,12 +9,12 @@ func WorkflowSchemaOps() []generated.SchemaOp {
 			Resource: "workflow",
 			Verb:     "move",
 			Method:   "PUT",
-			Path:     "/wiki/rest/api/content/{id}/move/append/{targetId}",
+			Path:     "/wiki/rest/api/content/{id}/move/append/{target-id}",
 			Summary:  "Move a page to a different parent",
 			HasBody:  false,
 			Flags: []generated.SchemaFlag{
-				{Name: "id", Required: true, Type: "string", Description: "page ID to move (required)", In: "custom"},
-				{Name: "target-id", Required: true, Type: "string", Description: "target parent page ID (required)", In: "custom"},
+				{Name: "id", Required: true, Type: "string", Description: "page ID to move (required)", In: "path"},
+				{Name: "target-id", Required: true, Type: "string", Description: "target parent page ID (required)", In: "path"},
 			},
 		},
 		{
@@ -25,7 +25,7 @@ func WorkflowSchemaOps() []generated.SchemaOp {
 			Summary:  "Copy a page to a target parent",
 			HasBody:  true,
 			Flags: []generated.SchemaFlag{
-				{Name: "id", Required: true, Type: "string", Description: "page ID to copy (required)", In: "custom"},
+				{Name: "id", Required: true, Type: "string", Description: "page ID to copy (required)", In: "path"},
 				{Name: "target-id", Required: true, Type: "string", Description: "target parent page ID (required)", In: "custom"},
 				{Name: "title", Required: false, Type: "string", Description: "title for the copied page", In: "custom"},
 				{Name: "copy-attachments", Required: false, Type: "boolean", Description: "include attachments in copy", In: "custom"},
@@ -43,7 +43,7 @@ func WorkflowSchemaOps() []generated.SchemaOp {
 			Summary:  "Publish a draft page",
 			HasBody:  true,
 			Flags: []generated.SchemaFlag{
-				{Name: "id", Required: true, Type: "string", Description: "page ID to publish (required)", In: "custom"},
+				{Name: "id", Required: true, Type: "string", Description: "page ID to publish (required)", In: "path"},
 			},
 		},
 		{
@@ -54,7 +54,7 @@ func WorkflowSchemaOps() []generated.SchemaOp {
 			Summary:  "Add a plain-text comment to a page",
 			HasBody:  true,
 			Flags: []generated.SchemaFlag{
-				{Name: "id", Required: true, Type: "string", Description: "page ID to comment on (required)", In: "custom"},
+				{Name: "id", Required: true, Type: "string", Description: "page ID to comment on (required)", In: "path"},
 				{Name: "body", Required: true, Type: "string", Description: "comment text (required)", In: "custom"},
 			},
 		},
@@ -66,7 +66,7 @@ func WorkflowSchemaOps() []generated.SchemaOp {
 			Summary:  "View, add, or remove page restrictions",
 			HasBody:  false,
 			Flags: []generated.SchemaFlag{
-				{Name: "id", Required: true, Type: "string", Description: "page ID to manage restrictions (required)", In: "custom"},
+				{Name: "id", Required: true, Type: "string", Description: "page ID to manage restrictions (required)", In: "path"},
 				{Name: "add", Required: false, Type: "boolean", Description: "add a restriction", In: "custom"},
 				{Name: "remove", Required: false, Type: "boolean", Description: "remove a restriction", In: "custom"},
 				{Name: "operation", Required: false, Type: "string", Description: "restriction operation: read or update", In: "custom"},

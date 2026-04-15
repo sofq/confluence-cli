@@ -119,7 +119,7 @@ cf pages get --id 12345 --preset agent
 cf pages get --id 12345 --preset brief
 
 # Titles only: just page titles
-cf spaces list --preset titles
+cf spaces get --preset titles
 
 # List all available presets
 cf preset list
@@ -154,7 +154,7 @@ Use `--cache` to avoid redundant API calls for stable data:
 
 ```bash
 # Cache space list for 5 minutes
-cf spaces list --cache 5m --jq '[.results[].key]'
+cf spaces get --cache 5m --jq '[.results[].key]'
 ```
 
 ## Batch Operations
@@ -165,7 +165,7 @@ When an agent needs multiple Confluence calls, use `cf batch` to run them in a s
 echo '[
   {"command": "pages get", "args": {"id": "12345"}, "jq": ".title"},
   {"command": "pages get", "args": {"id": "67890"}, "jq": ".title"},
-  {"command": "spaces list", "args": {}, "jq": "[.results[].key]"}
+  {"command": "spaces get", "args": {}, "jq": "[.results[].key]"}
 ]' | cf batch
 ```
 
@@ -205,7 +205,7 @@ Example error response:
   "error_type": "not_found",
   "status": 404,
   "message": "Page Does Not Exist",
-  "request": {"method": "GET", "path": "/wiki/api/v2/pages/99999"}
+  "request": {"method": "GET", "path": "/pages/99999"}
 }
 ```
 
@@ -218,7 +218,7 @@ Error JSON may also include `hint` (actionable recovery text) and `retry_after` 
   "message": "Rate limit exceeded",
   "hint": "You are being rate limited. Wait before retrying.",
   "retry_after": 30,
-  "request": {"method": "GET", "path": "/wiki/api/v2/pages"}
+  "request": {"method": "GET", "path": "/pages"}
 }
 ```
 
@@ -275,5 +275,5 @@ Always use `--preset` or `--fields` + `--jq` to minimize output. A single unfilt
 Use `--dry-run` to preview what `cf` will send without making the API call:
 
 ```bash
-cf pages create --spaceId 123456 --title "Test" --body "<p>Hello</p>" --dry-run
+cf pages create --space-id 123456 --title "Test" --body "<p>Hello</p>" --dry-run
 ```

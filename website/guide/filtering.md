@@ -57,5 +57,5 @@ Always use `--fields` and `--jq` together. `--fields` reduces what Confluence se
 For data that changes infrequently (like space lists), use `--cache` to avoid redundant API calls:
 
 ```bash
-cf spaces list --cache 5m --jq '[.results[].key]'
+cf spaces get --cache 5m --jq '[.results[].key]'
 ```

@@ -204,8 +204,8 @@ cf pages get --id 12345 --preset agent
 |---|---|
 | Read a page, only what the model needs | `cf pages get --id 12345 --preset agent` |
 | Find recently-updated pages in a space | `cf search search-content --cql "space = DEV AND lastModified > now('-7d')" --jq '.results[] \| {id, title}'` |
-| Create a page from XHTML body | `cf pages create --spaceId 123456 --title "Runbook" --body "<p>Steps...</p>"` |
-| Update a page (version-checked) | `cf pages update --id 12345 --version-number 3 --title "Runbook v2" --body "<p>...</p>"` |
+| Create a page from XHTML body | `cf pages create --space-id 123456 --title "Runbook" --body "<p>Steps...</p>"` |
+| Update a page (auto version increment) | `cf pages update --id 12345 --title "Runbook v2" --body "<p>...</p>"` |
 | Diff what changed in the last 2 hours | `cf diff --id 12345 --since 2h` |
 | Export a page tree as JSON | `cf export --id 12345 --tree` |
 | Watch a space for changes | `cf watch --cql "space = DEV" --interval 30s --max-events 50` |
@@ -213,7 +213,7 @@ cf pages get --id 12345 --preset agent
 | Add and remove labels | `cf labels add --page-id 12345 --name reviewed` |
 | Upload an attachment | `cf attachments upload --page-id 12345 --file ./diagram.png` |
 | Run multiple ops in one process | `echo '[...]' \| cf batch` |
-| Hit any v2 endpoint directly | `cf raw GET /wiki/api/v2/pages/12345` |
+| Hit any v2 endpoint directly | `cf raw GET /pages/12345` |
 
 <details>
 <summary><b>Streaming output sample (<code>cf watch</code>)</b></summary>

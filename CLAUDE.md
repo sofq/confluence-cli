@@ -29,20 +29,20 @@ cf pages get --id 12345
 cf search search-content --cql "space = DEV AND type = page" --jq '.results[] | {id, title}'
 
 # Create page (content in Confluence storage format — XHTML)
-cf pages create --spaceId 123456 --title "New Page" --body "<p>Content here</p>"
+cf pages create --space-id 123456 --title "New Page" --body "<p>Content here</p>"
 
-# Update page (requires current version number)
-cf pages update --id 12345 --version-number 3 --title "Updated" --body "<p>New content</p>"
+# Update page (auto-increments version number)
+cf pages update --id 12345 --title "Updated" --body "<p>New content</p>"
 
 # Delete page
 cf pages delete --id 12345
 
 # List spaces
-cf spaces list --jq '.results[] | {id, key: .key, name: .name}'
+cf spaces get --jq '.results[] | {id, key: .key, name: .name}'
 
 # Blog posts
-cf blogposts create --spaceId 123456 --title "Sprint Recap" --body "<p>What we shipped</p>"
-cf blogposts list --jq '.results[] | {id, title}'
+cf blogposts create-blog-post --space-id 123456 --title "Sprint Recap" --body "<p>What we shipped</p>"
+cf blogposts get-blog-posts --jq '.results[] | {id, title}'
 
 # Comments
 cf workflow comment --id 12345 --body "Reviewed and approved"
@@ -71,10 +71,10 @@ cf export --id 12345                         # single page body
 cf export --id 12345 --tree                  # page + all descendants
 cf export --id 12345 --format storage        # raw storage format
 
-# Raw API call (method is positional, not a flag; POST/PUT/PATCH require --body)
-cf raw GET /wiki/api/v2/pages/12345
-cf raw POST /wiki/api/v2/pages --body '{"spaceId":"123","title":"New"}'
-echo '{"spaceId":"123"}' | cf raw POST /wiki/api/v2/pages --body -  # stdin
+# Raw API call (path is relative to base URL; POST/PUT/PATCH require --body)
+cf raw GET /pages/12345
+cf raw POST /pages --body '{"spaceId":"123","title":"New"}'
+echo '{"spaceId":"123"}' | cf raw POST /pages --body -  # stdin
 
 # Batch operations
 echo '[{"command":"pages get","args":{"id":"12345"},"jq":".title"},{"command":"pages get","args":{"id":"67890"},"jq":".title"}]' | cf batch
