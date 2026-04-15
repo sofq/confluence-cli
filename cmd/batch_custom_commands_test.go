@@ -19,7 +19,7 @@ func TestBatch_DiffPathSubstitution(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"results":[{"number":2,"authorId":"a","createdAt":"2026-01-01T00:00:00Z","message":""}],"_links":{}}`))
+		_, _ = w.Write([]byte(`{"results":[{"number":2,"authorId":"a","createdAt":"2026-01-01T00:00:00Z","message":""}],"_links":{}}`))
 	}))
 	defer srv.Close()
 
@@ -56,7 +56,7 @@ func TestBatch_ExportPathSubstitution(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"id":"67890","title":"Test","body":{"storage":{"value":"<p>Hello</p>"}}}`))
+		_, _ = w.Write([]byte(`{"id":"67890","title":"Test","body":{"storage":{"value":"<p>Hello</p>"}}}`))
 	}))
 	defer srv.Close()
 
@@ -91,7 +91,7 @@ func TestBatch_WorkflowCommentPathSubstitution(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"id":"99","status":"current"}`))
+		_, _ = w.Write([]byte(`{"id":"99","status":"current"}`))
 	}))
 	defer srv.Close()
 
@@ -126,7 +126,7 @@ func TestBatch_WorkflowMovePathSubstitution(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		gotPath = r.URL.Path
 		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"id":"111","title":"Moved"}`))
+		_, _ = w.Write([]byte(`{"id":"111","title":"Moved"}`))
 	}))
 	defer srv.Close()
 
