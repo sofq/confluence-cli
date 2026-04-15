@@ -185,7 +185,7 @@ Command names are auto-generated from Confluence's OpenAPI spec, so they can be 
 ### List spaces
 
 ```bash
-cf spaces list
+cf spaces get
 ```
 
 ## Workflow commands

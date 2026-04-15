@@ -71,7 +71,7 @@ Override the authentication type for a single command. Accepted values: `basic`,
 :::
 
 ```bash
-cf raw GET /wiki/api/v2/pages --auth-type bearer --auth-token MY_PAT
+cf raw GET /pages --auth-type bearer --auth-token MY_PAT
 ```
 
 ---
@@ -97,7 +97,7 @@ cf pages get --id 12345 --auth-user other@company.com --auth-token TOKEN
 Override the API token or bearer token for a single command.
 
 ```bash
-cf raw GET /wiki/api/v2/pages --auth-token NEW_TOKEN
+cf raw GET /pages --auth-token NEW_TOKEN
 ```
 
 ::: warning
@@ -198,7 +198,7 @@ Only applies to GET requests.
 
 ```bash
 # Cache space list for 5 minutes
-cf spaces list --cache 5m --jq '[.results[].key]'
+cf spaces get --cache 5m --jq '[.results[].key]'
 
 # Cache for 1 hour
 cf pages get --id 12345 --cache 1h --fields id,title
@@ -232,7 +232,7 @@ Disable automatic pagination. By default, `cf` fetches all pages for paginated e
 
 ```bash
 # Only get the first page of results
-cf spaces list --no-paginate
+cf spaces get --no-paginate
 ```
 
 ---
@@ -260,7 +260,7 @@ cf pages get --id 12345 --verbose
 Print the HTTP request that would be made as JSON, without actually executing it. Useful for debugging request payloads, especially for POST/PUT operations.
 
 ```bash
-cf pages create --spaceId 123456 --title "Test" --body "<p>Hello</p>" --dry-run
+cf pages create --space-id 123456 --title "Test" --body "<p>Hello</p>" --dry-run
 # Outputs the request details without calling Confluence
 ```
 
@@ -280,7 +280,7 @@ cf search search-content \
   --timeout 2m
 
 # Short timeout for quick checks
-cf raw GET /wiki/api/v2/spaces --timeout 5s
+cf raw GET /spaces --timeout 5s
 ```
 
 ---

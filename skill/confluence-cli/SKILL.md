@@ -65,9 +65,9 @@ Always use `cf schema` to discover the exact command name and flags before runni
 ### Pages
 ```bash
 cf pages get --id 12345
-cf pages create --spaceId 123456 --title "Deploy Runbook" \
+cf pages create --space-id 123456 --title "Deploy Runbook" \
   --body "<h1>Steps</h1><p>Follow these steps...</p>"
-cf pages update --id 12345 --version-number 3 \
+cf pages update --id 12345 \
   --title "Deploy Runbook v2" --body "<h1>Updated Steps</h1>"
 cf pages delete --id 12345
 ```
@@ -83,13 +83,13 @@ cf search search-content \
 
 ### Spaces
 ```bash
-cf spaces list --jq '.results[] | {id, key: .key, name: .name}'
+cf spaces get --jq '.results[] | {id, key: .key, name: .name}'
 ```
 
 ### Blog posts
 ```bash
-cf blogposts create --spaceId 123456 --title "Sprint Recap" --body "<p>What we shipped...</p>"
-cf blogposts list --jq '.results[] | {id, title}'
+cf blogposts create-blog-post --space-id 123456 --title "Sprint Recap" --body "<p>What we shipped...</p>"
+cf blogposts get-blog-posts --jq '.results[] | {id, title}'
 ```
 
 ### Comments, Labels, Attachments
@@ -133,9 +133,9 @@ Events: `initial`, `created`, `updated`, `removed`. Always use `--max-polls` in 
 
 ### Raw API call (escape hatch)
 ```bash
-cf raw GET /wiki/api/v2/pages/12345
-cf raw POST /wiki/api/v2/pages --body '{"spaceId":"123","title":"New Page"}'
-echo '{"spaceId":"123"}' | cf raw POST /wiki/api/v2/pages --body -
+cf raw GET /pages/12345
+cf raw POST /pages --body '{"spaceId":"123","title":"New Page"}'
+echo '{"spaceId":"123"}' | cf raw POST /pages --body -
 ```
 
 POST/PUT/PATCH require `--body`. Without it, `cf raw` will error instead of hanging on stdin.
@@ -159,7 +159,7 @@ cf pages get --id 12345 --jq '{id: .id, title: .title}'
 cf pages get --id 12345 --fields id,title --jq '{id: .id, title: .title}'
 
 # Cache read-heavy data
-cf spaces list --cache 5m --jq '[.results[].key]'
+cf spaces get --cache 5m --jq '[.results[].key]'
 ```
 
 Always use `--preset` or `--fields` + `--jq`. Run `cf preset list` for available presets. See `references/presets.md` for the full preset table.
@@ -172,7 +172,7 @@ Run multiple Confluence calls in a single process:
 echo '[
   {"command": "pages get", "args": {"id": "12345"}, "jq": ".title"},
   {"command": "pages get", "args": {"id": "67890"}, "jq": ".title"},
-  {"command": "spaces list", "args": {}, "jq": "[.results[].key]"}
+  {"command": "spaces get", "args": {}, "jq": "[.results[].key]"}
 ]' | cf batch
 ```
 
@@ -237,17 +237,17 @@ echo '[
 ### Create page with children
 ```bash
 # Step 1: Create parent
-PARENT=$(cf pages create --spaceId 123456 --title "Project Docs" \
+PARENT=$(cf pages create --space-id 123456 --title "Project Docs" \
   --body "<p>Root</p>" --jq '.id')
 
 # Step 2: Create children via batch
 echo "[
-  {\"command\": \"pages create\", \"args\": {\"spaceId\": \"123456\", \"parentId\": \"$PARENT\", \"title\": \"Getting Started\", \"body\": \"<p>Setup</p>\"}},
-  {\"command\": \"pages create\", \"args\": {\"spaceId\": \"123456\", \"parentId\": \"$PARENT\", \"title\": \"Architecture\", \"body\": \"<p>Design</p>\"}}
+  {\"command\": \"pages create\", \"args\": {\"space-id\": \"123456\", \"parent-id\": \"$PARENT\", \"title\": \"Getting Started\", \"body\": \"<p>Setup</p>\"}},
+  {\"command\": \"pages create\", \"args\": {\"space-id\": \"123456\", \"parent-id\": \"$PARENT\", \"title\": \"Architecture\", \"body\": \"<p>Design</p>\"}}
 ]" | cf batch
 ```
 
 ### Validate before executing
 ```bash
-cf pages create --spaceId 123456 --title "Test" --body "<p>test</p>" --dry-run
+cf pages create --space-id 123456 --title "Test" --body "<p>test</p>" --dry-run
 ```
