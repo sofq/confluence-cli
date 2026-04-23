@@ -543,6 +543,36 @@ var attachments_get_comments = &cobra.Command{
 	},
 }
 
+var attachments_get_thumbnail_by_id = &cobra.Command{
+	Use:   "get-thumbnail-by-id",
+	Short: "Download attachment thumbnail by id",
+	Long:  "Redirects the client to a URL that serves an attachment thumbnail's binary data.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the attachment's container.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/attachments/%s/thumbnail/download", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "version", "height", "width")
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
 func init() {
 
 	attachments_get.Flags().String("sort", "", "Used to sort the result by a particular field.")
@@ -634,5 +664,12 @@ func init() {
 	attachments_get_comments.Flags().String("sort", "", "Used to sort the result by a particular field.")
 	attachments_get_comments.Flags().String("version", "", "Version number of the attachment to retrieve comments for. If no version provided, retrieves comments for the latest version.")
 	attachmentsCmd.AddCommand(attachments_get_comments)
+
+	attachments_get_thumbnail_by_id.Flags().String("id", "", "The ID of the attachment to be returned. If you don't know the attachment's ID, use Get attachments for page/blogpost/custom content.")
+	attachments_get_thumbnail_by_id.MarkFlagRequired("id")
+	attachments_get_thumbnail_by_id.Flags().String("version", "", "Allows you to retrieve a previously published version. Specify the previous version's number to retrieve its details.")
+	attachments_get_thumbnail_by_id.Flags().String("height", "", "Allows you to define the thumbnail height.")
+	attachments_get_thumbnail_by_id.Flags().String("width", "", "Allows you to define the thumbnail width.")
+	attachmentsCmd.AddCommand(attachments_get_thumbnail_by_id)
 
 }
