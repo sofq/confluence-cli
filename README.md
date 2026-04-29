@@ -344,13 +344,23 @@ Vulnerability reports: [SECURITY.md](SECURITY.md).
 
 ## Agent integration
 
-### Claude Code skill (included)
+### Claude Code plugin (included)
 
 ```bash
-cp -r skill/confluence-cli ~/.claude/skills/
+/plugin marketplace add https://github.com/sofq/confluence-cli
+/plugin install confluence-cli@confluence-cli
+```
+
+Or install the skill manually:
+
+```bash
+cp -r skills/confluence-cli ~/.claude/skills/    # global install
 ```
 
 The skill teaches Claude Code the cf command surface, presets, and exit-code contract directly — no system prompt edits needed.
+
+> [!NOTE]
+> See [`skills/confluence-cli/SKILL.md`](skills/confluence-cli/SKILL.md) for the full agent integration guide with patterns, error handling, and token optimization strategies.
 
 ### Any other agent
 

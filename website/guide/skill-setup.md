@@ -7,19 +7,28 @@ The skill follows the [Agent Skills](https://agentskills.io) open standard, supp
 ## Download the Skill
 
 ```bash
-curl -sL https://raw.githubusercontent.com/sofq/confluence-cli/main/skill/confluence-cli/SKILL.md \
+curl -sL https://raw.githubusercontent.com/sofq/confluence-cli/main/skills/confluence-cli/SKILL.md \
   -o SKILL.md
 ```
 
 Or copy from a local `cf` install:
 
 ```bash
-cp $(brew --prefix cf)/share/cf/skill/confluence-cli/SKILL.md SKILL.md
+cp $(brew --prefix cf)/share/cf/skills/confluence-cli/SKILL.md SKILL.md
 ```
 
 ## Setup by Tool
 
 ### Claude Code
+
+The fastest setup is to install the bundled plugin (also includes the skill):
+
+```bash
+/plugin marketplace add https://github.com/sofq/confluence-cli
+/plugin install confluence-cli@confluence-cli
+```
+
+Or install the skill manually:
 
 | Scope | Path |
 |-------|------|
