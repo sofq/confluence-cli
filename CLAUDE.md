@@ -12,9 +12,9 @@ cf configure --profile myprofile --delete  # remove a profile
 
 - **All output is JSON** on stdout. Errors are JSON on stderr.
 - **Exit codes are semantic**: 0=ok, 1=error, 2=auth, 3=not_found, 4=validation, 5=rate_limited, 6=conflict, 7=server
-- **Use `--preset`** for common field sets: `cf pages get --id 12345 --preset agent` (presets: agent, brief, titles, meta, tree, search, diff)
-- **Use `--jq`** to reduce output tokens: `cf pages get --id 12345 --jq '{id: .id, title: .title}'`
-- **Use `--fields`** to limit Confluence response fields: `cf pages get --id 12345 --fields id,title,status`
+- **Use `--preset`** for common field sets: `cf pages get-by-id --id 12345 --preset agent` (presets: agent, brief, titles, meta, tree, search, diff)
+- **Use `--jq`** to reduce output tokens: `cf pages get-by-id --id 12345 --jq '{id: .id, title: .title}'`
+- **Use `--fields`** to limit Confluence response fields: `cf pages get-by-id --id 12345 --fields id,title,status`
 - **Use `cf batch`** to run multiple operations in one call
 - **Use `cf raw`** for any API endpoint not covered by generated commands
 - **Content is XHTML** (Confluence storage format), not Markdown
@@ -22,11 +22,14 @@ cf configure --profile myprofile --delete  # remove a profile
 ## Common Operations
 
 ```bash
-# Get page
-cf pages get --id 12345
+# Get one page (single object)
+cf pages get-by-id --id 12345
 
-# Search content with CQL
-cf search search-content --cql "space = DEV AND type = page" --jq '.results[] | {id, title}'
+# List pages in a space (returns {results:[...]})
+cf pages get --space-id 123456 --jq '.results[] | {id, title}'
+
+# Search content with CQL (returns a flat array; hits have .content.id/.content.title)
+cf search --cql "space = DEV AND type = page" --jq '.[] | {id: .content.id, title: .content.title}'
 
 # Create page (content in Confluence storage format — XHTML)
 cf pages create --space-id 123456 --title "New Page" --body "<p>Content here</p>"
@@ -77,7 +80,7 @@ cf raw POST /pages --body '{"spaceId":"123","title":"New"}'
 echo '{"spaceId":"123"}' | cf raw POST /pages --body -  # stdin
 
 # Batch operations
-echo '[{"command":"pages get","args":{"id":"12345"},"jq":".title"},{"command":"pages get","args":{"id":"67890"},"jq":".title"}]' | cf batch
+echo '[{"command":"pages get-by-id","args":{"id":"12345"},"jq":".title"},{"command":"pages get-by-id","args":{"id":"67890"},"jq":".title"}]' | cf batch
 
 # Watch for changes (NDJSON stream — always use --max-polls in automated contexts)
 cf watch --cql "space = DEV" --interval 30s --max-polls 50
@@ -90,7 +93,7 @@ cf watch --cql "space = DEV" --interval 30s --max-polls 50
 cf schema                     # resource → verbs mapping (default)
 cf schema --list              # all resource names only
 cf schema pages               # all operations for 'pages'
-cf schema pages get           # full schema with flags for one operation
+cf schema pages get-by-id     # full schema with flags for one operation
 cf preset list                # list available output presets
 ```
 
@@ -100,7 +103,7 @@ In `cf batch`, use `"resource verb"` strings. Notable: `"diff diff"` (not just `
 
 ```bash
 echo '[
-  {"command": "pages get", "args": {"id": "12345"}, "jq": ".title"},
+  {"command": "pages get-by-id", "args": {"id": "12345"}, "jq": ".title"},
   {"command": "workflow comment", "args": {"id": "12345", "body": "Reviewed"}},
   {"command": "diff diff", "args": {"id": "12345", "since": "2h"}}
 ]' | cf batch
@@ -136,7 +139,7 @@ Restrict which operations a profile can execute:
     "agent": {
       "base_url": "...",
       "auth": {"type": "basic", "token": "..."},
-      "allowed_operations": ["pages get", "search *", "workflow *"]
+      "allowed_operations": ["pages get*", "search *", "workflow *"]
     },
     "readonly": {
       "base_url": "...",
