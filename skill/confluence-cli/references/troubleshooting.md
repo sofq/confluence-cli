@@ -1,10 +1,14 @@
 # Troubleshooting
 
-**"command not found"** — `cf` is not installed. Install via:
+**"command not found"** — `cf` is not installed. Install via any of:
 ```bash
-brew install sofq/tap/cf          # Homebrew
-go install github.com/sofq/confluence-cli@latest  # Go
+npm install -g confluence-cf                       # npm
+pip install confluence-cf                          # pip
+brew install sofq/tap/cf                           # Homebrew (macOS/Linux)
+scoop bucket add sofq https://github.com/sofq/scoop-bucket && scoop install cf  # Scoop (Windows)
+go install github.com/sofq/confluence-cli@latest   # Go
 ```
+Prebuilt binaries are also available at https://github.com/sofq/confluence-cli/releases.
 
 **Exit code 2 (auth)** — Token expired or misconfigured. Test with:
 ```bash

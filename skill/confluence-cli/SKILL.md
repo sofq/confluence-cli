@@ -1,16 +1,15 @@
 ---
 name: confluence-cli
-description: "Confluence Cloud CLI (`cf`) — interact with Confluence pages, spaces, blog posts, comments, labels, attachments, and any Confluence Cloud API operation through structured JSON output and semantic exit codes. Use this skill whenever the user asks about Confluence, Atlassian wiki, knowledge base pages, or any wiki/documentation management that involves Confluence — creating pages, searching content, exporting page trees, managing spaces, or automating workflows. Also trigger when you see `cf` commands in the codebase, or the user says things like 'check the wiki', 'update the docs on Confluence', 'publish to Confluence', or 'search our knowledge base'. Even casual mentions of Confluence or Atlassian wiki operations should trigger this skill."
-compatibility:
-  tools: ["Bash"]
-  requirements: ["cf CLI binary (brew install sofq/tap/cf)"]
+description: Use when the user mentions Confluence, Atlassian wiki, or knowledge base pages, or asks to create, search, export, update, or manage Confluence pages, spaces, blog posts, comments, labels, or attachments. Also trigger on `cf` commands appearing in shell or codebase, and on phrases like "check the wiki", "publish to Confluence", "update the docs on Confluence", or "search our knowledge base".
 ---
 
 # cf — Confluence Cloud CLI for AI Agents
 
 `cf` is a Confluence Cloud CLI designed for AI agents. Every command returns structured JSON on stdout, errors as JSON on stderr, and semantic exit codes — so you can parse, branch, and retry reliably.
 
-**Sections:** [Setup](#setup) · [Discovering Commands](#discovering-commands) · [Common Operations](#common-operations) · [Token Efficiency](#token-efficiency) · [Batch Operations](#batch-operations) · [Error Handling](#error-handling) · [Global Flags](#global-flags) · [Common Agent Patterns](#common-agent-patterns)
+**Requirements:** `cf` binary on PATH. Install via `npm i -g confluence-cf`, `pip install confluence-cf`, `brew install sofq/tap/cf` (macOS/Linux), `scoop install cf` (Windows), `go install github.com/sofq/confluence-cli@latest`, or grab a prebuilt binary from [Releases](https://github.com/sofq/confluence-cli/releases).
+
+**Sections:** [Setup](#setup) · [Discovering Commands](#discovering-commands) · [Common Operations](#common-operations) · [Token Efficiency](#token-efficiency) · [Batch Operations](#batch-operations) · [Error Handling](#error-handling) · [Global Flags](#global-flags) · [Common Mistakes](#common-mistakes) · [When NOT to Use](#when-not-to-use) · [Common Agent Patterns](#common-agent-patterns)
 
 **Reference files** (read when needed):
 - `references/presets.md` — Full preset reference table and custom preset config
@@ -34,7 +33,7 @@ cf configure --base-url https://yoursite.atlassian.net --token YOUR_API_TOKEN
 ```bash
 # Named profiles for multiple Confluence instances
 cf configure --base-url https://work.atlassian.net --token TOKEN --profile work
-cf pages get --profile work --id 12345
+cf pages get-by-id --profile work --id 12345
 cf configure --profile work --delete   # remove a profile
 ```
 
@@ -55,7 +54,7 @@ If you get exit code 2 (auth error), the token is likely expired or wrong. Ask t
 cf schema                     # resource → verbs mapping (most useful overview)
 cf schema --list              # all resource names only (pages, spaces, comments, ...)
 cf schema pages               # all operations for a resource
-cf schema pages get           # full schema with all flags for one operation
+cf schema pages get-by-id     # full schema with all flags for one operation
 ```
 
 Always use `cf schema` to discover the exact command name and flags before running an unfamiliar operation.
@@ -64,7 +63,12 @@ Always use `cf schema` to discover the exact command name and flags before runni
 
 ### Pages
 ```bash
-cf pages get --id 12345
+# Fetch one page by ID (use get-by-id, not get)
+cf pages get-by-id --id 12345
+
+# List pages in a space (get accepts filters: --space-id, --title, --id as comma-separated list)
+cf pages get --space-id 123456 --jq '.results[] | {id, title}'
+
 cf pages create --space-id 123456 --title "Deploy Runbook" \
   --body "<h1>Steps</h1><p>Follow these steps...</p>"
 cf pages update --id 12345 \
@@ -72,24 +76,28 @@ cf pages update --id 12345 \
 cf pages delete --id 12345
 ```
 
-Content uses Confluence storage format (XHTML, not Markdown).
+`cf pages get` lists pages and returns a `{results: [...]}` envelope. `cf pages get-by-id` returns a single page object. Picking the wrong one is the most common mistake. Content uses Confluence storage format (XHTML, not Markdown).
 
 ### Search with CQL
+`cf search` outputs a flat JSON array of v1 search hits — no `.results` envelope. Each hit has nested `.content.id`, `.content.title`, plus `.title`, `.excerpt`, `.url`.
+
 ```bash
-cf search search-content \
+cf search \
   --cql "space = DEV AND type = page AND lastModified > now('-7d')" \
-  --jq '.results[] | {id, title}'
+  --jq '.[] | {id: .content.id, title: .content.title}'
 ```
 
 ### Spaces
 ```bash
 cf spaces get --jq '.results[] | {id, key: .key, name: .name}'
+cf spaces get-by-id --id 123456
 ```
 
 ### Blog posts
 ```bash
 cf blogposts create-blog-post --space-id 123456 --title "Sprint Recap" --body "<p>What we shipped...</p>"
 cf blogposts get-blog-posts --jq '.results[] | {id, title}'
+cf blogposts get-blog-post-by-id --id 99999
 ```
 
 ### Comments, Labels, Attachments
@@ -129,7 +137,7 @@ cf export --id 12345 --format storage  # raw Confluence storage format
 cf watch --cql "space = DEV" --interval 30s --max-polls 50
 ```
 
-Events: `initial`, `created`, `updated`, `removed`. Always use `--max-polls` in automated contexts — agents cannot send Ctrl-C to stop the stream.
+Events: `initial`, `created`, `updated`, `removed`. Always pass `--max-polls` in agent contexts — agents cannot send Ctrl-C to stop the stream. The flag is hidden from `--help` (it's marked test-only) but is stable and required for safe automation.
 
 ### Raw API call (escape hatch)
 ```bash
@@ -146,17 +154,17 @@ Confluence responses can be large (8K+ tokens for a single page). Always minimiz
 
 ```bash
 # --preset: named preset for common field combinations
-cf pages get --id 12345 --preset agent    # id, title, status, spaceId
-cf pages get --id 12345 --preset brief    # id, title, status
+cf pages get-by-id --id 12345 --preset agent    # id, title, status, spaceId
+cf pages get-by-id --id 12345 --preset brief    # id, title, status
 
 # --fields: server-side field filtering
-cf pages get --id 12345 --fields id,title,status
+cf pages get-by-id --id 12345 --fields id,title,status
 
 # --jq: client-side JSON filtering
-cf pages get --id 12345 --jq '{id: .id, title: .title}'
+cf pages get-by-id --id 12345 --jq '{id: .id, title: .title}'
 
 # Combine for maximum efficiency (~50 tokens vs ~8,000)
-cf pages get --id 12345 --fields id,title --jq '{id: .id, title: .title}'
+cf pages get-by-id --id 12345 --fields id,title --jq '{id: .id, title: .title}'
 
 # Cache read-heavy data
 cf spaces get --cache 5m --jq '[.results[].key]'
@@ -166,12 +174,12 @@ Always use `--preset` or `--fields` + `--jq`. Run `cf preset list` for available
 
 ## Batch Operations
 
-Run multiple Confluence calls in a single process:
+Run multiple Confluence calls in a single process. Batch only dispatches commands listed by `cf schema` — `cf search`, `cf watch`, `cf raw`, `cf configure` are NOT available in batch.
 
 ```bash
 echo '[
-  {"command": "pages get", "args": {"id": "12345"}, "jq": ".title"},
-  {"command": "pages get", "args": {"id": "67890"}, "jq": ".title"},
+  {"command": "pages get-by-id", "args": {"id": "12345"}, "jq": ".title"},
+  {"command": "pages get-by-id", "args": {"id": "67890"}, "jq": ".title"},
   {"command": "spaces get", "args": {}, "jq": "[.results[].key]"}
 ]' | cf batch
 ```
@@ -211,40 +219,53 @@ For rate limits (exit 5), parse `retry_after` from stderr JSON and wait. For con
 | `--profile <name>` | use a named config profile |
 | `--audit <path>` | NDJSON audit log file path |
 
+## Common Mistakes
+
+- **Using `cf pages get --id X` to fetch a single page.** That command lists pages and returns a `{results: [...]}` envelope. Use `cf pages get-by-id --id X` for a single object.
+- **Sending Markdown.** Bodies must be Confluence storage format (XHTML), e.g. `<h1>Title</h1><p>Body</p>`.
+- **Using `--fields` on non-GET operations.** It's silently ignored.
+- **Calling `cf raw POST` without `--body`.** It errors rather than reading stdin by default; pass `--body -` to read stdin.
+- **Running `cf watch` without `--max-polls` in automation.** The stream never exits on its own.
+- **Mixing `allowed_operations` and `denied_operations` in one profile.** Use one or the other.
+- **Calling `cf search` from `cf batch`.** Search isn't in the batch dispatch map; run it as a separate step and feed IDs into a batch.
+- **Assuming `cf search` returns a `.results` envelope.** It returns a flat array of merged v1 hits.
+
+## When NOT to Use
+
+- **Jira issues, Trello, or Bitbucket** — different products, different CLIs.
+- **Confluence Server / Data Center** — `cf` targets Confluence Cloud only.
+- **Local Markdown wikis or static-site docs** — no API to call.
+
 ## Common Agent Patterns
 
 ### Check-then-act: update if exists, create if not
 ```bash
-# Try to get the page; check exit code
-cf pages get --id 12345 --preset agent
+cf pages get-by-id --id 12345 --preset agent
 # Exit 0 → update; Exit 3 → create
 ```
 
 ### Bulk page export
 ```bash
-# Step 1: Find pages
-cf search search-content \
+# Step 1: Find page IDs (search returns a flat array; .[] not .results[])
+IDS=$(cf search \
   --cql "space = DEV AND type = page" \
-  --jq '[.results[].content.id]'
+  --jq '[.[].content.id]')
 
 # Step 2: Build batch payload from IDs and execute
-echo '[
-  {"command": "export export", "args": {"id": "12345"}},
-  {"command": "export export", "args": {"id": "67890"}}
-]' | cf batch
+echo "$IDS" | jq '[.[] | {command: "export export", args: {id: .}}]' | cf batch
 ```
 
 ### Create page with children
 ```bash
 # Step 1: Create parent
 PARENT=$(cf pages create --space-id 123456 --title "Project Docs" \
-  --body "<p>Root</p>" --jq '.id')
+  --body "<p>Root</p>" --jq '.id' | tr -d '"')
 
-# Step 2: Create children via batch
-echo "[
-  {\"command\": \"pages create\", \"args\": {\"space-id\": \"123456\", \"parent-id\": \"$PARENT\", \"title\": \"Getting Started\", \"body\": \"<p>Setup</p>\"}},
-  {\"command\": \"pages create\", \"args\": {\"space-id\": \"123456\", \"parent-id\": \"$PARENT\", \"title\": \"Architecture\", \"body\": \"<p>Design</p>\"}}
-]" | cf batch
+# Step 2: Build batch payload safely with jq -n
+jq -n --arg pid "$PARENT" --arg sid "123456" '[
+  {command:"pages create", args:{"space-id":$sid, "parent-id":$pid, title:"Getting Started", body:"<p>Setup</p>"}},
+  {command:"pages create", args:{"space-id":$sid, "parent-id":$pid, title:"Architecture", body:"<p>Design</p>"}}
+]' | cf batch
 ```
 
 ### Validate before executing
