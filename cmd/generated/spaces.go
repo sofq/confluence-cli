@@ -62,7 +62,7 @@ var spaces_get = &cobra.Command{
 var spaces_create = &cobra.Command{
 	Use:   "create",
 	Short: "Create space",
-	Long:  "Creates a Space as specified in the payload.\n\nAvailable as part of the [Role-Based Access Controls Beta](https://community.atlassian.com/forums/Confluence-articles/Beta-Simplify-space-access-in-Confluence-with-roles/ba-p/3044550). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to create spaces.",
+	Long:  "Creates a Space as specified in the payload.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to create spaces.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
@@ -632,7 +632,7 @@ var spaces_get_permissions_assignments = &cobra.Command{
 var spaces_get_role_assignments = &cobra.Command{
 	Use:   "get-role-assignments",
 	Short: "Get space role assignments",
-	Long:  "Retrieves the space role assignments.\n\nAvailable as part of the [Role-Based Access Controls Beta](https://community.atlassian.com/forums/Confluence-articles/Beta-Simplify-space-access-in-Confluence-with-roles/ba-p/3044550). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the space.",
+	Long:  "Retrieves the space role assignments.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the space.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
@@ -662,7 +662,7 @@ var spaces_get_role_assignments = &cobra.Command{
 var spaces_set_role_assignments = &cobra.Command{
 	Use:   "set-role-assignments",
 	Short: "Set space role assignments",
-	Long:  "Sets space role assignments as specified in the payload.\n\nAvailable as part of the [Role-Based Access Controls Beta](https://community.atlassian.com/forums/Confluence-articles/Beta-Simplify-space-access-in-Confluence-with-roles/ba-p/3044550). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to manage roles in the space.",
+	Long:  "Sets space role assignments as specified in the payload.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to manage roles in the space.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {

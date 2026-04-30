@@ -41,7 +41,7 @@ var space_permissionsCmd = &cobra.Command{
 var space_permissions_get_available_space_permissions = &cobra.Command{
 	Use:   "get-available-space-permissions",
 	Short: "Get available space permissions",
-	Long:  "Retrieves the available space permissions.\n\nAvailable as part of the [Role-Based Access Controls Beta](https://community.atlassian.com/forums/Confluence-articles/Beta-Simplify-space-access-in-Confluence-with-roles/ba-p/3044550). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to access the Confluence site.",
+	Long:  "Retrieves the available space permissions.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to access the Confluence site.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {

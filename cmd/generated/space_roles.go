@@ -41,7 +41,7 @@ var space_rolesCmd = &cobra.Command{
 var space_roles_get_available_space_roles = &cobra.Command{
 	Use:   "get-available-space-roles",
 	Short: "Get available space roles",
-	Long:  "Retrieves the available space roles.\n\nAvailable as part of the [Role-Based Access Controls Beta](https://community.atlassian.com/forums/Confluence-articles/Beta-Simplify-space-access-in-Confluence-with-roles/ba-p/3044550). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to access the Confluence site; if requesting a certain space's roles, permission to view the space.",
+	Long:  "Retrieves the available space roles.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to access the Confluence site; if requesting a certain space's roles, permission to view the space.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
@@ -62,7 +62,7 @@ var space_roles_get_available_space_roles = &cobra.Command{
 var space_roles_create_space_role = &cobra.Command{
 	Use:   "create-space-role",
 	Short: "Create a space role",
-	Long:  "Create a space role.\n\nAvailable as part of the [Role-Based Access Controls Beta](https://community.atlassian.com/forums/Confluence-articles/Beta-Simplify-space-access-in-Confluence-with-roles/ba-p/3044550). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be an organization or site admin. Connect and Forge app users are not authorized to access this resource.",
+	Long:  "Create a space role.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be an organization or site admin. Connect and Forge app users are not authorized to access this resource.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
@@ -127,7 +127,7 @@ var space_roles_create_space_role = &cobra.Command{
 var space_roles_get_space_roles_by_id = &cobra.Command{
 	Use:   "get-space-roles-by-id",
 	Short: "Get space role by ID",
-	Long:  "Retrieves the space role by ID.\n\nAvailable as part of the [Role-Based Access Controls Beta](https://community.atlassian.com/forums/Confluence-articles/Beta-Simplify-space-access-in-Confluence-with-roles/ba-p/3044550). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to access the Confluence site.",
+	Long:  "Retrieves the space role by ID.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to access the Confluence site.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
@@ -157,7 +157,7 @@ var space_roles_get_space_roles_by_id = &cobra.Command{
 var space_roles_update_space_role = &cobra.Command{
 	Use:   "update-space-role",
 	Short: "Update a space role",
-	Long:  "Update a space role.\n\nAvailable as part of the [Role-Based Access Controls Beta](https://community.atlassian.com/forums/Confluence-articles/Beta-Simplify-space-access-in-Confluence-with-roles/ba-p/3044550). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be an organization or site admin. Connect and Forge app users are not authorized to access this resource.",
+	Long:  "Update a space role.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be an organization or site admin. Connect and Forge app users are not authorized to access this resource.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
@@ -231,7 +231,7 @@ var space_roles_update_space_role = &cobra.Command{
 var space_roles_delete_space_role = &cobra.Command{
 	Use:   "delete-space-role",
 	Short: "Delete a space role",
-	Long:  "Delete a space role\n\nAvailable as part of the [Role-Based Access Controls Beta](https://community.atlassian.com/forums/Confluence-articles/Beta-Simplify-space-access-in-Confluence-with-roles/ba-p/3044550). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be an organization or site admin. Connect and Forge app users are not authorized to access this resource.",
+	Long:  "Delete a space role\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be an organization or site admin. Connect and Forge app users are not authorized to access this resource.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
