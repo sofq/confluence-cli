@@ -662,7 +662,7 @@ var spaces_get_role_assignments = &cobra.Command{
 var spaces_set_role_assignments = &cobra.Command{
 	Use:   "set-role-assignments",
 	Short: "Set space role assignments",
-	Long:  "Sets space role assignments as specified in the payload.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to manage roles in the space.",
+	Long:  "Sets space role assignments as specified in the payload. For each entry, if `roleId` is provided\nthe principal is assigned to that role. If `roleId` is omitted, the role assignment for that principal is removed, if it exists.\n\nAvailable on tenants with [Role-Based Access Control](https://support.atlassian.com/confluence-cloud/docs/manage-user-roles/). \n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to manage roles in the space.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
