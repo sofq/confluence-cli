@@ -59,10 +59,228 @@ var space_permissions_get_available_space_permissions = &cobra.Command{
 	},
 }
 
+var space_permissions_list_space_permission_combinations = &cobra.Command{
+	Use:   "list-space-permission-combinations",
+	Short: "List unassigned space permission combinations",
+	Long:  "Lists the unique unassigned space permission combinations currently present on the tenant.\nCombinations that already map to a space role are filtered out server-side. Each row carries\nthe decoded set of space permissions and the principal types that currently hold the\ncombination — these inform which `principalType` values are valid to include in the matching\nbulk role-assignments request.\n\nResults are always sorted by `principalCount` descending. Sort field and sort order are not\nconfigurable; page size is controlled by the `limit` query parameter (default 25, min 1,\nmax 250). Use the `cursor` field to page through additional results. The `generatedAt` field\nreflects the last audit run that populated the combinations table — call the\ngenerate-combinations endpoint to refresh stale data.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be a Confluence administrator.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		path := fmt.Sprintf("/space-permissions/transition/combinations")
+		query := client.QueryFromFlags(cmd, "cursor", "limit")
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var space_permissions_generate_space_permission_combinations = &cobra.Command{
+	Use:   "generate-space-permission-combinations",
+	Short: "Generate space permission combinations",
+	Long:  "Submits a task to refresh the space permission combinations in the database, which identifies\nall unique permission combinations across the site. This provides permission combination IDs\nthat can be used with the assign-roles and remove-access endpoints.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be a Confluence administrator.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		path := fmt.Sprintf("/space-permissions/transition/combinations")
+		query := client.QueryFromFlags(cmd)
+
+		code := c.Do(cmd.Context(), "POST", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var space_permissions_bulk_assign_space_permission_roles = &cobra.Command{
+	Use:   "bulk-assign-space-permission-roles",
+	Short: "Bulk assign space permission roles",
+	Long:  "Bulk assigns roles for one or more permission combination IDs obtained from the space permission\ncombinations. Supports targeting all spaces, specific spaces, or excluding specific spaces.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be a Confluence administrator.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		path := fmt.Sprintf("/space-permissions/transition/role-assignments")
+		query := client.QueryFromFlags(cmd)
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "POST request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "POST", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var space_permissions_bulk_remove_space_permission_access = &cobra.Command{
+	Use:   "bulk-remove-space-permission-access",
+	Short: "Bulk remove space permission access",
+	Long:  "Bulk removes access for one or more permission combination IDs obtained from the space permission\ncombinations. This removes all space permissions for the specified combinations across\nthe targeted spaces.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be a Confluence administrator.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		path := fmt.Sprintf("/space-permissions/transition/access-removals")
+		query := client.QueryFromFlags(cmd)
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "POST request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "POST", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var space_permissions_get_space_permission_transition_task_status = &cobra.Command{
+	Use:   "get-space-permission-transition-task-status",
+	Short: "Get space permission transition task status",
+	Long:  "Retrieves the status of an async space permission transition task. Use the taskId returned\nfrom the generate-combinations, assign-roles, or remove-access endpoints to poll for\nprogress and completion.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nUser must be a Confluence administrator.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		taskId, _ := cmd.Flags().GetString("taskId")
+		if strings.TrimSpace(taskId) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--taskId must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/space-permissions/transition/tasks/%s", url.PathEscape(taskId))
+		query := client.QueryFromFlags(cmd)
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
 func init() {
 
 	space_permissions_get_available_space_permissions.Flags().String("cursor", "", "Used for pagination, this opaque cursor will be returned in the `next` URL in the `Link` response header. Use the relative URL in the `Link` header to retrieve the `next` set of results.")
 	space_permissions_get_available_space_permissions.Flags().String("limit", "", "Maximum number of space permissions to return. If more results exist, use the `Link` response header to retrieve a relative URL that will return the next set of results.")
 	space_permissionsCmd.AddCommand(space_permissions_get_available_space_permissions)
+
+	space_permissions_list_space_permission_combinations.Flags().String("cursor", "", "Opaque cursor returned from a previous page in the `cursor` field of the response. Omit for the first page.")
+	space_permissions_list_space_permission_combinations.Flags().String("limit", "", "The maximum number of combinations to return per page. Requests outside the supported range return `400`.")
+	space_permissionsCmd.AddCommand(space_permissions_list_space_permission_combinations)
+
+	space_permissionsCmd.AddCommand(space_permissions_generate_space_permission_combinations)
+
+	space_permissions_bulk_assign_space_permission_roles.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	space_permissionsCmd.AddCommand(space_permissions_bulk_assign_space_permission_roles)
+
+	space_permissions_bulk_remove_space_permission_access.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	space_permissionsCmd.AddCommand(space_permissions_bulk_remove_space_permission_access)
+
+	space_permissions_get_space_permission_transition_task_status.Flags().String("taskId", "", "The ID of the async task, as returned by the generate-combinations, assign-roles, or remove-access endpoints.")
+	space_permissions_get_space_permission_transition_task_status.MarkFlagRequired("taskId")
+	space_permissionsCmd.AddCommand(space_permissions_get_space_permission_transition_task_status)
 
 }
