@@ -15,7 +15,10 @@ jobs:
       pull-requests: write
     steps:
       - name: Enable auto-merge
-        run: gh pr merge "$PR_URL" --auto --squash
+        run: |
+          if ! gh pr merge "$PR_URL" --auto --squash; then
+            echo "::notice::Could not enable auto-merge. This needs the repository setting 'Allow auto-merge' plus branch protection with required status checks. Leaving the PR for manual merge."
+          fi
         env:
           PR_URL: ${{ github.event.pull_request.html_url }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
