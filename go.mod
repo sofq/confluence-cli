@@ -1,6 +1,6 @@
 module github.com/sofq/confluence-cli
 
-go 1.25.9
+go 1.25.11
 
 require (
 	github.com/itchyny/gojq v0.12.19
