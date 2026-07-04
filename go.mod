@@ -4,7 +4,7 @@ go 1.25.11
 
 require (
 	github.com/itchyny/gojq v0.12.19
-	github.com/pb33f/libopenapi v0.38.3
+	github.com/pb33f/libopenapi v0.38.5
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/pflag v1.0.10
 )
