@@ -766,7 +766,7 @@ var spaces_get_default_classification_level = &cobra.Command{
 var spaces_put_default_classification_level = &cobra.Command{
 	Use:   "put-default-classification-level",
 	Short: "Update space default classification level",
-	Long:  "Update the [default classification level](https://support.atlassian.com/security-and-access-policies/docs/what-is-a-default-classification-level/) \nfor a specific space.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\n'Permission to access the Confluence site ('Can use' global permission) and 'Admin' permission for the space.",
+	Long:  "Update the [default classification level](https://support.atlassian.com/security-and-access-policies/docs/what-is-a-default-classification-level/) \nfor a specific space.\n\n**[Permissions](https://support.atlassian.com/confluence-cloud/docs/what-are-confluences-roles/) required**:\nPermission to access the Confluence site ('Can use' global permission) and\n[`manage/space`](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-permissions/#api-space-permissions-get) permission for the space.\n\n**Note:** To find the display name for each permission ID, call the [Get available space permissions](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-permissions/#api-space-permissions-get) API.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
@@ -840,7 +840,7 @@ var spaces_put_default_classification_level = &cobra.Command{
 var spaces_delete_default_classification_level = &cobra.Command{
 	Use:   "delete-default-classification-level",
 	Short: "Delete space default classification level",
-	Long:  "Returns the [default classification level](https://support.atlassian.com/security-and-access-policies/docs/what-is-a-default-classification-level/) \nfor a specific space.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\n'Permission to access the Confluence site ('Can use' global permission) and 'Admin' permission for the space.",
+	Long:  "Returns the [default classification level](https://support.atlassian.com/security-and-access-policies/docs/what-is-a-default-classification-level/) \nfor a specific space.\n\n**[Permissions](https://support.atlassian.com/confluence-cloud/docs/what-are-confluences-roles/) required**:\nPermission to access the Confluence site ('Can use' global permission) and\n[`manage/space`](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-permissions/#api-space-permissions-get) permission for the space.\n\n**Note:** To find the display name for each permission ID, call the [Get available space permissions](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-permissions/#api-space-permissions-get) API.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
