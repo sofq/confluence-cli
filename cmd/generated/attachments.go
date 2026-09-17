@@ -92,7 +92,7 @@ var attachments_get_by_id = &cobra.Command{
 var attachments_delete = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete attachment",
-	Long:  "Delete an attachment by id.\n\nDeleting an attachment moves the attachment to the trash, where it can be restored later. To permanently delete an attachment (or \"purge\" it),\nthe endpoint must be called on a **trashed** attachment with the following param `purge=true`.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the container of the attachment.\nPermission to delete attachments in the space.\nPermission to administer the space (if attempting to purge).",
+	Long:  "Delete an attachment by id.\n\nDeleting an attachment moves the attachment to the trash, where it can be restored later. To permanently delete an attachment (or \"purge\" it),\nthe endpoint must be called on a **trashed** attachment with the following param `purge=true`.\n\n**[Permissions](https://support.atlassian.com/confluence-cloud/docs/what-are-confluences-roles/) required**:\nPermission to view the container of the attachment.\nPermission to delete attachments in the space.\n[`manage/content`](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-permissions/#api-space-permissions-get) permission for the space (if attempting to purge).\n\n**Note:** To find the display name for each permission ID, call the [Get available space permissions](https://developer.atlassian.com/cloud/confluence/rest/v2/api-group-space-permissions/#api-space-permissions-get) API.",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		c, err := client.FromContext(cmd.Context())
 		if err != nil {
