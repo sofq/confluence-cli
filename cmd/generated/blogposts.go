@@ -38,6 +38,318 @@ var blogpostsCmd = &cobra.Command{
 	},
 }
 
+var blogposts_get_blog_post_restriction_state = &cobra.Command{
+	Use:   "get-blog-post-restriction-state",
+	Short: "Get blog post restriction state",
+	Long:  "Returns the restriction state of a blog post.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the blog post.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/blogposts/%s/restriction-state", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd)
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var blogposts_set_blog_post_restriction_state = &cobra.Command{
+	Use:   "set-blog-post-restriction-state",
+	Short: "Set blog post restriction state",
+	Long:  "Sets the restriction state of a blog post.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the blog post or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/blogposts/%s/restriction-state", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "allow-self-lockout")
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "PUT request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "PUT", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var blogposts_get_blog_post_permissions = &cobra.Command{
+	Use:   "get-blog-post-permissions",
+	Short: "Get blog post permissions",
+	Long:  "Returns the direct content permissions on a blog post with optional filtering by operation, principal-type, and principal-id.\nResults are cursor-paginated (max 250 per page).\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the blog post.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/blogposts/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "operation", "principal-type", "principal-id", "cursor", "limit")
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var blogposts_add_blog_post_permissions = &cobra.Command{
+	Use:   "add-blog-post-permissions",
+	Short: "Add blog post permissions",
+	Long:  "Adds or replaces direct content permissions for the specified principals on a blog post. Permissions for other principals are preserved; use `PUT` to replace all permissions at once.\n\nA principal can hold only one `read` or `update` permission. Adding `read` for a principal that currently has `update` downgrades that principal to `read`; adding `update` upgrades them. If the same request contains both operations for a principal, `update` takes precedence.\n\nReasserting a principal's existing permission is idempotent and returns a successful response without creating a duplicate entry.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the blog post or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/blogposts/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "allow-self-lockout")
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "POST request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "POST", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var blogposts_set_blog_post_permissions = &cobra.Command{
+	Use:   "set-blog-post-permissions",
+	Short: "Set blog post permissions",
+	Long:  "Replaces all direct content permissions on a blog post with the provided set. Any permissions not included in the request body are removed.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the blog post or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/blogposts/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "allow-self-lockout")
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "PUT request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "PUT", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var blogposts_delete_blog_post_permissions = &cobra.Command{
+	Use:   "delete-blog-post-permissions",
+	Short: "Delete blog post permissions",
+	Long:  "Deletes direct content permissions from a blog post. See `DELETE /pages/{id}/permissions` for filter semantics.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the blog post or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/blogposts/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "operation", "principal-type", "principal-id", "allow-self-lockout")
+
+		code := c.Do(cmd.Context(), "DELETE", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
 var blogposts_get_blog_posts = &cobra.Command{
 	Use:   "get-blog-posts",
 	Short: "Get blog posts",
@@ -1085,6 +1397,45 @@ var blogposts_post_blog_post_classification_level = &cobra.Command{
 }
 
 func init() {
+
+	blogposts_get_blog_post_restriction_state.Flags().String("id", "", "The ID of the blog post.")
+	blogposts_get_blog_post_restriction_state.MarkFlagRequired("id")
+	blogpostsCmd.AddCommand(blogposts_get_blog_post_restriction_state)
+
+	blogposts_set_blog_post_restriction_state.Flags().String("id", "", "The ID of the blog post.")
+	blogposts_set_blog_post_restriction_state.MarkFlagRequired("id")
+	blogposts_set_blog_post_restriction_state.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	blogposts_set_blog_post_restriction_state.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	blogpostsCmd.AddCommand(blogposts_set_blog_post_restriction_state)
+
+	blogposts_get_blog_post_permissions.Flags().String("id", "", "The ID of the blog post.")
+	blogposts_get_blog_post_permissions.MarkFlagRequired("id")
+	blogposts_get_blog_post_permissions.Flags().String("operation", "", "Filter by operation (`read` or `update`).")
+	blogposts_get_blog_post_permissions.Flags().String("principal-type", "", "Filter by principal type (`user` or `group`). May be used without `principal-id` to return all permissions for that type.")
+	blogposts_get_blog_post_permissions.Flags().String("principal-id", "", "Filter by principal ID. Must be provided together with `principal-type`.")
+	blogposts_get_blog_post_permissions.Flags().String("cursor", "", "Opaque cursor for pagination. Use the value from the previous response's `_links.next`.")
+	blogposts_get_blog_post_permissions.Flags().String("limit", "", "Maximum number of permission entries to return. Must be between 1 and 250.")
+	blogpostsCmd.AddCommand(blogposts_get_blog_post_permissions)
+
+	blogposts_add_blog_post_permissions.Flags().String("id", "", "The ID of the blog post.")
+	blogposts_add_blog_post_permissions.MarkFlagRequired("id")
+	blogposts_add_blog_post_permissions.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	blogposts_add_blog_post_permissions.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	blogpostsCmd.AddCommand(blogposts_add_blog_post_permissions)
+
+	blogposts_set_blog_post_permissions.Flags().String("id", "", "The ID of the blog post.")
+	blogposts_set_blog_post_permissions.MarkFlagRequired("id")
+	blogposts_set_blog_post_permissions.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	blogposts_set_blog_post_permissions.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	blogpostsCmd.AddCommand(blogposts_set_blog_post_permissions)
+
+	blogposts_delete_blog_post_permissions.Flags().String("id", "", "The ID of the blog post.")
+	blogposts_delete_blog_post_permissions.MarkFlagRequired("id")
+	blogposts_delete_blog_post_permissions.Flags().String("operation", "", "Filter by operation. Must be provided together with `principal-type` and `principal-id`.")
+	blogposts_delete_blog_post_permissions.Flags().String("principal-type", "", "Filter by principal type. Must be provided together with `principal-id`.")
+	blogposts_delete_blog_post_permissions.Flags().String("principal-id", "", "Filter by principal ID. Must be provided together with `principal-type`.")
+	blogposts_delete_blog_post_permissions.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	blogpostsCmd.AddCommand(blogposts_delete_blog_post_permissions)
 
 	blogposts_get_blog_posts.Flags().String("id", "", "Filter the results based on blog post ids. Multiple blog post ids can be specified as a comma-separated list.")
 	blogposts_get_blog_posts.Flags().String("space-id", "", "Filter the results based on space ids. Multiple space ids can be specified as a comma-separated list.")

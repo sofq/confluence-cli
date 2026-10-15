@@ -38,6 +38,318 @@ var whiteboardsCmd = &cobra.Command{
 	},
 }
 
+var whiteboards_get_restriction_state = &cobra.Command{
+	Use:   "get-restriction-state",
+	Short: "Get whiteboard restriction state",
+	Long:  "Returns the restriction state of a whiteboard.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the whiteboard.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/whiteboards/%s/restriction-state", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd)
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var whiteboards_set_restriction_state = &cobra.Command{
+	Use:   "set-restriction-state",
+	Short: "Set whiteboard restriction state",
+	Long:  "Sets the restriction state of a whiteboard.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the whiteboard or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/whiteboards/%s/restriction-state", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "allow-self-lockout")
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "PUT request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "PUT", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var whiteboards_get_permissions = &cobra.Command{
+	Use:   "get-permissions",
+	Short: "Get whiteboard permissions",
+	Long:  "Returns the direct content permissions on a whiteboard with optional filtering.\nResults are cursor-paginated (max 250 per page).\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the whiteboard.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/whiteboards/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "operation", "principal-type", "principal-id", "cursor", "limit")
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var whiteboards_add_permissions = &cobra.Command{
+	Use:   "add-permissions",
+	Short: "Add whiteboard permissions",
+	Long:  "Adds or replaces direct content permissions for the specified principals on a whiteboard. Permissions for other principals are preserved; use `PUT` to replace all permissions at once.\n\nA principal can hold only one `read` or `update` permission. Adding `read` for a principal that currently has `update` downgrades that principal to `read`; adding `update` upgrades them. If the same request contains both operations for a principal, `update` takes precedence.\n\nReasserting a principal's existing permission is idempotent and returns a successful response without creating a duplicate entry.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the whiteboard or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/whiteboards/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "allow-self-lockout")
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "POST request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "POST", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var whiteboards_set_permissions = &cobra.Command{
+	Use:   "set-permissions",
+	Short: "Set whiteboard permissions",
+	Long:  "Replaces all direct content permissions on a whiteboard with the provided set.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the whiteboard or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/whiteboards/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "allow-self-lockout")
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "PUT request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "PUT", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var whiteboards_delete_permissions = &cobra.Command{
+	Use:   "delete-permissions",
+	Short: "Delete whiteboard permissions",
+	Long:  "Deletes direct content permissions from a whiteboard. See `DELETE /pages/{id}/permissions` for filter semantics.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the whiteboard or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/whiteboards/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "operation", "principal-type", "principal-id", "allow-self-lockout")
+
+		code := c.Do(cmd.Context(), "DELETE", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
 var whiteboards_create = &cobra.Command{
 	Use:   "create",
 	Short: "Create whiteboard",
@@ -727,6 +1039,45 @@ var whiteboards_post_classification_level = &cobra.Command{
 }
 
 func init() {
+
+	whiteboards_get_restriction_state.Flags().String("id", "", "The ID of the whiteboard.")
+	whiteboards_get_restriction_state.MarkFlagRequired("id")
+	whiteboardsCmd.AddCommand(whiteboards_get_restriction_state)
+
+	whiteboards_set_restriction_state.Flags().String("id", "", "The ID of the whiteboard.")
+	whiteboards_set_restriction_state.MarkFlagRequired("id")
+	whiteboards_set_restriction_state.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	whiteboards_set_restriction_state.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	whiteboardsCmd.AddCommand(whiteboards_set_restriction_state)
+
+	whiteboards_get_permissions.Flags().String("id", "", "The ID of the whiteboard.")
+	whiteboards_get_permissions.MarkFlagRequired("id")
+	whiteboards_get_permissions.Flags().String("operation", "", "Filter by operation (`read` or `update`).")
+	whiteboards_get_permissions.Flags().String("principal-type", "", "Filter by principal type (`user` or `group`). May be used without `principal-id` to return all permissions for that type.")
+	whiteboards_get_permissions.Flags().String("principal-id", "", "Filter by principal ID. Must be provided together with `principal-type`.")
+	whiteboards_get_permissions.Flags().String("cursor", "", "Opaque cursor for pagination. Use the value from the previous response's `_links.next`.")
+	whiteboards_get_permissions.Flags().String("limit", "", "Maximum number of permission entries to return. Must be between 1 and 250.")
+	whiteboardsCmd.AddCommand(whiteboards_get_permissions)
+
+	whiteboards_add_permissions.Flags().String("id", "", "The ID of the whiteboard.")
+	whiteboards_add_permissions.MarkFlagRequired("id")
+	whiteboards_add_permissions.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	whiteboards_add_permissions.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	whiteboardsCmd.AddCommand(whiteboards_add_permissions)
+
+	whiteboards_set_permissions.Flags().String("id", "", "The ID of the whiteboard.")
+	whiteboards_set_permissions.MarkFlagRequired("id")
+	whiteboards_set_permissions.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	whiteboards_set_permissions.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	whiteboardsCmd.AddCommand(whiteboards_set_permissions)
+
+	whiteboards_delete_permissions.Flags().String("id", "", "The ID of the whiteboard.")
+	whiteboards_delete_permissions.MarkFlagRequired("id")
+	whiteboards_delete_permissions.Flags().String("operation", "", "Filter by operation. Must be provided together with `principal-type` and `principal-id`.")
+	whiteboards_delete_permissions.Flags().String("principal-type", "", "Filter by principal type. Must be provided together with `principal-id`.")
+	whiteboards_delete_permissions.Flags().String("principal-id", "", "Filter by principal ID. Must be provided together with `principal-type`.")
+	whiteboards_delete_permissions.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	whiteboardsCmd.AddCommand(whiteboards_delete_permissions)
 
 	whiteboards_create.Flags().String("private", "", "The whiteboard will be private. Only the user who creates this whiteboard will have permission to view and edit one.")
 	whiteboards_create.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
