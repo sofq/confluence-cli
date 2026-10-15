@@ -38,6 +38,318 @@ var databasesCmd = &cobra.Command{
 	},
 }
 
+var databases_get_restriction_state = &cobra.Command{
+	Use:   "get-restriction-state",
+	Short: "Get database restriction state",
+	Long:  "Returns the restriction state of a database.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the database.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/restriction-state", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd)
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var databases_set_restriction_state = &cobra.Command{
+	Use:   "set-restriction-state",
+	Short: "Set database restriction state",
+	Long:  "Sets the restriction state of a database.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the database or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/restriction-state", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "allow-self-lockout")
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "PUT request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "PUT", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var databases_get_permissions = &cobra.Command{
+	Use:   "get-permissions",
+	Short: "Get database permissions",
+	Long:  "Returns the direct content permissions on a database with optional filtering.\nResults are cursor-paginated (max 250 per page).\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the database.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "operation", "principal-type", "principal-id", "cursor", "limit")
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var databases_add_permissions = &cobra.Command{
+	Use:   "add-permissions",
+	Short: "Add database permissions",
+	Long:  "Adds or replaces direct content permissions for the specified principals on a database. Permissions for other principals are preserved; use `PUT` to replace all permissions at once.\n\nA principal can hold only one `read` or `update` permission. Adding `read` for a principal that currently has `update` downgrades that principal to `read`; adding `update` upgrades them. If the same request contains both operations for a principal, `update` takes precedence.\n\nReasserting a principal's existing permission is idempotent and returns a successful response without creating a duplicate entry.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the database or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "allow-self-lockout")
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "POST request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "POST", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var databases_set_permissions = &cobra.Command{
+	Use:   "set-permissions",
+	Short: "Set database permissions",
+	Long:  "Replaces all direct content permissions on a database with the provided set.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the database or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "allow-self-lockout")
+
+		var bodyReader io.Reader
+		bodyStr, _ := cmd.Flags().GetString("body")
+		if bodyStr == "-" {
+			bodyReader = os.Stdin
+		} else if bodyStr != "" {
+			if strings.HasPrefix(bodyStr, "@") {
+				filename := strings.TrimPrefix(bodyStr, "@")
+				if filename == "" {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "--body @<filename> requires a filename after @",
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				f, err := os.Open(filename)
+				if err != nil {
+					apiErr := &cferrors.APIError{
+						ErrorType: "validation_error",
+						Message:   "cannot open body file: " + err.Error(),
+					}
+					apiErr.WriteJSON(os.Stderr)
+					return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+				}
+				defer f.Close()
+				bodyReader = f
+			} else {
+				bodyReader = strings.NewReader(bodyStr)
+			}
+		} else if !c.DryRun {
+			// Check if stdin has data (guard against Stat failure to avoid nil dereference).
+			// Skip in dry-run mode to avoid hanging on empty stdin pipes in non-terminal contexts.
+			if stat, err := os.Stdin.Stat(); err == nil && (stat.Mode()&os.ModeCharDevice) == 0 {
+				bodyReader = os.Stdin
+			}
+		}
+		if bodyReader == nil && !c.DryRun {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "PUT request requires a body; use --body '{...}', --body @file, or pipe JSON to stdin",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		code := c.Do(cmd.Context(), "PUT", path, query, bodyReader)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var databases_delete_permissions = &cobra.Command{
+	Use:   "delete-permissions",
+	Short: "Delete database permissions",
+	Long:  "Deletes direct content permissions from a database. See `DELETE /pages/{id}/permissions` for filter semantics.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to edit the database or administer the space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/permissions", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "operation", "principal-type", "principal-id", "allow-self-lockout")
+
+		code := c.Do(cmd.Context(), "DELETE", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
 var databases_create = &cobra.Command{
 	Use:   "create",
 	Short: "Create database",
@@ -548,6 +860,135 @@ var databases_get_ancestors = &cobra.Command{
 	},
 }
 
+var databases_get_fields = &cobra.Command{
+	Use:   "get-fields",
+	Short: "Get fields for database",
+	Long:  "Returns the field definitions (schema) for a database, ordered by the\nuser-defined column order, using cursor-based pagination.\n\n> **Consistency:** Responses may not immediately reflect recent changes.\nClients requiring read-after-write confirmation should poll with bounded backoff.\n\n> **Experimental:** This operation is experimental and may change in backwards-incompatible ways without notice.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the database and its corresponding space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/fields", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "limit", "cursor")
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var databases_get_views = &cobra.Command{
+	Use:   "get-views",
+	Short: "Get views for database",
+	Long:  "Returns the views defined on a database using cursor-based pagination.\nOnly view IDs, names, and types are returned; view configuration is not exposed.\n\n> **Consistency:** Responses may not immediately reflect recent changes.\nClients requiring read-after-write confirmation should poll with bounded backoff.\n\n> **Experimental:** This operation is experimental and may change in backwards-incompatible ways without notice.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the database and its corresponding space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/views", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "limit", "cursor")
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var databases_get_entries = &cobra.Command{
+	Use:   "get-entries",
+	Short: "Get entries for database",
+	Long:  "Returns the entries (rows) of a database, with optional filtering, sorting,\nand cursor-based pagination. Entry values are keyed by field ID; use\nGet fields for database (`GET /databases/{id}/fields`) to map field IDs to\nnames.\n\nFiltering is expressed with bracket-scoped query parameters keyed on field\nID. The exact operators vary by field type and are documented on the\n`filter` parameter. Multiple filters are combined with AND. Unsupported\noperators and non-filterable fields return distinct structured `400`\nresponses.\n\nPagination uses opaque, offset-based continuation tokens and is best effort\nwhile a database is changing. Concurrent inserts, deletes, or changes to a\nsort value can cause duplicate or omitted rows across pages. Restart from\nthe first page when a consistent export is required.\n\nResults are based on the database, not a particular view. A view's filters,\nsorting, grouping, and field visibility do not affect the response.\n\n> **Consistency:** Responses may not immediately reflect recent changes.\nClients requiring read-after-write confirmation should poll with bounded backoff.\n\n> **Experimental:** This operation is experimental and may change in backwards-incompatible ways without notice.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the database and its corresponding space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/entries", url.PathEscape(id))
+		query := client.QueryFromFlags(cmd, "limit", "cursor", "sort", "filter")
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
+var databases_get_entry_by_id = &cobra.Command{
+	Use:   "get-entry-by-id",
+	Short: "Get entry by id",
+	Long:  "Returns a single entry (row) from a database by ID.\n\n> **Consistency:** Responses may not immediately reflect recent changes.\nClients requiring read-after-write confirmation should poll with bounded backoff.\n\n> **Experimental:** This operation is experimental and may change in backwards-incompatible ways without notice.\n\n**[Permissions](https://confluence.atlassian.com/x/_AozKw) required**:\nPermission to view the database and its corresponding space.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		c, err := client.FromContext(cmd.Context())
+		if err != nil {
+			return err
+		}
+		id, _ := cmd.Flags().GetString("id")
+		if strings.TrimSpace(id) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--id must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		entryId, _ := cmd.Flags().GetString("entryId")
+		if strings.TrimSpace(entryId) == "" {
+			apiErr := &cferrors.APIError{
+				ErrorType: "validation_error",
+				Message:   "--entryId must not be empty",
+			}
+			apiErr.WriteJSON(os.Stderr)
+			return &cferrors.AlreadyWrittenError{Code: cferrors.ExitValidation}
+		}
+		path := fmt.Sprintf("/databases/%s/entries/%s", url.PathEscape(id), url.PathEscape(entryId))
+		query := client.QueryFromFlags(cmd)
+
+		code := c.Do(cmd.Context(), "GET", path, query, nil)
+
+		if code != 0 {
+			return &cferrors.AlreadyWrittenError{Code: code}
+		}
+		return nil
+	},
+}
+
 var databases_get_classification_level = &cobra.Command{
 	Use:   "get-classification-level",
 	Short: "Get database classification level",
@@ -728,6 +1169,45 @@ var databases_post_classification_level = &cobra.Command{
 
 func init() {
 
+	databases_get_restriction_state.Flags().String("id", "", "The ID of the database.")
+	databases_get_restriction_state.MarkFlagRequired("id")
+	databasesCmd.AddCommand(databases_get_restriction_state)
+
+	databases_set_restriction_state.Flags().String("id", "", "The ID of the database.")
+	databases_set_restriction_state.MarkFlagRequired("id")
+	databases_set_restriction_state.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	databases_set_restriction_state.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	databasesCmd.AddCommand(databases_set_restriction_state)
+
+	databases_get_permissions.Flags().String("id", "", "The ID of the database.")
+	databases_get_permissions.MarkFlagRequired("id")
+	databases_get_permissions.Flags().String("operation", "", "Filter by operation (`read` or `update`).")
+	databases_get_permissions.Flags().String("principal-type", "", "Filter by principal type (`user` or `group`). May be used without `principal-id` to return all permissions for that type.")
+	databases_get_permissions.Flags().String("principal-id", "", "Filter by principal ID. Must be provided together with `principal-type`.")
+	databases_get_permissions.Flags().String("cursor", "", "Opaque cursor for pagination. Use the value from the previous response's `_links.next`.")
+	databases_get_permissions.Flags().String("limit", "", "Maximum number of permission entries to return. Must be between 1 and 250.")
+	databasesCmd.AddCommand(databases_get_permissions)
+
+	databases_add_permissions.Flags().String("id", "", "The ID of the database.")
+	databases_add_permissions.MarkFlagRequired("id")
+	databases_add_permissions.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	databases_add_permissions.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	databasesCmd.AddCommand(databases_add_permissions)
+
+	databases_set_permissions.Flags().String("id", "", "The ID of the database.")
+	databases_set_permissions.MarkFlagRequired("id")
+	databases_set_permissions.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	databases_set_permissions.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
+	databasesCmd.AddCommand(databases_set_permissions)
+
+	databases_delete_permissions.Flags().String("id", "", "The ID of the database.")
+	databases_delete_permissions.MarkFlagRequired("id")
+	databases_delete_permissions.Flags().String("operation", "", "Filter by operation. Must be provided together with `principal-type` and `principal-id`.")
+	databases_delete_permissions.Flags().String("principal-type", "", "Filter by principal type. Must be provided together with `principal-id`.")
+	databases_delete_permissions.Flags().String("principal-id", "", "Filter by principal ID. Must be provided together with `principal-type`.")
+	databases_delete_permissions.Flags().String("allow-self-lockout", "", "If `false` (default), the request is rejected when it would remove the calling user's own edit access.\nSet to `true` to allow the operation even when it locks out the caller.")
+	databasesCmd.AddCommand(databases_delete_permissions)
+
 	databases_create.Flags().String("private", "", "The database will be private. Only the user who creates this database will have permission to view and edit one.")
 	databases_create.Flags().String("body", "", "request body (JSON string, @file, or - for stdin)")
 	databasesCmd.AddCommand(databases_create)
@@ -798,6 +1278,32 @@ func init() {
 	databases_get_ancestors.MarkFlagRequired("id")
 	databases_get_ancestors.Flags().String("limit", "", "Maximum number of items per result to return. If more results exist, call the endpoint with the highest ancestor's ID to fetch the next set of results.")
 	databasesCmd.AddCommand(databases_get_ancestors)
+
+	databases_get_fields.Flags().String("id", "", "The Confluence content ID of the database, represented as an ASCII decimal-digit string.")
+	databases_get_fields.MarkFlagRequired("id")
+	databases_get_fields.Flags().String("limit", "", "Maximum number of results to return. The value must be a positive integer\nwithout a sign, decimal point, or leading zero. The default is 50 and the\nmaximum is 250.")
+	databases_get_fields.Flags().String("cursor", "", "Opaque, offset-based continuation token obtained from `_links.next` or the\n`Link` response header. A cursor is scoped to the database, collection\nendpoint, filters, sort, and page size that produced it. Reusing a\nwell-formed cursor with any different query context returns\n`CURSOR_QUERY_MISMATCH`; malformed or structurally invalid cursors return\n`INVALID_CURSOR`, and a decoded but unsupported version returns\n`UNSUPPORTED_CURSOR_VERSION`.\n\nCursor versions remain decodable for at least 24 hours, but the API does\nnot promise TTL-expiration detection. Cursors are continuation state, not\ncaller-scoped credentials, and authorization is re-evaluated on every\nrequest. Their query-context fingerprint is unsigned and must not be\ntreated as authentication or tamper protection.\n\nPagination is best effort under concurrent mutation. Inserts, deletes, or\nchanges to sort values can cause duplicate or omitted rows; restart from\nthe first page when a consistent export is required.")
+	databasesCmd.AddCommand(databases_get_fields)
+
+	databases_get_views.Flags().String("id", "", "The Confluence content ID of the database, represented as an ASCII decimal-digit string.")
+	databases_get_views.MarkFlagRequired("id")
+	databases_get_views.Flags().String("limit", "", "Maximum number of results to return. The value must be a positive integer\nwithout a sign, decimal point, or leading zero. The default is 50 and the\nmaximum is 250.")
+	databases_get_views.Flags().String("cursor", "", "Opaque, offset-based continuation token obtained from `_links.next` or the\n`Link` response header. A cursor is scoped to the database, collection\nendpoint, filters, sort, and page size that produced it. Reusing a\nwell-formed cursor with any different query context returns\n`CURSOR_QUERY_MISMATCH`; malformed or structurally invalid cursors return\n`INVALID_CURSOR`, and a decoded but unsupported version returns\n`UNSUPPORTED_CURSOR_VERSION`.\n\nCursor versions remain decodable for at least 24 hours, but the API does\nnot promise TTL-expiration detection. Cursors are continuation state, not\ncaller-scoped credentials, and authorization is re-evaluated on every\nrequest. Their query-context fingerprint is unsigned and must not be\ntreated as authentication or tamper protection.\n\nPagination is best effort under concurrent mutation. Inserts, deletes, or\nchanges to sort values can cause duplicate or omitted rows; restart from\nthe first page when a consistent export is required.")
+	databasesCmd.AddCommand(databases_get_views)
+
+	databases_get_entries.Flags().String("id", "", "The Confluence content ID of the database, represented as an ASCII decimal-digit string.")
+	databases_get_entries.MarkFlagRequired("id")
+	databases_get_entries.Flags().String("limit", "", "Maximum number of results to return. The value must be a positive integer\nwithout a sign, decimal point, or leading zero. The default is 50 and the\nmaximum is 250.")
+	databases_get_entries.Flags().String("cursor", "", "Opaque, offset-based continuation token obtained from `_links.next` or the\n`Link` response header. A cursor is scoped to the database, collection\nendpoint, filters, sort, and page size that produced it. Reusing a\nwell-formed cursor with any different query context returns\n`CURSOR_QUERY_MISMATCH`; malformed or structurally invalid cursors return\n`INVALID_CURSOR`, and a decoded but unsupported version returns\n`UNSUPPORTED_CURSOR_VERSION`.\n\nCursor versions remain decodable for at least 24 hours, but the API does\nnot promise TTL-expiration detection. Cursors are continuation state, not\ncaller-scoped credentials, and authorization is re-evaluated on every\nrequest. Their query-context fingerprint is unsigned and must not be\ntreated as authentication or tamper protection.\n\nPagination is best effort under concurrent mutation. Inserts, deletes, or\nchanges to sort values can cause duplicate or omitted rows; restart from\nthe first page when a consistent export is required.")
+	databases_get_entries.Flags().String("sort", "", "Used to sort the result by a single field ID. Prefix the field ID with\n`-` to sort in descending order. Text, number, checkbox, date, select,\nand hyperlink fields are sortable. Other field types return\n`FIELD_NOT_SORTABLE`. The `fieldId:modifier` form is reserved and\nreturns `UNSUPPORTED_SORT_MODIFIER`.\n\nEmpty values sort after non-empty values in both directions. Text uses\nthe projected `plain` value and fixed, locale-independent `en-US`\ncollation with numeric comparison and upper-case before lower-case.\nNumbers compare numerically, checkboxes order `false` before `true`, and\nselect values use configured option order. Date-only values compare\nchronologically; datetime values compare as absolute UTC instants.\nFor hyperlinks, each link's key is its non-empty label or, when the\nlabel is absent or empty, its URL. A multi-link value uses the minimum\nlink key under the same fixed string collation. AI Summary and all\ndependency-backed field types are not sortable.")
+	databases_get_entries.Flags().String("filter", "", "Filters entries by field value. Bracket-scoped on field ID, for example\n`filter[fieldId]=value`. The grammar forms are:\n- `filter[fieldId]=value` (implicit equality)\n- `filter[fieldId]=eq:value` (explicit equality)\n- `filter[fieldId]=in:value1,value2`\n- `filter[fieldId]=$empty`\n- `filter[fieldId][gte|lte|gt|lt]=value` (date and number fields only)\n\nThe supported capability matrix is:\n\n| Field type | Operators |\n| --- | --- |\n| `text` | `eq`, `$empty` |\n| `number` | `eq`, `in`, `gte`, `lte`, `gt`, `lt`, `$empty` |\n| `checkbox` | `eq` |\n| `date` | `eq`, `gte`, `lte`, `gt`, `lt`, `$empty` |\n| `select` | `eq`, `in`, `$empty` |\n| `user`, `pageLink`, `jiraIssue`, `entryLink` | `eq`, `in`, `$empty` |\n| `attachment` | `$empty` only |\n| all other field types | not filterable |\n\nBare equality and `eq:` use projected scalar identifiers; `in:` uses\na comma-separated list of those identifiers. Text and reference-field\nvalues remain strings even when they resemble booleans, `null`,\nnumbers, operators, or sentinels. Checkbox accepts only boolean\nequality, and an unset checkbox is treated as `false`. Date values\nmust match the field's `includesTime` mode: `YYYY-MM-DD` for a\ndate-only field, or an offset-bearing datetime for a datetime field.\nNumber values are canonical finite decimals.\n\nAn initial `<prefix>:` is operator-like only when the colon is not\nimmediately followed by `/`, so a URL such as `https://example.com`\nis an ordinary bare literal. A recognized leading `eq:` or `in:`\nselects that operator; any unknown operator-like prefix is an\nunsupported operator. Use explicit equality to escape a literal\ncontaining such a prefix, for example `eq:foo:bar`. A leading `$` is\nreserved for sentinels: `$empty` is accepted only where the matrix\nlists it, while `eq:$value` compares the literal string `$value`. An\nunknown bare `$...` value returns `INVALID_FILTER`. The `in:` syntax\ntreats every comma as a value delimiter and provides no escaping for\ncommas within a member. Use equality for a single comma-bearing\nliteral; such a literal cannot be included as one member of a\nmulti-value `in:` expression. An unknown operator, or an operator\nunsupported by the referenced field type, returns\n`UNSUPPORTED_FILTER_OPERATOR`. A field type with no filtering support\nreturns `FIELD_NOT_FILTERABLE`.\n\nNote: This two-level nesting pattern is not represented portably\nacross OpenAPI generators. Consumers may need to construct the\nbracket-scoped parameter names explicitly.")
+	databasesCmd.AddCommand(databases_get_entries)
+
+	databases_get_entry_by_id.Flags().String("id", "", "The Confluence content ID of the database, represented as an ASCII decimal-digit string.")
+	databases_get_entry_by_id.MarkFlagRequired("id")
+	databases_get_entry_by_id.Flags().String("entryId", "", "The ID of the entry to be returned.")
+	databases_get_entry_by_id.MarkFlagRequired("entryId")
+	databasesCmd.AddCommand(databases_get_entry_by_id)
 
 	databases_get_classification_level.Flags().String("id", "", "The ID of the database for which classification level should be returned.")
 	databases_get_classification_level.MarkFlagRequired("id")
